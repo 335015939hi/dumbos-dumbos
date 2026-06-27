@@ -1,10 +1,11 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
-#define VERSION_CODE 0
-#define VERSION_STRING "v0.0"
+#define _VERSION_CODE 000001
+#define _VERSION_STRING "v0.0.1"
 
 //whether to compile with unsafe debug features
+//comment this out if you're not debugging
 #define DEBUG_MODE 1
 
 
@@ -15,6 +16,14 @@
 //default port
 #define DEFAULT_PORT 3850
 
+
+#ifdef DEBUG_MODE
+#define VERSION_STRING _VERSION_STRING "-debug"
+#define VERSION_CODE (-_VERSION_CODE)
+#else
+#define VERSION_STRING _VERSION_STRING
+#define VERSION_CODE _VERSION_CODE
+#endif
 
 void print_error(const char*const);
 

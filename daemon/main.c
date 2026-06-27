@@ -31,6 +31,10 @@ int main (int argc,char ** argv){
         display_help(stdout,argv[0]);
         return 0;//or exit(0). i like return better
         break;
+      case 'v':
+        fprintf(stdout,"dumbosd version %s versioncode %d\n",VERSION_STRING,VERSION_CODE);
+        return 0;
+        break;
       case 'F':
         opt_fork=false;
         break;
@@ -62,12 +66,13 @@ int main (int argc,char ** argv){
 
 static const struct option long_opts[]={
   {"help",no_argument,0,'h'},
+  {"version",no_argument,0,'v'},
   {"fore",no_argument,0,'F'},
   {"foreground",no_argument,0,'F'},
   {"socket",required_argument,0,'s'},
   {0,0,0,0}
 };
-static const char * const short_opts="hFs:";
+static const char * const short_opts="hvFs:";
 
 void display_help(FILE*file,const char*const argv0){
   const char * const help_text=
@@ -78,6 +83,7 @@ void display_help(FILE*file,const char*const argv0){
     #endif
     "Options:\n"
     " -h,--help              display this help text\n"
+    " -v,--version           display version and exit\n"
     " -F,--fore,--foreground do not fork, stay in foreground\n"
     " -s,--socket=<path>     socket path, default " DEFAULT_SOCKET_PATH "\n"
     " -h,--host=<host>       server host, default " DEFAULT_SERVER "\n"
