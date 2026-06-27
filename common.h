@@ -16,7 +16,7 @@
 #define DEFAULT_SOCKET_PATH DEFAULT_SOCKET_DIRNAME DEFAULT_SOCKET_NAME
 
 
-
+void print_error(const char*const);
 
 
 #endif
