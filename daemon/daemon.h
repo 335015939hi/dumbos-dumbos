@@ -2,6 +2,6 @@
 #define _DAEMON_DAEMON_H
 
 //main daemon program
-void start_daemon(const char* const socket_path);
+int start_daemon(const char* const socket_path);
 
 #endif

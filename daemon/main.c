@@ -56,10 +56,7 @@ int main (int argc,char ** argv){
     }
   }
 
-  start_daemon(socket_path);
-
-
-  return 0;
+  return start_daemon(socket_path);
 }
 
 

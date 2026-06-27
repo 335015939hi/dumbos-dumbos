@@ -5,6 +5,7 @@
 #include "../common.h"
 #include "daemon.h"
 
-void start_daemon(const char* const socket_path){
+int start_daemon(const char* const socket_path){
   printf("hello world\n");
+  return 0;
 }
