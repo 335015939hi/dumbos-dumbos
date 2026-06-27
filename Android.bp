@@ -1,0 +1,32 @@
+cc_binary {
+    name: "dumbos",
+
+    srcs: [
+        "caller/main.c",
+    ],
+
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+    product_specific: true,
+
+}
+
+
+
+cc_binary {
+    name: "dumbosd",
+
+    srcs: [
+        "daemon/main.c",
+    ],
+
+
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+    product_specific: true,
+
+}
