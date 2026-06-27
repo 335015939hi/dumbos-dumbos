@@ -1,6 +1,9 @@
 #include <stdio.h>
 
+#include "../common.h"
+
 int main (int argc,char ** argv){
-	printf("hello world! this is DumbOS daemon");
-	return 0;
+  printf("This is DumbOS daemon");
+  printf("version " VERSION_STRING);
+  return 0;
 }
