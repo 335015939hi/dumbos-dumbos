@@ -1,3 +1,6 @@
+#default compiler output
+a.out
+
 # Prerequisites
 *.d
 
