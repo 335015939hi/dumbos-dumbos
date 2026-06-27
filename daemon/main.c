@@ -10,7 +10,7 @@
 
 static const struct option long_opts[];
 static const char * const short_opts;
-void display_help(FILE *);
+void display_help(FILE *,const char*const);
 
 
 int main (int argc,char ** argv){
@@ -28,7 +28,7 @@ int main (int argc,char ** argv){
   while(-1!=(option = getopt_long(argc, argv, short_opts, long_opts, NULL))){
     switch(option){
       case 'h':
-        display_help(stdout);
+        display_help(stdout,argv[0]);
         return 0;//or exit(0). i like return better
         break;
       case 'F':
@@ -38,7 +38,7 @@ int main (int argc,char ** argv){
         socket_path=optarg;
         break;
       default:
-        display_help(stderr);
+        display_help(stderr,argv[0]);
         error=EINVAL;
         break;
     }
@@ -69,10 +69,10 @@ static const struct option long_opts[]={
 };
 static const char * const short_opts="hFs:";
 
-void display_help(FILE*file){
+void display_help(FILE*file,const char*const argv0){
   const char * const help_text=
     //TODO
-    "Usage:\n"
+    "Usage:%s [options] [--] <command> [command args]\n"
     #ifdef DEBUG_MODE
     "debug mode options:\n"
     #endif
@@ -80,9 +80,9 @@ void display_help(FILE*file){
     " -h,--help              display this help text\n"
     " -F,--fore,--foreground do not fork, stay in foreground\n"
     " -s,--socket=<path>     socket path, default " DEFAULT_SOCKET_PATH "\n"
-    " -h,--host=<ipv4>       server IP, default TODO\n"
-    " -p,--port=<port>       server port, default TODO\n"
+    " -h,--host=<host>       server host, default " DEFAULT_SERVER "\n"
+    " -p,--port=<port>       server port, default %d\n"
 
   ;
-  fprintf(file,help_text);
+  fprintf(file,help_text,argv0,DEFAULT_PORT);
 }

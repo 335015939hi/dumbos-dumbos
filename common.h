@@ -8,12 +8,12 @@
 #define DEBUG_MODE 1
 
 
-//parent folder of the default socket, useful for mkdir
-#define DEFAULT_SOCKET_DIRNAME "/dev/socket"
-//file name of default socket
-#define DEFAULT_SOCKET_NAME "dumbos.socket"
 //full path of the default socket
-#define DEFAULT_SOCKET_PATH DEFAULT_SOCKET_DIRNAME DEFAULT_SOCKET_NAME
+#define DEFAULT_SOCKET_PATH "/dev/socket/dumbosd.socket"
+//default server
+#define DEFAULT_SERVER "192.168.12.1"
+//default port
+#define DEFAULT_PORT 3850
 
 
 void print_error(const char*const);
