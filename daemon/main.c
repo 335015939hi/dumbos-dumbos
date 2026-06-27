@@ -79,6 +79,9 @@ void display_help(FILE*file){
     "Options:\n"
     " -h,--help              display this help text\n"
     " -F,--fore,--foreground do not fork, stay in foreground\n"
+    " -s,--socket=<path>     socket path, default " DEFAULT_SOCKET_PATH "\n"
+    " -h,--host=<ipv4>       server IP, default TODO\n"
+    " -p,--port=<port>       server port, default TODO\n"
 
   ;
   fprintf(file,help_text);
