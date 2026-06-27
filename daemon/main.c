@@ -2,12 +2,15 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <errno.h>
+#include <stdbool.h>
+#include <unistd.h>
 
 #include "../common.h"
+#include "daemon.h"
 
 static const struct option long_opts[];
 static const char * const short_opts;
-void display_help();
+void display_help(FILE *);
 
 
 int main (int argc,char ** argv){
@@ -18,18 +21,43 @@ int main (int argc,char ** argv){
   bool error=0;
   int option;
 
+  //whether to fork to background
+  bool opt_fork=true;
+  char *socket_path=DEFAULT_SOCKET_PATH;
+
   while(-1!=(option = getopt_long(argc, argv, short_opts, long_opts, NULL))){
     switch(option){
       case 'h':
-        display_help();
+        display_help(stdout);
+        return 0;//or exit(0). i like return better
+        break;
+      case 'F':
+        opt_fork=false;
+        break;
+      case 's':
+        socket_path=optarg;
         break;
       default:
-        printf("unknown option\n");
+        display_help(stderr);
         error=EINVAL;
         break;
     }
-    if (error) return error;
+    if (error) return error;//or exit(error)
   }
+
+  if(opt_fork){
+    pid_t pid=fork();
+    if(pid<0){
+      fprintf(stderr,"Fork failed\n");
+      return errno;
+    }else if (pid!=0){//parent
+      fprintf(stdout,"Forked to background. PID=%d\n",pid);
+      return 0;
+    }
+  }
+
+  start_daemon(socket_path);
+
 
   return 0;
 }
@@ -37,18 +65,24 @@ int main (int argc,char ** argv){
 
 static const struct option long_opts[]={
   {"help",no_argument,0,'h'},
+  {"fore",no_argument,0,'F'},
+  {"foreground",no_argument,0,'F'},
+  {"socket",required_argument,0,'s'},
   {0,0,0,0}
 };
-static const char * const short_opts="h";
+static const char * const short_opts="hFs:";
 
-void display_help(){
+void display_help(FILE*file){
   const char * const help_text=
+    //TODO
+    "Usage:\n"
     #ifdef DEBUG_MODE
     "debug mode options:\n"
     #endif
-    "options:\n"
-    " --help,-h display this help text\n"
+    "Options:\n"
+    " -h,--help              display this help text\n"
+    " -F,--fore,--foreground do not fork, stay in foreground\n"
 
   ;
-  printf(help_text);
+  fprintf(file,help_text);
 }
