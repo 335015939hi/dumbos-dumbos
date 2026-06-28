@@ -42,8 +42,8 @@ int main(int argc, char **argv) {
       return 0; // or exit(0). i like return better
       break;
     case 'v':
-      fprintf(stdout, "dumbosd version %s versioncode %d\n", VERSION_STRING,
-              VERSION_CODE);
+      fprintf(stdout, "dumbosd version %s versioncode %d.%d.%d\n",
+              VERSION_STRING, VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
       return 0;
       break;
     case 'F':

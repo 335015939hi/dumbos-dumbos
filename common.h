@@ -1,8 +1,10 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
-#define _VERSION_CODE 000001
-#define _VERSION_STRING "v0.0.1"
+#define _VERSION_MAJOR 0
+#define _VERSION_MINOR 1
+#define _VERSION_PATCH 0
+#define _VERSION_STRING "v0.1.0"
 
 // whether to compile with unsafe debug features
 // comment this out if you're not debugging
@@ -17,10 +19,14 @@
 
 #ifdef DEBUG_MODE
 #define VERSION_STRING _VERSION_STRING "-debug"
-#define VERSION_CODE (-_VERSION_CODE)
+#define VERSION_MAJOR (-_VERSION_MAJOR)
+#define VERSION_MINOR (-_VERSION_MINOR)
+#define VERSION_PATCH (-_VERSION_PATCH)
 #else
 #define VERSION_STRING _VERSION_STRING
-#define VERSION_CODE _VERSION_CODE
+#define VERSION_MAJOR _VERSION_MAJOR
+#define VERSION_MINOR _VERSION_MINOR
+#define VERSION_PATCH _VERSION_PATCH
 #endif
 
 void print_error(const char *const);

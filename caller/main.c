@@ -25,8 +25,8 @@ int main(int argc, char **argv) {
       return 0;
       break;
     case 'v':
-      fprintf(stdout, "dumbos client version %s versioncode %d\n",
-              VERSION_STRING, VERSION_CODE);
+      fprintf(stdout, "dumbos client version %s versioncode %d.%d.%d\n",
+              VERSION_STRING, VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
       return 0;
       break;
     case 's':
