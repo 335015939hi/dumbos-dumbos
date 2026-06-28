@@ -17,6 +17,10 @@
 // default port
 #define DEFAULT_PORT 3850
 
+// max string length, including NULL terminator
+// strings over this length will throw error somewhere
+#define MAX_STRING 4096
+
 #ifdef DEBUG_MODE
 #define VERSION_STRING _VERSION_STRING "-debug"
 #define VERSION_MAJOR (-_VERSION_MAJOR)
@@ -35,5 +39,14 @@ void print_error(const char *const);
 signed long read_ushort(const int fd);
 // writes unsigned short to fd, <0 on error and sets errno
 int write_ushort(const int fd, const unsigned short ushort);
+// write a byte, <0 on error
+int write_byte(const int fd, const unsigned char c);
+// read a unsigned byte, <0 on error
+int read_byte(const int fd);
+// malloc() and read string (that was written with write_string()).returns NULL
+// on error, and sets errno. don't forget to free!
+char *malloc_read_string(const int fd);
+// write a string, to be read with read_string
+int write_string(const int fd, const char *const s);
 
 #endif
