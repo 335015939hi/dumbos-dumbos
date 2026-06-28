@@ -1,22 +1,91 @@
 
+#include <errno.h>
 #include <stdio.h>
-#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <string.h>
-#include <stdlib.h>
+#include <unistd.h>
 
 #include "../common.h"
 #include "daemon.h"
+#include "handler.h"
 
-int start_daemon(const char* const socket_path){
+// max length of struct sockaddr_un.sun_path, with NULL, in bytes
+#define MAX_SOCK_PATH (sizeof(((struct sockaddr_un *)0)->sun_path))
+
+int start_daemon(const char *const socket_path, const char *const server,
+                 const int port) {
+
   int socket_fd;
-  
+  struct sockaddr_un *sock_addr = malloc(sizeof(struct sockaddr_un));
+
   socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (socket_fd < 0) {
-    print_error("socket");
-    return 1;
+    print_error("failed to create socket: ");
+    print_error(strerror(errno));
+    free(sock_addr);
+    return errno;
   }
-  
+
+  if (strlen(socket_path) >= MAX_SOCK_PATH) {
+    print_error("socket path too long, aborting\n");
+    free(sock_addr);
+    return ENAMETOOLONG;
+  }
+
+  memset(sock_addr, 0, sizeof(*sock_addr));
+
+  strncpy(sock_addr->sun_path, socket_path, MAX_SOCK_PATH - 1);
+
+  sock_addr->sun_family = AF_UNIX;
+
+  if (bind(socket_fd, (struct sockaddr *)sock_addr, sizeof(*sock_addr)) < 0) {
+    print_error("failed to bind socket: ");
+    print_error(strerror(errno));
+    print_error("\n");
+    free(sock_addr);
+    return errno;
+  }
+
+  if (listen(socket_fd, 16) < 0) {
+    print_error("listen failed:");
+    print_error(strerror(errno));
+    free(sock_addr);
+    return errno;
+  }
+
+  free(sock_addr);
+
+  for (;;) {
+    int client;
+
+    client = accept(socket_fd, NULL, NULL);
+    if (client == 0) {
+      print_error("failed to accept client:");
+      print_error(strerror(errno));
+      continue;
+    }
+
+    pid_t child_pid = fork();
+    if (child_pid < 0) {
+      print_error("failed to fork:");
+      print_error(strerror(errno));
+      close(client);
+      continue;
+    }
+
+    if (child_pid == 0) { // child
+      close(socket_fd);
+      int ret = handler(client);
+      fprintf(stdout, "Handler pid %d exited with %d\n", getpid(), ret);
+      close(client);
+      return ret;
+    } else { // parent
+      fprintf(stdout, "Found client. Handler PID=%d\n", child_pid);
+      close(client);
+    }
+  }
+
   return 0;
 }

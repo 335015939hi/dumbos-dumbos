@@ -20,6 +20,8 @@ cc_binary {
 
     srcs: [
         "daemon/main.c",
+        "daemon/daemon.c",
+        "common.c",
     ],
 
 
