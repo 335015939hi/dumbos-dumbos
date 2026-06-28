@@ -1,5 +1,8 @@
 #default compiler output
 a.out
+#dev outputs
+/dumbos
+/dumbosd
 
 # Prerequisites
 *.d
