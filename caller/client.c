@@ -77,5 +77,24 @@ int client(int argc, char **argv, const char *const socket_path) {
     }
   }
 
-  return 0;
+  int d_ret;
+  char *d_msg;
+
+  ret = read_ushort(socket_fd);
+  if (ret < 0) {
+    print_errno("failed to read daemon return code", errno);
+    return errno;
+  }
+  d_ret = ret;
+
+  d_msg = malloc_read_string(socket_fd);
+  if (d_msg == NULL) {
+    print_errno("faild to read daemon return message", errno);
+    return errno;
+  }
+
+  printf("%s", d_msg);
+
+  free(d_msg);
+  return d_ret;
 };

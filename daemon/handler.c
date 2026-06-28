@@ -23,6 +23,7 @@ int handler(const int client_fd) {
   }
 
   fprintf(stdout, "client version string is %s\n", client_v_str);
+  free(client_v_str);
 
   ret = read_ushort(client_fd);
   if (ret >= 0) {
@@ -38,7 +39,6 @@ int handler(const int client_fd) {
   }
   if (ret < 0) {
     print_errno("reading client version code fail", errno);
-    free(client_v_str);
     return errno;
   }
 
@@ -55,6 +55,8 @@ int handler(const int client_fd) {
 
   int argc;
   char **argv;
+  char *ret_msg;
+  int ret_val;
   bool haserror = false;
 
   ret = read_ushort(client_fd);
@@ -86,7 +88,7 @@ int handler(const int client_fd) {
   }
 
   if (!haserror) {
-    ret = do_command(argc, argv);
+    ret_msg = do_command(argc, argv, &ret_val);
   }
 
   for (int i = 0; i < argc; i++) {
@@ -95,6 +97,14 @@ int handler(const int client_fd) {
   }
   free(argv);
 
-  free(client_v_str);
+  write_ushort(client_fd, (unsigned short)ret_val);
+
+  if (ret_msg) {
+    write_string(client_fd, ret_msg);
+    free(ret_msg);
+  } else {
+    write_string(client_fd, "Done\n");
+  }
+
   return ret;
 };

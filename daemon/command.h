@@ -1,6 +1,8 @@
 #ifndef _DAEMON_COMMAND_H
 #define _DAEMON_COMMAND_H
 
-int do_command(int argc, char **argv);
+// returns a string. the string is either NULL (no message) or malloc()'ed
+// (print then free it)'
+char *do_command(int argc, char **argv, int *ret_val);
 
 #endif
