@@ -34,6 +34,7 @@
 #endif
 
 void print_error(const char *const);
+void print_errno(const char *const s, const int err);
 
 // reads unsigned short from fd, return <0 on error and sets errno
 signed long read_ushort(const int fd);

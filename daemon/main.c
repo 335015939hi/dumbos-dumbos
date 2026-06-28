@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
       opt_port = strtoul(optarg, &end, 10);
       if (errno == ERANGE || end == optarg || *end != '\0' ||
           opt_port > 65536) {
-        print_error("invalid port");
+        print_error("invalid port\n");
         error = EINVAL;
       }
       break;

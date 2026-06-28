@@ -22,9 +22,7 @@ int start_daemon(const char *const socket_path, const char *const server,
 
   socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (socket_fd < 0) {
-    print_error("failed to create socket: ");
-    print_error(strerror(errno));
-    free(sock_addr);
+    print_errno("failed to create socket", errno);
     return errno;
   }
 
@@ -41,16 +39,13 @@ int start_daemon(const char *const socket_path, const char *const server,
   sock_addr->sun_family = AF_UNIX;
 
   if (bind(socket_fd, (struct sockaddr *)sock_addr, sizeof(*sock_addr)) < 0) {
-    print_error("failed to bind socket: ");
-    print_error(strerror(errno));
-    print_error("\n");
+    print_errno("failed to bind socket", errno);
     free(sock_addr);
     return errno;
   }
 
   if (listen(socket_fd, 16) < 0) {
-    print_error("listen failed:");
-    print_error(strerror(errno));
+    print_errno("listen failed", errno);
     free(sock_addr);
     return errno;
   }
@@ -62,15 +57,13 @@ int start_daemon(const char *const socket_path, const char *const server,
 
     client = accept(socket_fd, NULL, NULL);
     if (client == 0) {
-      print_error("failed to accept client:");
-      print_error(strerror(errno));
+      print_errno("failed to accept client", errno);
       continue;
     }
 
     pid_t child_pid = fork();
     if (child_pid < 0) {
-      print_error("failed to fork:");
-      print_error(strerror(errno));
+      print_errno("failed to fork:", errno);
       close(client);
       continue;
     }

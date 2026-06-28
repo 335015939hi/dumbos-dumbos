@@ -19,14 +19,13 @@ int client(int argc, char **argv, const char *const socket_path) {
 
   socket_addr = malloc(sizeof(*socket_addr));
   if (socket_addr == NULL) {
-    print_error("cannot allocate memory\n");
-    return ENOMEM;
+    print_errno("cannot allocate memory", errno);
+    return errno;
   }
 
   socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (socket_fd < 0) {
-    print_error("failed to socket:");
-    print_error(strerror(errno));
+    print_errno("failed to socket", errno);
     return errno;
   }
 
@@ -38,9 +37,7 @@ int client(int argc, char **argv, const char *const socket_path) {
       connect(socket_fd, (struct sockaddr *)socket_addr, sizeof(*socket_addr));
   if (ret < 0) {
     free(socket_addr);
-    print_error("failed to connect to socket:");
-    print_error(strerror(errno));
-    print_error("\n");
+    print_errno("failed to connect to socket", errno);
     return errno;
   }
 
@@ -57,27 +54,19 @@ int client(int argc, char **argv, const char *const socket_path) {
     }
   }
   if (ret < 0) {
-    print_error("write handshake failed:");
-    print_error(strerror(errno));
-    print_error("\n");
+    print_errno("write handshake failed", errno);
   }
 
   ret = read_ushort(socket_fd); // should be 0 on handshake success
   if (ret < 0) {
-    print_error("read handshake result failed:");
-    print_error(strerror(errno));
-    print_error("\n");
+    print_errno("read handshake result failed", errno);
   } else if (ret != 0) {
-    print_error("handshake failed:");
-    print_error(strerror(ret));
-    print_error("\n");
+    print_errno("handshake failed", errno);
   }
 
   ret = write_ushort(socket_fd, argc);
   if (ret < 0) {
-    print_error("failed to write argc:");
-    print_error(strerror(errno));
-    print_error("\n");
+    print_errno("failed to write argc", errno);
   }
 
   return 0;

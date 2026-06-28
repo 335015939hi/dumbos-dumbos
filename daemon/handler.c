@@ -16,9 +16,7 @@ int handler(const int client_fd) {
 
   client_v_str = malloc_read_string(client_fd);
   if (client_v_str == NULL) {
-    print_error("reading client version string fail:");
-    print_error(strerror(errno));
-    print_error("\n");
+    print_errno("reading client version string fail", errno);
     return errno;
   }
 
@@ -37,9 +35,7 @@ int handler(const int client_fd) {
     }
   }
   if (ret < 0) {
-    print_error("reading client version code fail:");
-    print_error(strerror(errno));
-    print_error("\n");
+    print_errno("reading client version code fail", errno);
     free(client_v_str);
     return errno;
   }
@@ -59,9 +55,7 @@ int handler(const int client_fd) {
 
   ret = read_ushort(client_fd);
   if (ret < 0) {
-    print_error("getting argc failed:");
-    print_error(strerror(errno));
-    print_error("\n");
+    print_errno("getting argc failed", errno);
   }
   argc = ret;
   fprintf(stdout, "client has %d arguments\n", argc);

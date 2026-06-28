@@ -26,6 +26,16 @@ signed long read_ushort(const int fd) {
   return val;
 }
 
+void print_errno(const char *const s, const int err) {
+  const char nl = '\n';
+  const char colon = ':';
+  write(STDERR_FILENO, s, strlen(s));
+  write(STDERR_FILENO, &colon, 1);
+  const char *const serr = strerror(err);
+  write(STDERR_FILENO, serr, strlen(serr));
+  write(STDERR_FILENO, &nl, 1);
+}
+
 int write_ushort(const int fd, const unsigned short ushort) {
   int ret;
 
