@@ -101,6 +101,10 @@ int write_string(const int fd, const char *const s) {
     return -1;
   }
 
+  ret = write_ushort(fd, len);
+  if (ret < 0)
+    return ret;
+
   ret = write(fd, s, len + 1);
 
   if (ret < 0) {

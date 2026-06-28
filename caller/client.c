@@ -44,10 +44,34 @@ int client(int arg, char **argv, const char *const socket_path) {
     return errno;
   }
 
-  write_ushort(socket_fd, 509);
-  printf("%ld", read_ushort(socket_fd));
-
   free(socket_addr);
+
+  ret = write_string(socket_fd, VERSION_STRING);
+  if (ret == 0) {
+    ret = write_ushort(socket_fd, VERSION_MAJOR);
+    if (ret == 0) {
+      ret = write_ushort(socket_fd, VERSION_MINOR);
+      if (ret == 0) {
+        ret = write_ushort(socket_fd, VERSION_PATCH);
+      }
+    }
+  }
+  if (ret < 0) {
+    print_error("write handshake failed:");
+    print_error(strerror(errno));
+    print_error("\n");
+  }
+
+  ret = read_ushort(socket_fd); // should be 0 on handshake success
+  if (ret < 0) {
+    print_error("read handshake result failed:");
+    print_error(strerror(errno));
+    print_error("\n");
+  } else if (ret != 0) {
+    print_error("handshake failed:");
+    print_error(strerror(ret));
+    print_error("\n");
+  }
 
   return 0;
 };
