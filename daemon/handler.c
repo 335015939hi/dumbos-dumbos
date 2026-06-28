@@ -52,7 +52,19 @@ int handler(const int client_fd) {
     return EPROTO;
   }
 
+  // success! tell it to the client
   write_ushort(client_fd, 0);
+
+  int argc;
+
+  ret = read_ushort(client_fd);
+  if (ret < 0) {
+    print_error("getting argc failed:");
+    print_error(strerror(errno));
+    print_error("\n");
+  }
+  argc = ret;
+  fprintf(stdout, "client has %d arguments\n", argc);
 
   free(client_v_str);
   return 0;

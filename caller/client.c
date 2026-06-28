@@ -12,7 +12,7 @@
 
 #define SOCKET_PATH_MAX (sizeof(((struct sockaddr_un *)0)->sun_path))
 
-int client(int arg, char **argv, const char *const socket_path) {
+int client(int argc, char **argv, const char *const socket_path) {
   int socket_fd;
   struct sockaddr_un *socket_addr;
   int ret;
@@ -70,6 +70,13 @@ int client(int arg, char **argv, const char *const socket_path) {
   } else if (ret != 0) {
     print_error("handshake failed:");
     print_error(strerror(ret));
+    print_error("\n");
+  }
+
+  ret = write_ushort(socket_fd, argc);
+  if (ret < 0) {
+    print_error("failed to write argc:");
+    print_error(strerror(errno));
     print_error("\n");
   }
 
