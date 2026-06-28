@@ -69,5 +69,13 @@ int client(int argc, char **argv, const char *const socket_path) {
     print_errno("failed to write argc", errno);
   }
 
+  for (int i = 0; i < argc; i++) {
+    ret = write_string(socket_fd, argv[i]);
+    if (ret < 0) {
+      print_errno("failed to write argv[]", errno);
+      return errno;
+    }
+  }
+
   return 0;
 };

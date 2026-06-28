@@ -1,10 +1,12 @@
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "../common.h"
+#include "command.h"
 #include "handler.h"
 
 int handler(const int client_fd) {
@@ -52,14 +54,47 @@ int handler(const int client_fd) {
   write_ushort(client_fd, 0);
 
   int argc;
+  char **argv;
+  bool haserror = false;
 
   ret = read_ushort(client_fd);
   if (ret < 0) {
     print_errno("getting argc failed", errno);
   }
   argc = ret;
+  if (argc == 0) {
+    fprintf(stdout, "no command. exiting\n");
+    return 0;
+  }
   fprintf(stdout, "client has %d arguments\n", argc);
+  // TODO: bounds check, prevent bad argc causing bad mem
+
+  argv = calloc(argc, sizeof(char *));
+  if (argv == NULL) {
+    print_errno("alloc argv fail", errno);
+  }
+
+  for (int i = 0; i < argc; i++) {
+    char *arg;
+    arg = malloc_read_string(client_fd);
+    if (arg == NULL) {
+      print_errno("alloc argv[] fail", errno);
+      haserror = true;
+      break;
+    }
+    argv[i] = arg;
+  }
+
+  if (!haserror) {
+    ret = do_command(argc, argv);
+  }
+
+  for (int i = 0; i < argc; i++) {
+    if (argv[i])
+      free(argv[i]);
+  }
+  free(argv);
 
   free(client_v_str);
-  return 0;
+  return ret;
 };
