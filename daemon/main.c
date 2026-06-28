@@ -28,6 +28,9 @@ int main(int argc, char **argv) {
   char *opt_socket_path = DEFAULT_SOCKET_PATH;
   char *opt_server = DEFAULT_SERVER;
   unsigned int opt_port = DEFAULT_PORT;
+#ifdef DEBUG_MODE
+  bool opt_unlink = false;
+#endif
 
   char *end;
 
@@ -60,6 +63,11 @@ int main(int argc, char **argv) {
         error = EINVAL;
       }
       break;
+#ifdef DEBUG_MODE
+    case 'u':
+      opt_unlink = true;
+      break;
+#endif
     default:
       display_help(stderr, argv[0]);
       error = EINVAL;
@@ -68,6 +76,12 @@ int main(int argc, char **argv) {
     if (error)
       return error; // or exit(error)
   }
+
+#ifdef DEBUG_MODE
+  if (opt_unlink) {
+    unlink(opt_socket_path);
+  }
+#endif
 
   if (opt_fork) {
     pid_t pid = fork();
@@ -83,12 +97,22 @@ int main(int argc, char **argv) {
   return start_daemon(opt_socket_path, opt_server, opt_port);
 }
 
-static const struct option long_opts[] = {
-    {"help", no_argument, 0, 'h'},         {"version", no_argument, 0, 'v'},
-    {"fore", no_argument, 0, 'F'},         {"foreground", no_argument, 0, 'F'},
-    {"socket", required_argument, 0, 's'}, {"host", required_argument, 0, 'H'},
-    {"port", required_argument, 0, 'p'},   {0, 0, 0, 0}};
-static const char *const short_opts = "hvFs:H:p:";
+static const struct option long_opts[] = {{"help", no_argument, 0, 'h'},
+                                          {"version", no_argument, 0, 'v'},
+                                          {"fore", no_argument, 0, 'F'},
+                                          {"foreground", no_argument, 0, 'F'},
+                                          {"socket", required_argument, 0, 's'},
+                                          {"host", required_argument, 0, 'H'},
+                                          {"port", required_argument, 0, 'p'},
+#ifdef DEBUG_MODE
+                                          {"unlink", no_argument, 0, 'u'},
+#endif
+                                          {0, 0, 0, 0}};
+static const char *const short_opts = "hvFs:H:p:"
+#ifdef DEBUG_MODE
+                                      "u"
+#endif
+    ;
 
 void display_help(FILE *file, const char *const argv0) {
   const char *const help_text =
@@ -96,6 +120,7 @@ void display_help(FILE *file, const char *const argv0) {
       "Usage:%s [options] [--] <command> [command args]\n"
 #ifdef DEBUG_MODE
       "debug mode options:\n"
+      " -u,--unlink            unlink socket path first\n"
 #endif
       "Options:\n"
       " -h,--help              display this help text\n"
