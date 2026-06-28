@@ -106,5 +106,5 @@ int handler(const int client_fd) {
     write_string(client_fd, "Done\n");
   }
 
-  return ret;
+  return ret_val;
 };
