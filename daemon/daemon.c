@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/un.h>
 #include <unistd.h>
 
@@ -15,7 +16,8 @@
 #define MAX_SOCK_PATH (sizeof(((struct sockaddr_un *)0)->sun_path))
 
 int start_daemon(const char *const socket_path, const char *const server,
-                 const int port) {
+                 const int port, mode_t sock_mode, uid_t sock_uid,
+                 gid_t sock_gid) {
 
   int socket_fd;
   struct sockaddr_un *sock_addr = malloc(sizeof(struct sockaddr_un));
@@ -43,14 +45,24 @@ int start_daemon(const char *const socket_path, const char *const server,
     free(sock_addr);
     return errno;
   }
+  free(sock_addr);
 
-  if (listen(socket_fd, 16) < 0) {
-    print_errno("listen failed", errno);
-    free(sock_addr);
+  if (chown(socket_path, sock_uid, sock_gid) < 0) {
+    print_errno("chown failed", errno);
+    unlink(socket_path);
+    return errno;
+  }
+  if (chmod(socket_path, sock_mode) < 0) {
+    print_errno("chmod failed", errno);
+    unlink(socket_path);
     return errno;
   }
 
-  free(sock_addr);
+  if (listen(socket_fd, 16) < 0) {
+    print_errno("listen failed", errno);
+    unlink(socket_path);
+    return errno;
+  }
 
   for (;;) {
     int client;

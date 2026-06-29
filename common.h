@@ -16,6 +16,10 @@
 #define DEFAULT_SERVER "192.168.12.1"
 // default port
 #define DEFAULT_PORT 3850
+// default socket permissions
+#define DEFAULT_SOCKET_MODE "666"
+// default socket ownership
+#define DEFAULT_SOCKET_OWNER "root:system"
 
 // max string length, including NULL terminator
 // strings over this length will throw error somewhere
