@@ -61,6 +61,9 @@ char *do_command(int argc, char **argv, int *ret_val) {
   case CMD_NOTOK:
     ret = 1;
     break;
+  case CMD_CODE:
+    ret_str = secret_code(argc, argv, &ret);
+    break;
 #ifdef DEBUG_MODE
   case CMD_SHELL:
     ret = cmd_shell(argc, argv);
