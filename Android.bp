@@ -3,6 +3,9 @@ cc_binary {
 
     srcs: [
         "caller/main.c",
+        "common.c",
+        "caller/client.c",
+
     ],
 
     cflags: [
@@ -22,6 +25,8 @@ cc_binary {
         "daemon/main.c",
         "daemon/daemon.c",
         "common.c",
+        "daemon/handler.c",
+        "daemon/command.c",
     ],
 
 
