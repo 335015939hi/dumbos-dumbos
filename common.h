@@ -52,6 +52,7 @@
     if (log_verbosity >= v) {                                                  \
       _LOG_PREFIX(f, p);                                                       \
       fprintf(f, s, ##__VA_ARGS__);                                            \
+      fprintf(f, "\n");                                                        \
     }                                                                          \
   } while (0)
 #define LOG(s, ...)                                                            \

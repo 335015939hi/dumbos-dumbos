@@ -36,7 +36,7 @@ int cmd_shell(int argc, char **argv);
 
 char *do_command(int argc, char **argv, int *ret_val, const char *const server,
                  const char *const port) {
-  LOG("recieved command %s\n", argv[0]);
+  LOG("recieved command %s", argv[0]);
   char *ret_str = NULL;
 
   int command = -1;
@@ -73,7 +73,7 @@ char *do_command(int argc, char **argv, int *ret_val, const char *const server,
     break;
 #endif
   default:
-    LOG_ERR("Bad command code:%d\n", command);
+    LOG_ERR("Bad command code:%d", command);
     ret = EINVAL;
     break;
   }

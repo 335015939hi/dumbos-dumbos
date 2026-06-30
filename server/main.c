@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
   }
 
   if (argc - optind != 2) {
-    LOG_ERR("wrong number of arguments\n");
+    LOG_ERR("wrong number of arguments");
     return EINVAL;
   }
 

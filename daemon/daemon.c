@@ -31,7 +31,7 @@ int start_daemon(const char *const socket_path, const char *const server,
   }
 
   if (strlen(socket_path) >= MAX_SOCK_PATH) {
-    LOG_ERR("socket path too long, aborting\n");
+    LOG_ERR("socket path too long, aborting");
     free(sock_addr);
     return ENAMETOOLONG;
   }
@@ -85,11 +85,11 @@ int start_daemon(const char *const socket_path, const char *const server,
     if (child_pid == 0) { // child
       close(socket_fd);
       int ret = handler(client, server, port);
-      LOG("Handler pid %d exited with %d\n", getpid(), ret);
+      LOG("Handler pid %d exited with %d", getpid(), ret);
       close(client);
       return ret;
     } else { // parent
-      LOG("Forked to handle request. PID=%d\n", child_pid);
+      LOG("Forked to handle request. PID=%d", child_pid);
       close(client);
     }
   }

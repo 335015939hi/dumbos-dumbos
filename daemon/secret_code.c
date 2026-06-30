@@ -27,7 +27,7 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
                   const char *const port) {
   if (argc != 1) {
     *ret_val = EINVAL;
-    LOG_ERR("secret_code: expected exactly ONE code\n");
+    LOG_ERR("secret_code: expected exactly ONE code");
     return malloc_str("secret_code: expected exactly ONE code\n");
   }
 
@@ -42,7 +42,7 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
   hints->ai_family = AF_UNSPEC; // IPv4 or IPv6
   hints->ai_socktype = SOCK_STREAM;
 
-  LOG("using server=%s:%s\n", host, port);
+  LOG("using server=%s:%s", host, port);
   err = getaddrinfo(host, port, hints, &res);
   free(hints);
   if (err != 0) {
@@ -105,7 +105,7 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
   }
 
   // send secret code command
-  LOG_VERBOSE("sending command %d to server\n", SERVER_CMD_SECRET_CODE);
+  LOG_VERBOSE("sending command %d to server", SERVER_CMD_SECRET_CODE);
   write_ushort(fd, SERVER_CMD_SECRET_CODE);
 
   *ret_val = 0;

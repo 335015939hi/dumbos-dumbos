@@ -62,7 +62,7 @@ int do_server(const char *const addr, const char *const port,
     return errno;
   }
 
-  LOG("listening on %s:%s\n", addr, port);
+  LOG("listening on %s:%s", addr, port);
 
   struct sockaddr_storage *client;
   socklen_t client_len;
@@ -90,7 +90,7 @@ int do_server(const char *const addr, const char *const port,
       close(clientfd);
       continue;
     } else if (childp != 0) {
-      LOG("forked to accept client. PID=%d\n", childp);
+      LOG("forked to accept client. PID=%d", childp);
       close(clientfd);
       continue;
     }
@@ -102,13 +102,13 @@ int do_server(const char *const addr, const char *const port,
       break;
     }
 
-    LOG("connection from %s:%s\n", host, serv);
+    LOG("connection from %s:%s", host, serv);
 
     err = handle_client(clientfd);
     if (err != 0) {
-      LOG_ERR("handle_client() exited with %d\n", err);
+      LOG_ERR("handle_client() exited with %d", err);
     } else {
-      LOG_VERBOSE("handle_client() exited with 0\n");
+      LOG_VERBOSE("handle_client() exited with 0");
     }
 
     close(clientfd);
@@ -152,7 +152,7 @@ static int handle_client(const int fd) {
     return errno;
   }
 
-  LOG("client %s (%hu.%hu.%hu)\n", client_v_str, client_v_maj, client_v_min,
+  LOG("client %s (%hu.%hu.%hu)", client_v_str, client_v_maj, client_v_min,
       client_v_pat);
 
   // version sanity check, semantic versioning
@@ -174,7 +174,7 @@ static int handle_client(const int fd) {
     return errno;
   }
   command = err;
-  LOG("recieved command %d\n", command);
+  LOG("recieved command %d", command);
 
   return 0;
 }

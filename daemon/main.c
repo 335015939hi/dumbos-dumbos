@@ -95,14 +95,14 @@ int main(int argc, char **argv) {
   errno = 0;
   opt_sock_mode = (mode_t)strtoul(opt_sock_mode_str, &end, 8);
   if (errno || *end != '\0' || opt_sock_mode < 0) {
-    LOG_ERR("invalid mode '%s'\n", opt_sock_mode_str);
+    LOG_ERR("invalid mode '%s'", opt_sock_mode_str);
     return EINVAL;
   }
 
   char *sock_own_str = strdup(opt_sock_own_str);
   char *colon = strchr(sock_own_str, ':');
   if (NULL == colon) {
-    LOG_ERR("bad user:group '%s'\n", opt_sock_own_str);
+    LOG_ERR("bad user:group '%s'", opt_sock_own_str);
     free(sock_own_str);
     return EINVAL;
   }
@@ -113,14 +113,14 @@ int main(int argc, char **argv) {
     errno = 0;
     opt_sock_own = strtol(sock_user_str, &end, 10);
     if (*end != '\0' || errno) {
-      LOG_ERR("bad user '%s'\n", sock_user_str);
+      LOG_ERR("bad user '%s'", sock_user_str);
       free(sock_own_str);
       return EINVAL;
     }
   } else {
     struct passwd *pw = getpwnam(sock_user_str);
     if (pw == NULL) {
-      LOG_ERR("bad user  '%s'\n", sock_user_str);
+      LOG_ERR("bad user  '%s'", sock_user_str);
       free(sock_own_str);
       return EINVAL;
     }
@@ -130,14 +130,14 @@ int main(int argc, char **argv) {
     errno = 0;
     opt_sock_grp = strtol(sock_grp_str, &end, 10);
     if (*end != '\0' || errno) {
-      LOG_ERR("bad group '%s'\n", sock_grp_str);
+      LOG_ERR("bad group '%s'", sock_grp_str);
       free(sock_own_str);
       return EINVAL;
     }
   } else {
     struct group *gr = getgrnam(sock_grp_str);
     if (gr == NULL) {
-      LOG_ERR("bad group '%s'\n", sock_grp_str);
+      LOG_ERR("bad group '%s'", sock_grp_str);
       free(sock_own_str);
       return EINVAL;
     }
@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
       LOG_ERRNO("Fork failed", errno);
       return errno;
     } else if (pid != 0) { // parent
-      LOG("Forked to background. PID=%d\n", pid);
+      LOG("Forked to background. PID=%d", pid);
       return 0;
     }
   }

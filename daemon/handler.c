@@ -25,7 +25,7 @@ int handler(const int client_fd, const char *const server,
     return errno;
   }
 
-  LOG("client version string is %s\n", client_v_str);
+  LOG("client version string is %s", client_v_str);
   free(client_v_str);
 
   ret = read_ushort(client_fd);
@@ -45,11 +45,11 @@ int handler(const int client_fd, const char *const server,
     return errno;
   }
 
-  LOG("client version code is %hu.%hu.%hu\n", client_v_major, client_v_minor,
+  LOG("client version code is %hu.%hu.%hu", client_v_major, client_v_minor,
       client_v_patch);
   if (client_v_major != (unsigned short)VERSION_MAJOR ||
       client_v_minor > (unsigned short)VERSION_MINOR) {
-    LOG_ERR("client has incompatible version. stopping\n");
+    LOG_ERR("client has incompatible version. stopping");
     return EPROTO;
   }
 
@@ -68,10 +68,10 @@ int handler(const int client_fd, const char *const server,
   }
   argc = ret;
   if (argc == 0) {
-    LOG("no command. exiting\n");
+    LOG("no command. exiting");
     return 0;
   }
-  LOG("client has %d arguments\n", argc);
+  LOG("client has %d arguments", argc);
   // TODO: bounds check, prevent bad argc causing bad mem
 
   argv = calloc(argc, sizeof(char *));
@@ -106,7 +106,7 @@ int handler(const int client_fd, const char *const server,
     write_string(client_fd, ret_msg);
     free(ret_msg);
   } else {
-    write_string(client_fd, "Done\n");
+    write_string(client_fd, "Done");
   }
 
   return ret_val;
