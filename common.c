@@ -118,6 +118,12 @@ char *malloc_read_string(const int fd) {
     return NULL;
   }
 
+  //security: error if the last byte isn't a \0, probably someone's trying to attack us
+  if(dest[len]!='\0'){
+    errno=EACCES;
+    return NULL;
+  }
+
   return dest;
 }
 

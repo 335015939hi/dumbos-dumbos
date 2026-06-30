@@ -4,11 +4,11 @@
 #define _VERSION_MAJOR 0
 #define _VERSION_MINOR 1
 #define _VERSION_PATCH 0
-#define _VERSION_STRING "v0.1.0"
+#define _VERSION_STRING "v0.2.0"
 
 // whether to compile with unsafe debug features
 // comment this out if you're not debugging
-#define DEBUG_MODE 1
+//#define DEBUG_MODE 1
 
 // full path of the default socket
 #define DEFAULT_SOCKET_PATH "/dev/socket/dumbosd.socket"

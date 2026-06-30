@@ -73,14 +73,35 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
     return NULL;
   }
 
-  int x = read_ushort(fd);
-  if (x < 0) {
-    print_errno("failed to read", errno);
-    *ret_val = errno;
+  //write version to server
+  err=write_string(fd,VERSION_STRING);
+  if(err==0){
+    err=write_ushort(fd,(unsigned short)VERSION_MAJOR);
+    if(err==0){
+      err=write_ushort(fd,(unsigned short)VERSION_MINOR);
+      if(err==0){
+        err=write_ushort(fd,(unsigned short)VERSION_PATCH);
+      }
+    }
+  }
+  if(err!=0){
+    *ret_val=errno;
+    print_errno("failed to send version",errno);
     return NULL;
   }
 
-  printf("read from server:%d\n", x);
+  //read status
+  err=read_ushort(fd);
+  if(err<0){
+    *ret_val=errno;
+    print_errno("failedd to read server status",errno);
+    return NULL;
+  }else if(err!=0){
+    *ret_val=err;
+    print_errno("server doesn't like us",err);
+    return malloc_str(strerror(err));
+  }
+
 
   *ret_val = 0;
   return NULL;

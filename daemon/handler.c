@@ -45,7 +45,7 @@ int handler(const int client_fd, const char *const server,
 
   fprintf(stdout, "client version code is %hu.%hu.%hu\n", client_v_major,
           client_v_minor, client_v_patch);
-  if (client_v_major != VERSION_MAJOR ||
+  if (client_v_major != (unsigned short)VERSION_MAJOR ||
       client_v_minor > (unsigned short)VERSION_MINOR) {
     print_error("client has incompatible version. stopping\n");
     return EPROTO;
