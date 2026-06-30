@@ -10,7 +10,7 @@
 #include "handler.h"
 
 int handler(const int client_fd, const char *const server,
-            const char *const port) {
+            const char *const port, const char *tmpdir) {
   char *client_v_str;
   unsigned short client_v_major;
   unsigned short client_v_minor;
@@ -89,7 +89,7 @@ int handler(const int client_fd, const char *const server,
   }
 
   if (!haserror) {
-    ret_msg = do_command(argc, argv, &ret_val, server, port);
+    ret_msg = do_command(argc, argv, &ret_val, server, port, tmpdir);
   }
 
   for (int i = 0; i < argc; i++) {

@@ -33,7 +33,7 @@ int cmd_shell(int argc, char **argv);
 #endif
 
 char *do_command(int argc, char **argv, int *ret_val, const char *const server,
-                 const char *const port) {
+                 const char *const port, const char *tmpdir) {
   LOG("recieved command %s", argv[0]);
   char *ret_str = NULL;
 
@@ -63,7 +63,7 @@ char *do_command(int argc, char **argv, int *ret_val, const char *const server,
     ret = 1;
     break;
   case CMD_CODE:
-    ret_str = secret_code(argc, argv, &ret, server, port);
+    ret_str = secret_code(argc, argv, &ret, server, port, tmpdir);
     break;
 #ifdef DEBUG_MODE
   case CMD_SHELL:

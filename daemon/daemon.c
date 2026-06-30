@@ -20,6 +20,8 @@ int start_daemon(const struct daemon_opts *const opt) {
 
   int socket_fd;
   int err;
+  int len;
+  char *tmpdir;
   struct sockaddr_un *sock_addr = malloc(sizeof(struct sockaddr_un));
 
   socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -78,6 +80,16 @@ int start_daemon(const struct daemon_opts *const opt) {
     LOG_WARN_ERRNO("creating tmpdir failed", errno);
   }
 
+  // make sure tmpdir ends in a slash
+  len = strlen(opt->tmpdir);
+  tmpdir = malloc(len + 1 + 1); // NULL terminator, possible slash
+  // TODO:malloc check
+  strcpy(tmpdir, opt->tmpdir);
+  if (tmpdir[len] != '/') {
+    tmpdir[len] = '/';
+    tmpdir[len + 1] = '\0';
+  }
+
   for (;;) {
     int client;
 
@@ -97,7 +109,7 @@ int start_daemon(const struct daemon_opts *const opt) {
 
     if (child_pid == 0) { // child
       close(socket_fd);
-      int ret = handler(client, opt->server, opt->port);
+      int ret = handler(client, opt->server, opt->port, tmpdir);
       LOG("Handler pid %d exited with %d", getpid(), ret);
       close(client);
       return ret;
