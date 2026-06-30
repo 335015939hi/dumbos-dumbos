@@ -96,7 +96,7 @@ int do_server(const char *const addr, const char *const port,
 
     printf("%d connection from %s:%s\n", getpid(), host, serv);
 
-    send(clientfd, "hello", 6, 0);
+    write_ushort(clientfd, 1234);
 
     close(clientfd);
     break;

@@ -15,7 +15,7 @@
 // default server
 #define DEFAULT_SERVER "192.168.12.1"
 // default port
-#define DEFAULT_PORT 3850
+#define DEFAULT_PORT "3850"
 // default socket permissions
 #define DEFAULT_SOCKET_MODE "666"
 // default socket ownership

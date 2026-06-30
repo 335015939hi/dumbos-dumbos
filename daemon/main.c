@@ -27,9 +27,9 @@ int main(int argc, char **argv) {
 
   // whether to fork to background
   bool opt_fork = true;
-  char *opt_socket_path = DEFAULT_SOCKET_PATH;
-  char *opt_server = DEFAULT_SERVER;
-  unsigned int opt_port = DEFAULT_PORT;
+  const char *opt_socket_path = DEFAULT_SOCKET_PATH;
+  const char *opt_server = DEFAULT_SERVER;
+  const char *opt_port = DEFAULT_PORT;
   const char *opt_sock_mode_str = DEFAULT_SOCKET_MODE;
   const char *opt_sock_own_str = DEFAULT_SOCKET_OWNER;
   mode_t opt_sock_mode;
@@ -69,12 +69,7 @@ int main(int argc, char **argv) {
       opt_sock_mode_str = optarg;
       break;
     case 'p':
-      opt_port = strtoul(optarg, &end, 10);
-      if (errno == ERANGE || end == optarg || *end != '\0' ||
-          opt_port > 65536) {
-        print_error("invalid port\n");
-        error = EINVAL;
-      }
+      opt_port = optarg;
       break;
 #ifdef DEBUG_MODE
     case 'u':
@@ -198,12 +193,12 @@ void display_help(FILE *file, const char *const argv0) {
       " -F,--fore,--foreground  do not fork, stay in foreground\n"
       " -s,--socket=<path>      socket path, default " DEFAULT_SOCKET_PATH "\n"
       " -H,--host=<host>        server host, default " DEFAULT_SERVER "\n"
-      " -p,--port=<port>        server port, default %d\n"
+      " -p,--port=<port>        server port, default " DEFAULT_PORT "\n"
       " -m,--mode=<octal>       socket permissions, "
       "default " DEFAULT_SOCKET_MODE "\n"
       " -o,--owner=<user:group> socket ownership, default " DEFAULT_SOCKET_OWNER
       "\n"
 
       ;
-  fprintf(file, help_text, argv0, DEFAULT_PORT);
+  fprintf(file, help_text, argv0);
 }

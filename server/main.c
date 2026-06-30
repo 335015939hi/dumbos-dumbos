@@ -11,13 +11,11 @@ static const struct option long_opts[];
 static const char *const short_opts;
 void display_help(FILE *, const char *);
 
-#define _STR(x) #x
-#define STR(x) _STR(x)
 #define DEFAULT_ADDR "0.0.0.0"
 
 int main(int argc, char **argv) {
   int option;
-  char *opt_port = STR(DEFAULT_PORT);
+  char *opt_port = DEFAULT_PORT;
   char *opt_addr = DEFAULT_ADDR;
   bool opt_fork = false;
   char *opt_dir;

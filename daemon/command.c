@@ -32,7 +32,8 @@ enum {
 int cmd_shell(int argc, char **argv);
 #endif
 
-char *do_command(int argc, char **argv, int *ret_val) {
+char *do_command(int argc, char **argv, int *ret_val, const char *const server,
+                 const char *const port) {
   printf("recieved command %s\n", argv[0]);
   char *ret_str = NULL;
 
@@ -62,7 +63,7 @@ char *do_command(int argc, char **argv, int *ret_val) {
     ret = 1;
     break;
   case CMD_CODE:
-    ret_str = secret_code(argc, argv, &ret);
+    ret_str = secret_code(argc, argv, &ret, server, port);
     break;
 #ifdef DEBUG_MODE
   case CMD_SHELL:

@@ -16,7 +16,7 @@
 #define MAX_SOCK_PATH (sizeof(((struct sockaddr_un *)0)->sun_path))
 
 int start_daemon(const char *const socket_path, const char *const server,
-                 const int port, mode_t sock_mode, uid_t sock_uid,
+                 const char *const port, mode_t sock_mode, uid_t sock_uid,
                  gid_t sock_gid) {
 
   int socket_fd;
@@ -82,7 +82,7 @@ int start_daemon(const char *const socket_path, const char *const server,
 
     if (child_pid == 0) { // child
       close(socket_fd);
-      int ret = handler(client);
+      int ret = handler(client, server, port);
       fprintf(stdout, "Handler pid %d exited with %d\n", getpid(), ret);
       close(client);
       return ret;
