@@ -17,7 +17,7 @@
 
 int start_daemon(const char *const socket_path, const char *const server,
                  const char *const port, mode_t sock_mode, uid_t sock_uid,
-                 gid_t sock_gid) {
+                 gid_t sock_gid, const char *const con) {
 
   int socket_fd;
   struct sockaddr_un *sock_addr = malloc(sizeof(struct sockaddr_un));
@@ -58,6 +58,8 @@ int start_daemon(const char *const socket_path, const char *const server,
     unlink(socket_path);
     return errno;
   }
+
+  // TODO:selinux
 
   if (listen(socket_fd, 16) < 0) {
     LOG_ERRNO("listen failed", errno);

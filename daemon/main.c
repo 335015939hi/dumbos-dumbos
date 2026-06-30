@@ -12,6 +12,8 @@
 #include "../common.h"
 #include "daemon.h"
 
+#define DEFAULT_SOCKET_CONTEXT ""
+
 static const struct option long_opts[];
 static const char *const short_opts;
 void display_help(FILE *, const char *const);
@@ -34,6 +36,7 @@ int main(int argc, char **argv) {
   const char *opt_port = DEFAULT_PORT;
   const char *opt_sock_mode_str = DEFAULT_SOCKET_MODE;
   const char *opt_sock_own_str = DEFAULT_SOCKET_OWNER;
+  const char *opt_sock_con = DEFAULT_SOCKET_CONTEXT;
   mode_t opt_sock_mode;
   uid_t opt_sock_own;
   gid_t opt_sock_grp;
@@ -89,6 +92,10 @@ int main(int argc, char **argv) {
     case 'p':
       LOG_DEBUG("found option port=%s", optarg);
       opt_port = optarg;
+      break;
+    case 'Z':
+      LOG_DEBUG("found option context=%s", optarg);
+      opt_sock_con = optarg;
       break;
 #ifdef DEBUG_MODE
     case 'u':
@@ -180,7 +187,7 @@ int main(int argc, char **argv) {
 
   LOG_DEBUG("reached start_daemon()");
   err = start_daemon(opt_socket_path, opt_server, opt_port, opt_sock_mode,
-                     opt_sock_own, opt_sock_grp);
+                     opt_sock_own, opt_sock_grp, opt_sock_con);
   LOG_DEBUG("exited start_daemon() code %d", err);
   return err;
 }
@@ -196,11 +203,12 @@ static const struct option long_opts[] = {
     {"port", required_argument, 0, 'p'},
     {"mode", required_argument, 0, 'm'},
     {"owner", required_argument, 0, 'o'},
+    {"context", required_argument, 0, 'Z'},
 #ifdef DEBUG_MODE
     {"unlink", no_argument, 0, 'u'},
 #endif
     {0, 0, 0, 0}};
-static const char *const short_opts = "hvl:Fs:H:p:m:o:"
+static const char *const short_opts = "hvl:Fs:H:p:m:o:Z:"
 #ifdef DEBUG_MODE
                                       "u"
 #endif
@@ -228,6 +236,8 @@ void display_help(FILE *file, const char *const argv0) {
       " -m,--mode=<octal>       socket permissions, "
       "default " DEFAULT_SOCKET_MODE "\n"
       " -o,--owner=<user:group> socket ownership, default " DEFAULT_SOCKET_OWNER
+      " -Z,--context=<con>      socket SELinux context, "
+      "default " DEFAULT_SOCKET_CONTEXT "\n"
       "\n"
 
       ;
