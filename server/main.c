@@ -17,6 +17,8 @@ int main(int argc, char **argv) {
   int opt_port = DEFAULT_PORT;
   char *opt_addr = DEFAULT_ADDR;
   bool opt_fork = false;
+  char *opt_dir;
+  char *opt_persist_dir;
 
   while ((option = getopt_long(argc, argv, short_opts, long_opts, NULL)) !=
          -1) {
@@ -46,6 +48,26 @@ int main(int argc, char **argv) {
       return EINVAL;
     }
   }
+
+  if (argc - optind != 2) {
+    print_error("wrong number of arguments\n");
+    return EINVAL;
+  }
+
+  opt_dir = argv[optind];
+  opt_persist_dir = argv[optind + 1];
+
+  if (opt_fork) {
+    pid_t childp;
+    childp = fork();
+    if (childp < 0) {
+      print_errno("failed to fork", errno);
+      return errno;
+    } else if (childp != 0) { // parent
+      printf("forked to background. PID=%d", childp);
+      return 0;
+    }
+  }
 }
 
 static const struct option long_opts[] = {
@@ -55,7 +77,7 @@ static const struct option long_opts[] = {
 static const char *const short_opts = "hvp:a:b";
 void display_help(FILE *dest, const char *argv0) {
   fprintf(dest,
-          "Usage:%s [options] <dir> [persist dir]\n"
+          "Usage:%s [options] <dir> <persist dir>\n"
           " dir is the directory that holds all the one time secret codes. "
           "persist dir is the directory with all the persistant secret codes, "
           "defaulting to TODO\n"
