@@ -89,9 +89,6 @@ extern int log_verbosity;
 // returns -1 on fail, setting errno
 signed long parse_ushort(const char *str);
 
-void print_error(const char *const);
-void print_errno(const char *const s, const int err);
-
 // returns timestamp. beware the returned string is statically allocated and
 // will be overwritten on next call
 const char *timestamp();
