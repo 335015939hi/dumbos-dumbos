@@ -98,7 +98,7 @@ int cmd_shell(int argc, char **argv) {
   }
 
   if (child_p == 0) { // child
-    execve(argv[0], argv, NULL);
+    execvp(argv[0], argv);
     LOG_ERRNO("bad execve", errno);
     _exit(127);
   } else {
