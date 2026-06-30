@@ -24,6 +24,11 @@
 // default socket ownership
 #define DEFAULT_SOCKET_OWNER "root:system"
 
+// extension of signature file
+#define EXT_SIG ".sig"
+// extension of code (not secret code) file
+#define EXT_CODE ".sh"
+
 // max string length, including NULL terminator
 // strings over this length will throw error somewhere
 #define MAX_STRING 4096

@@ -77,8 +77,8 @@ int main(int argc, char **argv) {
 
   opt_dir = argv[optind];
   opt_persist_dir = argv[optind + 1];
-  LOG("dir set to %s", opt_dir);
-  LOG("used dir set to %s", opt_persist_dir);
+  LOG_VERBOSE("dir set to %s", opt_dir);
+  LOG_VERBOSE("used dir set to %s", opt_persist_dir);
 
   if (opt_fork) {
     pid_t childp;

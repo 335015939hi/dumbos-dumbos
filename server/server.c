@@ -11,20 +11,42 @@
 #include "secret.h"
 #include "server.h"
 
-static int handle_client(const int fd);
+static int handle_client(const int fd, const char *const code_dir,
+                         const char *const code_used_dir);
 
 int do_server(const char *const addr, const char *const port,
-              const char *const code_dir, const char *const code_used_dir) {
+              const char *const _code_dir, const char *const _code_used_dir) {
   struct addrinfo hints;
   struct addrinfo *res;
   struct addrinfo *p;
   int serverfd;
   int err;
+  int len;
+  char *code_dir;
+  char *code_used_dir;
+
+  // TODO:check for bad malloc
+  // add a slash to code*dir if not exist
+  len = strlen(_code_dir);
+  code_dir = malloc(len + 1 + 1); // plus 1 for NULL, plus 1 for maybe slash
+  strcpy(code_dir, _code_dir);
+  if (code_dir[len] != '/') {
+    code_dir[len] = '/';
+    code_dir[len + 1] = '\0';
+  }
+  len = strlen(_code_used_dir);
+  code_used_dir = malloc(len + 1 + 1); // plus 1 for NULL, plus 1 for maybe
+                                       // slash
+  strcpy(code_used_dir, _code_used_dir);
+  if (code_used_dir[len] != '/') {
+    code_used_dir[len] = '/';
+    code_used_dir[len + 1] = '\0';
+  }
 
   LOG_VERBOSE("addr=%s", addr);
   LOG_VERBOSE("port=%s", port);
-  LOG_DEBUG("code_dir=%s", code_dir);
-  LOG_DEBUG("code_used_dir=%s", code_used_dir);
+  LOG("code_dir=%s", code_dir);
+  LOG("code_used_dir=%s", code_used_dir);
 
   hints = (struct addrinfo){
       .ai_family = AF_UNSPEC,
@@ -37,6 +59,8 @@ int do_server(const char *const addr, const char *const port,
     if (err < 0)
       err = -err;
     LOG_FATAL_ERRNO("getaddrinfo failed", err);
+    free(code_dir);
+    free(code_used_dir);
     return err;
   }
 
@@ -56,6 +80,8 @@ int do_server(const char *const addr, const char *const port,
   if (NULL == p) {
     LOG_FATAL_ERRNO("failed to bind", err);
     freeaddrinfo(res);
+    free(code_dir);
+    free(code_used_dir);
     return err;
   }
   freeaddrinfo(res);
@@ -63,6 +89,8 @@ int do_server(const char *const addr, const char *const port,
   err = listen(serverfd, 16);
   if (err < 0) {
     LOG_FATAL_ERRNO("failed to listen", errno);
+    free(code_dir);
+    free(code_used_dir);
     return errno;
   }
 
@@ -109,7 +137,7 @@ int do_server(const char *const addr, const char *const port,
 
     LOG("connection from %s:%s", host, serv);
 
-    err = handle_client(clientfd);
+    err = handle_client(clientfd, code_dir, code_used_dir);
     LOG_DEBUG("handle_client() exited with %d", err);
     if (err != 0) {
       LOG_ERR("handle_client() exited with %d", err);
@@ -123,6 +151,8 @@ int do_server(const char *const addr, const char *const port,
 
   LOG_VERBOSE("do_server() returning,code %d", err);
 
+  free(code_dir);
+  free(code_used_dir);
   free(host);
   free(serv);
   free(client);
@@ -130,7 +160,8 @@ int do_server(const char *const addr, const char *const port,
   return err;
 }
 
-static int handle_client(const int fd) {
+static int handle_client(const int fd, const char *const code_dir,
+                         const char *const code_used_dir) {
   int err;
   int ret;
   char *client_v_str;
@@ -190,7 +221,7 @@ static int handle_client(const int fd) {
 
   switch (command) {
   case SERVER_CMD_SECRET_CODE:
-    ret = handle_secret(fd);
+    ret = handle_secret(fd, code_dir, code_used_dir);
     LOG_DEBUG("handle_secret() exited with %d", ret);
     break;
   case SERVER_CMD_OK:
