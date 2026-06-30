@@ -79,6 +79,11 @@ extern int log_verbosity;
 #define LOG_VERBOSITY_DEBUG 4732
 #define LOG_VERBOSITY_MAX 9999
 
+// command codes, for server to daemon communication. type should be unsigned
+// short
+#define SERVER_CMD_SECRET_CODE 357
+#define SERVER_CMD_OK 128
+
 // takes a string and tries to parse it as unsigned base 10 integer short.
 // returns -1 on fail, setting errno
 signed long parse_ushort(const char *str);

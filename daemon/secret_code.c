@@ -96,13 +96,17 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
   err = read_ushort(fd);
   if (err < 0) {
     *ret_val = errno;
-    LOG_ERRNO("failedd to read server status", errno);
+    LOG_ERRNO("failed to read server status", errno);
     return NULL;
   } else if (err != 0) {
     *ret_val = err;
     LOG_ERRNO("server doesn't like us", err);
     return malloc_str(strerror(err));
   }
+
+  // send secret code command
+  LOG_VERBOSE("sending command %d to server\n", SERVER_CMD_SECRET_CODE);
+  write_ushort(fd, SERVER_CMD_SECRET_CODE);
 
   *ret_val = 0;
   return NULL;

@@ -105,6 +105,11 @@ int do_server(const char *const addr, const char *const port,
     LOG("connection from %s:%s\n", host, serv);
 
     err = handle_client(clientfd);
+    if (err != 0) {
+      LOG_ERR("handle_client() exited with %d\n", err);
+    } else {
+      LOG_VERBOSE("handle_client() exited with 0\n");
+    }
 
     close(clientfd);
     break;
@@ -123,6 +128,7 @@ static int handle_client(const int fd) {
   unsigned short client_v_maj;
   unsigned short client_v_min;
   unsigned short client_v_pat;
+  unsigned short command;
 
   client_v_str = malloc_read_string(fd);
   if (client_v_str == NULL) {
@@ -157,8 +163,18 @@ static int handle_client(const int fd) {
     return EPROTO;
   }
 
+  // tell client connection is good
   write_ushort(fd, 0);
-
   free(client_v_str);
+
+  // get command
+  err = read_ushort(fd);
+  if (err < 0) {
+    LOG_ERRNO("failed to read command", errno);
+    return errno;
+  }
+  command = err;
+  LOG("recieved command %d\n", command);
+
   return 0;
 }
