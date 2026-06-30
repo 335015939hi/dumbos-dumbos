@@ -13,6 +13,7 @@
 #include "daemon.h"
 
 #define DEFAULT_SOCKET_CONTEXT ""
+#define DEFAULT_TMPDIR "/data/local/tmp/"
 
 static const struct option long_opts[];
 static const char *const short_opts;
@@ -29,17 +30,18 @@ int main(int argc, char **argv) {
   int option;
   int err;
 
+  struct daemon_opts *opt;
+  opt = malloc(sizeof(struct daemon_opts));
+
   // whether to fork to background
   bool opt_fork = true;
-  const char *opt_socket_path = DEFAULT_SOCKET_PATH;
-  const char *opt_server = DEFAULT_SERVER;
-  const char *opt_port = DEFAULT_PORT;
+  opt->path = DEFAULT_SOCKET_PATH;
+  opt->server = DEFAULT_SERVER;
+  opt->port = DEFAULT_PORT;
+  opt->con = DEFAULT_SOCKET_CONTEXT;
+  opt->tmpdir = DEFAULT_TMPDIR;
   const char *opt_sock_mode_str = DEFAULT_SOCKET_MODE;
   const char *opt_sock_own_str = DEFAULT_SOCKET_OWNER;
-  const char *opt_sock_con = DEFAULT_SOCKET_CONTEXT;
-  mode_t opt_sock_mode;
-  uid_t opt_sock_own;
-  gid_t opt_sock_grp;
 #ifdef DEBUG_MODE
   bool opt_unlink = false;
 #endif
@@ -75,11 +77,11 @@ int main(int argc, char **argv) {
       break;
     case 's':
       LOG_DEBUG("found option socket=%s", optarg);
-      opt_socket_path = optarg;
+      opt->path = optarg;
       break;
     case 'H':
       LOG_DEBUG("found option host=%s", optarg);
-      opt_server = optarg;
+      opt->server = optarg;
       break;
     case 'o':
       LOG_DEBUG("found option owner=%s", optarg);
@@ -91,11 +93,11 @@ int main(int argc, char **argv) {
       break;
     case 'p':
       LOG_DEBUG("found option port=%s", optarg);
-      opt_port = optarg;
+      opt->port = optarg;
       break;
     case 'Z':
       LOG_DEBUG("found option context=%s", optarg);
-      opt_sock_con = optarg;
+      opt->con = optarg;
       break;
 #ifdef DEBUG_MODE
     case 'u':
@@ -115,14 +117,14 @@ int main(int argc, char **argv) {
 
 #ifdef DEBUG_MODE
   if (opt_unlink) {
-    err = unlink(opt_socket_path);
+    err = unlink(opt->path);
     LOG("unlink exit with %d, errno %d", err, errno);
   }
 #endif
 
   errno = 0;
-  opt_sock_mode = (mode_t)strtoul(opt_sock_mode_str, &end, 8);
-  if (errno || *end != '\0' || opt_sock_mode < 0) {
+  opt->mode = (mode_t)strtoul(opt_sock_mode_str, &end, 8);
+  if (errno || *end != '\0' || opt->mode < 0) {
     LOG_FATAL("invalid mode '%s'", opt_sock_mode_str);
     return EINVAL;
   }
@@ -139,7 +141,7 @@ int main(int argc, char **argv) {
   char *sock_grp_str = colon + 1;
   if (sock_user_str[0] >= '0' && sock_user_str[0] <= '9') {
     errno = 0;
-    opt_sock_own = strtol(sock_user_str, &end, 10);
+    opt->uid = strtol(sock_user_str, &end, 10);
     if (*end != '\0' || errno) {
       LOG_ERR("bad user '%s'", sock_user_str);
       free(sock_own_str);
@@ -152,11 +154,11 @@ int main(int argc, char **argv) {
       free(sock_own_str);
       return EINVAL;
     }
-    opt_sock_own = pw->pw_uid;
+    opt->uid = pw->pw_uid;
   }
   if (sock_grp_str[0] >= '0' && sock_grp_str[0] <= '9') {
     errno = 0;
-    opt_sock_grp = strtol(sock_grp_str, &end, 10);
+    opt->gid = strtol(sock_grp_str, &end, 10);
     if (*end != '\0' || errno) {
       LOG_ERR("bad group '%s'", sock_grp_str);
       free(sock_own_str);
@@ -169,7 +171,7 @@ int main(int argc, char **argv) {
       free(sock_own_str);
       return EINVAL;
     }
-    opt_sock_grp = gr->gr_gid;
+    opt->gid = gr->gr_gid;
   }
 
   free(sock_own_str);
@@ -186,9 +188,9 @@ int main(int argc, char **argv) {
   }
 
   LOG_DEBUG("reached start_daemon()");
-  err = start_daemon(opt_socket_path, opt_server, opt_port, opt_sock_mode,
-                     opt_sock_own, opt_sock_grp, opt_sock_con);
+  err = start_daemon(opt);
   LOG_DEBUG("exited start_daemon() code %d", err);
+  free(opt);
   return err;
 }
 
@@ -204,11 +206,13 @@ static const struct option long_opts[] = {
     {"mode", required_argument, 0, 'm'},
     {"owner", required_argument, 0, 'o'},
     {"context", required_argument, 0, 'Z'},
+    {"tmpdir", required_argument, 0, 't'},
+
 #ifdef DEBUG_MODE
     {"unlink", no_argument, 0, 'u'},
 #endif
     {0, 0, 0, 0}};
-static const char *const short_opts = "hvl:Fs:H:p:m:o:Z:"
+static const char *const short_opts = "hvl:Fs:H:p:m:o:Z:t:"
 #ifdef DEBUG_MODE
                                       "u"
 #endif
@@ -236,8 +240,11 @@ void display_help(FILE *file, const char *const argv0) {
       " -m,--mode=<octal>       socket permissions, "
       "default " DEFAULT_SOCKET_MODE "\n"
       " -o,--owner=<user:group> socket ownership, default " DEFAULT_SOCKET_OWNER
+      "\n"
       " -Z,--context=<con>      socket SELinux context, "
       "default " DEFAULT_SOCKET_CONTEXT "\n"
+      " -t,--tmpdir=<tmp>       use <tmp> as tempoary directory instead "
+      "of " DEFAULT_TMPDIR "\n"
       "\n"
 
       ;

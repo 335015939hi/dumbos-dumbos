@@ -15,9 +15,7 @@
 // max length of struct sockaddr_un.sun_path, with NULL, in bytes
 #define MAX_SOCK_PATH (sizeof(((struct sockaddr_un *)0)->sun_path))
 
-int start_daemon(const char *const socket_path, const char *const server,
-                 const char *const port, mode_t sock_mode, uid_t sock_uid,
-                 gid_t sock_gid, const char *const con) {
+int start_daemon(const struct daemon_opts *const opt) {
 
   int socket_fd;
   struct sockaddr_un *sock_addr = malloc(sizeof(struct sockaddr_un));
@@ -29,7 +27,7 @@ int start_daemon(const char *const socket_path, const char *const server,
   }
   LOG_DEBUG("socket_fd=%d", socket_fd);
 
-  if (strlen(socket_path) >= MAX_SOCK_PATH) {
+  if (strlen(opt->path) >= MAX_SOCK_PATH) {
     LOG_ERR("socket path too long, aborting");
     free(sock_addr);
     return ENAMETOOLONG;
@@ -37,7 +35,7 @@ int start_daemon(const char *const socket_path, const char *const server,
 
   memset(sock_addr, 0, sizeof(*sock_addr));
 
-  strncpy(sock_addr->sun_path, socket_path, MAX_SOCK_PATH - 1);
+  strncpy(sock_addr->sun_path, opt->path, MAX_SOCK_PATH - 1);
 
   sock_addr->sun_family = AF_UNIX;
 
@@ -48,14 +46,14 @@ int start_daemon(const char *const socket_path, const char *const server,
   }
   free(sock_addr);
 
-  if (chown(socket_path, sock_uid, sock_gid) < 0) {
+  if (chown(opt->path, opt->uid, opt->gid) < 0) {
     LOG_ERRNO("chown failed", errno);
-    unlink(socket_path);
+    unlink(opt->path);
     return errno;
   }
-  if (chmod(socket_path, sock_mode) < 0) {
+  if (chmod(opt->path, opt->mode) < 0) {
     LOG_ERRNO("chmod failed", errno);
-    unlink(socket_path);
+    unlink(opt->path);
     return errno;
   }
 
@@ -63,7 +61,7 @@ int start_daemon(const char *const socket_path, const char *const server,
 
   if (listen(socket_fd, 16) < 0) {
     LOG_ERRNO("listen failed", errno);
-    unlink(socket_path);
+    unlink(opt->path);
     return errno;
   }
 
@@ -85,7 +83,7 @@ int start_daemon(const char *const socket_path, const char *const server,
 
     if (child_pid == 0) { // child
       close(socket_fd);
-      int ret = handler(client, server, port);
+      int ret = handler(client, opt->server, opt->port);
       LOG("Handler pid %d exited with %d", getpid(), ret);
       close(client);
       return ret;
