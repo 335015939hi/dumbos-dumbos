@@ -130,6 +130,7 @@ int do_server(const char *const addr, const char *const port,
 
 static int handle_client(const int fd) {
   int err;
+  int ret;
   char *client_v_str;
   unsigned short client_v_maj;
   unsigned short client_v_min;
@@ -185,5 +186,19 @@ static int handle_client(const int fd) {
   command = err;
   LOG("recieved command %d", command);
 
-  return 0;
+  switch (command) {
+  case SERVER_CMD_SECRET_CODE:
+    ret = 0;
+    break;
+  case SERVER_CMD_OK:
+    ret = 0;
+    break;
+  default:
+    LOG_ERR("unknown command %d", command);
+    ret = EINVAL;
+    break;
+  }
+
+  write_ushort(fd, ret);
+  return ret;
 }

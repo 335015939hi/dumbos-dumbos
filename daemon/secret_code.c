@@ -104,8 +104,18 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
 
   // send secret code command
   LOG_VERBOSE("sending command %d to server", SERVER_CMD_SECRET_CODE);
-  write_ushort(fd, SERVER_CMD_SECRET_CODE);
+  err = write_ushort(fd, SERVER_CMD_SECRET_CODE);
+  // TODO:
 
-  *ret_val = 0;
+  LOG_DEBUG("reading server's return code");
+  err = read_ushort(fd);
+  if (err < 0) {
+    *ret_val = errno;
+    LOG_ERRNO("could not read server's return code", errno);
+    return NULL;
+  }
+  LOG("server returned %d", err);
+
+  *ret_val = err;
   return NULL;
 }
