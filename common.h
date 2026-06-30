@@ -37,6 +37,10 @@
 #define VERSION_PATCH _VERSION_PATCH
 #endif
 
+// takes a string and tries to parse it as unsigned base 10 integer short.
+// returns -1 on fail, setting errno
+signed long parse_ushort(const char *str);
+
 void print_error(const char *const);
 void print_errno(const char *const s, const int err);
 

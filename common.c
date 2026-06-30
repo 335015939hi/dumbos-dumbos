@@ -1,11 +1,31 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "common.h"
+
+signed long parse_ushort(const char *str) {
+  signed long ret;
+  char *end;
+  errno = 0;
+  ret = strtoul(str, &end, 10);
+  if (errno) {
+    return -1;
+  }
+  if (end == str || *end != '\0') {
+    errno = EINVAL;
+    return -1;
+  }
+  if (ret < 0 || ret > USHRT_MAX) {
+    errno = ERANGE;
+    return -1;
+  }
+  return ret;
+}
 
 void print_error(const char *const error_string) {
   write(STDERR_FILENO, error_string, strlen(error_string));
