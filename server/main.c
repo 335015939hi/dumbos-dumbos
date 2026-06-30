@@ -5,16 +5,19 @@
 #include <unistd.h>
 
 #include "../common.h"
+#include "server.h"
 
 static const struct option long_opts[];
 static const char *const short_opts;
 void display_help(FILE *, const char *);
 
+#define _STR(x) #x
+#define STR(x) _STR(x)
 #define DEFAULT_ADDR "0.0.0.0"
 
 int main(int argc, char **argv) {
   int option;
-  int opt_port = DEFAULT_PORT;
+  char *opt_port = STR(DEFAULT_PORT);
   char *opt_addr = DEFAULT_ADDR;
   bool opt_fork = false;
   char *opt_dir;
@@ -34,11 +37,7 @@ int main(int argc, char **argv) {
       opt_addr = optarg;
       break;
     case 'p':
-      opt_port = parse_ushort(optarg);
-      if (opt_port < 0) {
-        print_errno("invalid port", errno);
-        return errno;
-      }
+      opt_port = optarg;
       break;
     case 'b':
       opt_fork = true;
@@ -68,6 +67,8 @@ int main(int argc, char **argv) {
       return 0;
     }
   }
+
+  return do_server(opt_addr, opt_port, opt_dir, opt_persist_dir);
 }
 
 static const struct option long_opts[] = {
