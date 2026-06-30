@@ -6,7 +6,8 @@ project(dumbos_server)
 
 set (SOURCES
   main.c
+  ../common.c
 )
 
 
-add_executable(${PROJECT_NAME} main.c)
+add_executable(${PROJECT_NAME} ${SOURCES})
