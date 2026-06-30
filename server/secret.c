@@ -31,6 +31,7 @@ int handle_secret(const int fd) {
   // TODO:
   secret_code_safe = secret_str_safe(secret_code);
   if (!secret_code_safe) {
+    free(secret_code);
     return EINVAL;
   }
 

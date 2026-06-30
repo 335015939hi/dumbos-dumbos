@@ -1,4 +1,5 @@
 
+#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -12,8 +13,6 @@
 #include <unistd.h>
 
 #include "common.h"
-
-// TODO:endianess translation
 
 #ifdef DEBUG_MODE
 int log_verbosity = LOG_VERBOSITY_MAX;
@@ -64,9 +63,9 @@ static ssize_t write_all(int fd, const void *buf, size_t len) {
 }
 static ssize_t read_all(int fd, void *buf, size_t len) {
   char *p = buf;
-  const int readed = len //'read' is already taken
+  const int readed = len; //'read' is already taken
 
-      while (len) {
+  while (len) {
     ssize_t r = read(fd, p, len);
     if (r < 0) {
       return -1;
@@ -107,13 +106,16 @@ signed long read_ushort(const int fd) {
   ret = read_all(fd, &val, sizeof(val));
   if (ret < 0)
     return ret; // read error
-  return val;
+  return ntohs(val);
 }
 
 int write_ushort(const int fd, const unsigned short ushort) {
   int ret;
+  unsigned short ns;
 
-  ret = write_all(fd, &ushort, sizeof(ushort));
+  ns = htons(ushort);
+
+  ret = write_all(fd, &ns, sizeof(ns));
   if (ret < 0) // write error
     return ret;
   return 0;
@@ -143,7 +145,7 @@ int write_byte(const int fd, const unsigned char c) {
     errno = EPIPE;
     return -1;
   }
-  return ret;
+  return 1;
 }
 
 char *malloc_read_string(const int fd) {
@@ -211,7 +213,8 @@ int write_file(const int fd, const char *const path) {
   int srcfd;
   int err;
   void *buf;
-  uint64_t size;
+  unsigned long size;
+  unsigned long nl;
 
   // open the file
   srcfd = open(path, O_RDONLY);
@@ -253,7 +256,8 @@ int write_file(const int fd, const char *const path) {
   }
 
   // send filesize
-  err = write_all(fd, &size, sizeof(size));
+  nl = htonl(size);
+  err = write_all(fd, &nl, sizeof(nl));
   if (err < 0) {
     close(srcfd);
     free(buf);
@@ -275,7 +279,7 @@ int read_file(const int fd, const char *const dest) {
   int destfd;
   int err;
   void *buf;
-  uint64_t size;
+  unsigned long size;
 
   // open for writing
   destfd = creat(dest, 0o600);
@@ -290,6 +294,7 @@ int read_file(const int fd, const char *const dest) {
     unlink(dest);
     return -1;
   }
+  size = ntohl(size);
 
   // weight control
   if (size > MAX_FILE_SIZE || size < 0) {
@@ -330,6 +335,7 @@ int read_file(const int fd, const char *const dest) {
   return 0;
 }
 
+// warning: not thread safe
 const char *timestamp() {
   static char ret[32] = {0};
   time_t t = time(NULL);
