@@ -3,6 +3,12 @@ a.out
 #dev outputs
 /dumbos
 /dumbosd
+/server/dumbos_server
+#cmake output
+/server/cmake_install.cmake
+/server/CMakeFiles/
+/server/Makefile
+/server/CMakeCache.txt
 
 # Prerequisites
 *.d
