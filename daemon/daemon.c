@@ -8,8 +8,6 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#define LOG_USE_PID
-
 #include "../common.h"
 #include "daemon.h"
 #include "handler.h"
@@ -29,6 +27,7 @@ int start_daemon(const char *const socket_path, const char *const server,
     LOG_ERRNO("failed to create socket", errno);
     return errno;
   }
+  LOG_DEBUG("socket_fd=%d", socket_fd);
 
   if (strlen(socket_path) >= MAX_SOCK_PATH) {
     LOG_ERR("socket path too long, aborting");

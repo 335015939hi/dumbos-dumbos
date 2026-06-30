@@ -16,6 +16,38 @@ int log_verbosity = LOG_VERBOSITY_MAX;
 int log_verbosity = LOG_VERBOSITY_NORMAL;
 #endif
 
+#define LOG_VERBOSITY_NONE 0
+#define LOG_VERBOSITY_FATAL 7
+#define LOG_VERBOSITY_ERROR 124
+#define LOG_VERBOSITY_WARN 200
+#define LOG_VERBOSITY_NORMAL 387
+#define LOG_VERBOSITY_VERBOSE 1244
+#define LOG_VERBOSITY_DEBUG 4732
+#define LOG_VERBOSITY_MAX 9999
+int set_log_verbosity(const char *const lvl) {
+  if (0 == strcasecmp(LOG_NONE_NAME, lvl)) {
+    log_verbosity = LOG_VERBOSITY_NONE;
+  } else if (0 == strcasecmp(LOG_FATAL_NAME, lvl)) {
+    log_verbosity = LOG_VERBOSITY_FATAL;
+  } else if (0 == strcasecmp(LOG_ERROR_NAME, lvl)) {
+    log_verbosity = LOG_VERBOSITY_ERROR;
+  } else if (0 == strcasecmp(LOG_WARN_NAME, lvl)) {
+    log_verbosity = LOG_VERBOSITY_WARN;
+  } else if (0 == strcasecmp(LOG_NORMAL_NAME, lvl)) {
+    log_verbosity = LOG_VERBOSITY_NORMAL;
+  } else if (0 == strcasecmp(LOG_VERBOSE_NAME, lvl)) {
+    log_verbosity = LOG_VERBOSITY_VERBOSE;
+  } else if (0 == strcasecmp(LOG_DEBUG_NAME, lvl)) {
+    log_verbosity = LOG_VERBOSITY_DEBUG;
+  } else if (0 == strcasecmp(LOG_MAX_NAME, lvl)) {
+    log_verbosity = LOG_VERBOSITY_MAX;
+  } else {
+    errno = EINVAL;
+    return -EINVAL;
+  }
+  return 0;
+}
+
 signed long parse_ushort(const char *str) {
   signed long ret;
   char *end;

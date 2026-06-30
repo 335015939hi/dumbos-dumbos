@@ -5,8 +5,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#define LOG_USE_PID
-
 #include "../common.h"
 #include "command.h"
 

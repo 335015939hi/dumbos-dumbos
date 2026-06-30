@@ -5,8 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LOG_USE_PID
-
 #include "../common.h"
 #include "command.h"
 #include "handler.h"

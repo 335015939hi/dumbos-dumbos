@@ -41,12 +41,12 @@
 #endif
 
 // logging functions
-#ifdef LOG_USE_PID
+// #ifdef LOG_USE_PID
 #define _LOG_PREFIX(f, p)                                                      \
   fprintf(f, "[%s][%ld]%s ", timestamp(), (long)getpid(), p)
-#else
-#define _LOG_PREFIX(f, p) fprintf(f, "[%s]%s", timestamp(), p)
-#endif
+// #else
+// #define _LOG_PREFIX(f, p) fprintf(f, "[%s]%s", timestamp(), p)
+// #endif
 #define _LOG(v, f, p, s, ...)                                                  \
   do {                                                                         \
     if (log_verbosity >= v) {                                                  \
@@ -67,7 +67,10 @@
   _LOG(LOG_VERBOSITY_VERBOSE, stderr, "[VRBOS]", s, ##__VA_ARGS__)
 #define LOG_DEBUG(s, ...)                                                      \
   _LOG(LOG_VERBOSITY_DEBUG, stderr, "[DEBUG]", s, ##__VA_ARGS__)
-#define LOG_ERRNO(s, err) LOG_ERR("%s:%s\n", s, strerror(err))
+#define LOG_WARN_ERRNO(s, err) LOG_WARN("%s:%s", s, strerror(err))
+#define LOG_ERRNO(s, err) LOG_ERR("%s:%s", s, strerror(err))
+#define LOG_ERROR_ERRNO(s, err) LOG_ERRNO(s, err)
+#define LOG_FATAL_ERRNO(s, err) LOG_FATAL("%s:%s", s, strerror(err))
 // global variable controlling log verbosity
 extern int log_verbosity;
 // verbosity defs, the lower the less verbose
@@ -79,6 +82,17 @@ extern int log_verbosity;
 #define LOG_VERBOSITY_VERBOSE 1244
 #define LOG_VERBOSITY_DEBUG 4732
 #define LOG_VERBOSITY_MAX 9999
+#define LOG_NONE_NAME "none"
+#define LOG_FATAL_NAME "fatal"
+#define LOG_ERROR_NAME "error"
+#define LOG_WARN_NAME "warn"
+#define LOG_NORMAL_NAME "normal"
+#define LOG_VERBOSE_NAME "verbose"
+#define LOG_DEBUG_NAME "debug"
+#define LOG_MAX_NAME "max"
+// sets log verbosity. accepts one of LOG_*_NAME (case insensative), returns 0
+// on success
+int set_log_verbosity(const char *const lvl);
 
 // command codes, for server to daemon communication. type should be unsigned
 // short

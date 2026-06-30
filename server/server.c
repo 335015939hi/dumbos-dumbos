@@ -7,20 +7,23 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define LOG_USE_PID
-
 #include "../common.h"
 #include "server.h"
 
 static int handle_client(const int fd);
 
 int do_server(const char *const addr, const char *const port,
-              const char *const code_dir, const char *const code_persist_dir) {
+              const char *const code_dir, const char *const code_used_dir) {
   struct addrinfo hints;
   struct addrinfo *res;
   struct addrinfo *p;
   int serverfd;
   int err;
+
+  LOG_VERBOSE("addr=%s", addr);
+  LOG_VERBOSE("port=%s", port);
+  LOG_DEBUG("code_dir=%s", code_dir);
+  LOG_DEBUG("code_used_dir=%s", code_used_dir);
 
   hints = (struct addrinfo){
       .ai_family = AF_UNSPEC,
@@ -32,7 +35,7 @@ int do_server(const char *const addr, const char *const port,
   if (err) {
     if (err < 0)
       err = -err;
-    LOG_ERRNO("getaddrinfo failed", err);
+    LOG_FATAL_ERRNO("getaddrinfo failed", err);
     return err;
   }
 
@@ -50,7 +53,7 @@ int do_server(const char *const addr, const char *const port,
   }
 
   if (NULL == p) {
-    LOG_ERRNO("failed to bind", err);
+    LOG_FATAL_ERRNO("failed to bind", err);
     freeaddrinfo(res);
     return err;
   }
@@ -58,7 +61,7 @@ int do_server(const char *const addr, const char *const port,
 
   err = listen(serverfd, 16);
   if (err < 0) {
-    LOG_ERRNO("failed to listen", errno);
+    LOG_FATAL_ERRNO("failed to listen", errno);
     return errno;
   }
 
@@ -79,6 +82,7 @@ int do_server(const char *const addr, const char *const port,
   for (;;) {
 
     clientfd = accept(serverfd, (struct sockaddr *)client, &client_len);
+    LOG_VERBOSE("found a connection");
     if (clientfd < 0) {
       LOG_ERRNO("accept client failed", errno);
       continue;
@@ -115,6 +119,8 @@ int do_server(const char *const addr, const char *const port,
     break;
   };
 
+  LOG_VERBOSE("do_server() returning,code %d", err);
+
   free(host);
   free(serv);
   free(client);
@@ -129,6 +135,9 @@ static int handle_client(const int fd) {
   unsigned short client_v_min;
   unsigned short client_v_pat;
   unsigned short command;
+
+  LOG_DEBUG("handle_client() started");
+  LOG_DEBUG("fd=%d", fd);
 
   client_v_str = malloc_read_string(fd);
   if (client_v_str == NULL) {
