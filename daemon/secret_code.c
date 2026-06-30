@@ -105,7 +105,14 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
   // send secret code command
   LOG_VERBOSE("sending command %d to server", SERVER_CMD_SECRET_CODE);
   err = write_ushort(fd, SERVER_CMD_SECRET_CODE);
-  // TODO:
+
+  LOG("sending secret code %s",argv[0]);
+  err=write_string(fd,argv[0]);
+  if(err!=0){
+    *ret_val=errno;
+    LOG_ERRNO("write secret code failed",errno);
+    return NULL;
+  }
 
   LOG_DEBUG("reading server's return code");
   err = read_ushort(fd);

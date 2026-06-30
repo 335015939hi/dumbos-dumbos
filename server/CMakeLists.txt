@@ -7,6 +7,7 @@ project(dumbos_server)
 set (SOURCES
   main.c
   server.c
+  secret.c
   ../common.c
 )
 

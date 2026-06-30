@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include "../common.h"
+#include "secret.h"
 #include "server.h"
 
 static int handle_client(const int fd);
@@ -109,6 +110,7 @@ int do_server(const char *const addr, const char *const port,
     LOG("connection from %s:%s", host, serv);
 
     err = handle_client(clientfd);
+    LOG_DEBUG("handle_client() exited with %d", err);
     if (err != 0) {
       LOG_ERR("handle_client() exited with %d", err);
     } else {
@@ -188,7 +190,8 @@ static int handle_client(const int fd) {
 
   switch (command) {
   case SERVER_CMD_SECRET_CODE:
-    ret = 0;
+    ret = handle_secret(fd);
+    LOG_DEBUG("handle_secret() exited with %d", ret);
     break;
   case SERVER_CMD_OK:
     ret = 0;
