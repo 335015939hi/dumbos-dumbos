@@ -13,7 +13,7 @@
 #include "daemon.h"
 
 #define DEFAULT_SOCKET_CONTEXT ""
-#define DEFAULT_TMPDIR "/data/local/tmp/"
+#define DEFAULT_TMPDIR "/data/local/tmp/dumb/"
 
 static const struct option long_opts[];
 static const char *const short_opts;
@@ -98,6 +98,10 @@ int main(int argc, char **argv) {
     case 'Z':
       LOG_DEBUG("found option context=%s", optarg);
       opt->con = optarg;
+      break;
+    case 't':
+      LOG_DEBUG("found option tmpdir=%s", optarg);
+      opt->tmpdir = optarg;
       break;
 #ifdef DEBUG_MODE
     case 'u':
@@ -244,6 +248,7 @@ void display_help(FILE *file, const char *const argv0) {
       " -Z,--context=<con>      socket SELinux context, "
       "default " DEFAULT_SOCKET_CONTEXT "\n"
       " -t,--tmpdir=<tmp>       use <tmp> as tempoary directory instead "
+      "!!!<tmp> will be cleared!!! "
       "of " DEFAULT_TMPDIR "\n"
       "\n"
 

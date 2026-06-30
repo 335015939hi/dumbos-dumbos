@@ -28,6 +28,7 @@ cc_binary {
         "daemon/handler.c",
         "daemon/command.c",
         "daemon/secret_code.c",
+        "daemon/util.c"
     ],
 
 

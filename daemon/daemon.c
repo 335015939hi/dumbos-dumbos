@@ -11,6 +11,7 @@
 #include "../common.h"
 #include "daemon.h"
 #include "handler.h"
+#include "util.h"
 
 // max length of struct sockaddr_un.sun_path, with NULL, in bytes
 #define MAX_SOCK_PATH (sizeof(((struct sockaddr_un *)0)->sun_path))
@@ -18,6 +19,7 @@
 int start_daemon(const struct daemon_opts *const opt) {
 
   int socket_fd;
+  int err;
   struct sockaddr_un *sock_addr = malloc(sizeof(struct sockaddr_un));
 
   socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -65,9 +67,21 @@ int start_daemon(const struct daemon_opts *const opt) {
     return errno;
   }
 
+  LOG_VERBOSE("clearing tmpdir '%s'", opt->tmpdir);
+  err = rm_r(opt->tmpdir);
+  if (err != 0) {
+    LOG_WARN_ERRNO("clearing tmpdir failed", errno);
+  }
+  LOG_VERBOSE("creating tmpdir '%s'", opt->tmpdir);
+  err = mkdir_p(opt->tmpdir);
+  if (err != 0) {
+    LOG_WARN_ERRNO("creating tmpdir failed", errno);
+  }
+
   for (;;) {
     int client;
 
+    LOG_VERBOSE("waiting for  client...");
     client = accept(socket_fd, NULL, NULL);
     if (client == 0) {
       LOG_ERRNO("failed to accept client", errno);
