@@ -5,9 +5,9 @@
 #include <unistd.h>
 
 #define _VERSION_MAJOR 0
-#define _VERSION_MINOR 2
+#define _VERSION_MINOR 3
 #define _VERSION_PATCH 0
-#define _VERSION_STRING "v0.2.0"
+#define _VERSION_STRING "v0.3.0"
 
 // whether to compile with unsafe debug features
 // comment this out if you're not debugging
