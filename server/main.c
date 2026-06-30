@@ -9,6 +9,8 @@
 #include "../common.h"
 #include "server.h"
 
+// TODO: kill kids
+
 static const struct option long_opts[];
 static const char *const short_opts;
 void display_help(FILE *, const char *);

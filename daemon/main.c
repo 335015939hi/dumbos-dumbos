@@ -12,6 +12,8 @@
 #include "../common.h"
 #include "daemon.h"
 
+// TODO: kill kids
+
 #define DEFAULT_SOCKET_CONTEXT ""
 #define DEFAULT_TMPDIR "/data/local/tmp/dumb/"
 
