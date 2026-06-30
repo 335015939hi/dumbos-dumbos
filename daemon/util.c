@@ -1,7 +1,10 @@
 
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -104,4 +107,65 @@ int mkdir_p(const char *path) {
 
   free(tmp);
   return 0;
+}
+
+// TODO:
+static const char pubkey[] = {0};
+int verify_sig(const char *file, const char *sig) {
+  int sfd;
+  int ffd;
+  off_t sigsize;
+  off_t filesize;
+  void *sigbuf;
+  void *filebuf;
+  int err;
+  struct stat st;
+
+  LOG_DEBUG("verify_sig() called on '%s' '%s'", file, sig);
+
+  LOG_DEBUG("opening '%s'", sig);
+  sfd = open(sig, O_RDONLY);
+  if (sfd < 0) {
+    LOG_ERR("open '%s' fail:%s", sig, strerror(errno));
+    return -1;
+  }
+  LOG_DEBUG("opening '%s'", file);
+  ffd = open(file, O_RDONLY);
+  if (ffd < 0) {
+    err = errno;
+    LOG_ERR("open '%s' fail:%s", file, strerror(errno));
+    close(sfd);
+    errno = err;
+    return -1;
+  }
+  LOG_DEBUG("ffd=%d sfd=%d", ffd, sfd);
+
+  LOG_DEBUG("getting %s size", sig);
+  err = fstat(sfd, &st);
+  if (err < 0) {
+    err = errno;
+    LOG_ERR("failed fstat() on '%s':%s", sig, strerror(err));
+    close(sfd);
+    close(ffd);
+    errno = err;
+    return -1;
+  }
+  sigsize = st.st_size;
+  LOG_DEBUG("%s size is %ld", sig, sigsize);
+
+  LOG_DEBUG("getting %s size", file);
+  err = fstat(ffd, &st);
+  if (err < 0) {
+    err = errno;
+    LOG_ERR("failed fstat() on '%s':%s", file, strerror(err));
+    close(sfd);
+    close(ffd);
+    errno = err;
+    return -1;
+  }
+  filesize = st.st_size;
+  LOG_DEBUG("%s size is %ld", file, filesize);
+
+  errno = EINVAL;
+  return -1;
 }

@@ -13,6 +13,7 @@
 
 #include "../common.h"
 #include "command.h"
+#include "util.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
@@ -44,6 +45,7 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
   int err;
   int fd;
   int secret_len_max;
+  bool can_verify;
 
   secret_len_max =
       PATH_MAX - (strlen(tmpdir) + MAX(strlen(EXT_SIG), strlen(EXT_CODE)) +
@@ -151,29 +153,62 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
     LOG_DEBUG("checking secret code for bad chars");
     if (secret_str_safe(argv[0])) {
       LOG_DEBUG("secret code passed sanitizer");
-      char *pathtmp;
-      pathtmp = malloc(PATH_MAX);
+      char *pathsig;
+      char *pathfil;
+      pathsig = malloc(PATH_MAX);
+      pathfil = malloc(PATH_MAX);
+      // TODO:malloc check
 
-      sprintf(pathtmp, "%s%s%s", tmpdir, argv[0], EXT_CODE);
-      LOG_VERBOSE("reading into '%s'", pathtmp);
-      err = read_file(fd, pathtmp);
+      sprintf(pathfil, "%s%s%s", tmpdir, argv[0], EXT_CODE);
+      LOG_VERBOSE("reading into '%s'", pathfil);
+      err = read_file(fd, pathfil);
       if (err < 0) {
-        LOG_ERR("failed to read into '%s':%s", pathtmp, strerror(errno));
-        free(pathtmp);
+        LOG_ERR("failed to read into '%s':%s", pathfil, strerror(errno));
+        free(pathfil);
+        free(pathsig);
         *ret_val = errno;
         return NULL;
       }
-      sprintf(pathtmp, "%s%s%s", tmpdir, argv[0], EXT_SIG);
-      LOG_VERBOSE("reading into '%s'", pathtmp);
-      err = read_file(fd, pathtmp);
+      sprintf(pathsig, "%s%s%s", tmpdir, argv[0], EXT_SIG);
+      LOG_VERBOSE("reading into '%s'", pathsig);
+      err = read_file(fd, pathsig);
       if (err < 0) {
-        LOG_ERR("failed to read into '%s':%s", pathtmp, strerror(errno));
-        free(pathtmp);
+        LOG_ERR("failed to read into '%s':%s", pathsig, strerror(errno));
+        free(pathfil);
+        free(pathsig);
         *ret_val = errno;
         return NULL;
       }
-      free(pathtmp);
-      // TODO:
+
+      LOG_VERBOSE("verifying %s with %s", pathfil, pathsig);
+      err = verify_sig(pathfil, pathsig);
+      if (err < 0) {
+        LOG_ERRNO("verification failed", errno);
+        can_verify = false;
+      } else {
+        LOG("verification Success. Code is Valid");
+        can_verify = true;
+      }
+      LOG_DEBUG("reading server's return code");
+      err = read_ushort(fd);
+      if (err < 0) {
+        *ret_val = errno;
+        LOG_ERRNO("could not read server's return code", errno);
+      }
+      LOG("server returned %d", err);
+
+      unlink(pathsig);
+      unlink(pathfil);
+      free(pathsig);
+      free(pathfil);
+
+      if (can_verify) {
+        *ret_val = err;
+        return malloc_str("Code valid");
+      } else {
+        *ret_val = EINVAL;
+        return malloc_str("Signature invalid");
+      }
 
     } else {
       LOG_ERR("invalid characters detected in secret code");
