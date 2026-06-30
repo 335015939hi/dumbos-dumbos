@@ -18,8 +18,9 @@ void display_help(FILE *, const char *const);
 
 int main(int argc, char **argv) {
 #ifdef DEBUG_MODE
-  printf("WARNING: running in debug mode. if you are not developing this "
-         "program, please report this to someone.\n");
+  fprintf(stderr,
+          "WARNING: running in debug mode. if you are not developing this "
+          "program, please report this to someone.\n");
 #endif
 
   bool error = 0;
@@ -93,15 +94,15 @@ int main(int argc, char **argv) {
 
   errno = 0;
   opt_sock_mode = (mode_t)strtoul(opt_sock_mode_str, &end, 8);
-  if (errno || *end != '\0') {
-    print_error("invalid mode\n");
+  if (errno || *end != '\0' || opt_sock_mode < 0) {
+    LOG_ERR("invalid mode '%s'\n", opt_sock_mode_str);
     return EINVAL;
   }
 
   char *sock_own_str = strdup(opt_sock_own_str);
   char *colon = strchr(sock_own_str, ':');
   if (NULL == colon) {
-    print_error("colon missing in user:group\n");
+    LOG_ERR("bad user:group '%s'\n", opt_sock_own_str);
     free(sock_own_str);
     return EINVAL;
   }
@@ -112,14 +113,14 @@ int main(int argc, char **argv) {
     errno = 0;
     opt_sock_own = strtol(sock_user_str, &end, 10);
     if (*end != '\0' || errno) {
-      print_error("invalid numerical user\n");
+      LOG_ERR("bad user '%s'\n", sock_user_str);
       free(sock_own_str);
       return EINVAL;
     }
   } else {
     struct passwd *pw = getpwnam(sock_user_str);
     if (pw == NULL) {
-      print_error("bad user\n");
+      LOG_ERR("bad user  '%s'\n", sock_user_str);
       free(sock_own_str);
       return EINVAL;
     }
@@ -129,14 +130,14 @@ int main(int argc, char **argv) {
     errno = 0;
     opt_sock_grp = strtol(sock_grp_str, &end, 10);
     if (*end != '\0' || errno) {
-      print_error("invalid numerical group\n");
+      LOG_ERR("bad group '%s'\n", sock_grp_str);
       free(sock_own_str);
       return EINVAL;
     }
   } else {
     struct group *gr = getgrnam(sock_grp_str);
     if (gr == NULL) {
-      print_error("bad group\n");
+      LOG_ERR("bad group '%s'\n", sock_grp_str);
       free(sock_own_str);
       return EINVAL;
     }
@@ -148,10 +149,10 @@ int main(int argc, char **argv) {
   if (opt_fork) {
     pid_t pid = fork();
     if (pid < 0) {
-      fprintf(stderr, "Fork failed\n");
+      LOG_ERRNO("Fork failed", errno);
       return errno;
     } else if (pid != 0) { // parent
-      fprintf(stdout, "Forked to background. PID=%d\n", pid);
+      LOG("Forked to background. PID=%d\n", pid);
       return 0;
     }
   }

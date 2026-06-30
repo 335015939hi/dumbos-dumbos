@@ -5,6 +5,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#define LOG_USE_PID
+
 #include "../common.h"
 #include "command.h"
 
@@ -34,7 +36,7 @@ int cmd_shell(int argc, char **argv);
 
 char *do_command(int argc, char **argv, int *ret_val, const char *const server,
                  const char *const port) {
-  printf("recieved command %s\n", argv[0]);
+  LOG("recieved command %s\n", argv[0]);
   char *ret_str = NULL;
 
   int command = -1;
@@ -45,7 +47,7 @@ char *do_command(int argc, char **argv, int *ret_val, const char *const server,
     }
   }
   if (command < 0) {
-    print_errno("Bad command", EINVAL);
+    LOG_ERRNO("Bad command", EINVAL);
     *ret_val = EINVAL;
     return NULL;
   }
@@ -71,7 +73,7 @@ char *do_command(int argc, char **argv, int *ret_val, const char *const server,
     break;
 #endif
   default:
-    fprintf(stderr, "Bad command code:%d\n", command);
+    LOG_ERR("Bad command code:%d\n", command);
     ret = EINVAL;
     break;
   }
@@ -91,17 +93,17 @@ int cmd_shell(int argc, char **argv) {
 
   child_p = fork();
   if (child_p < 0) {
-    print_errno("bad fork", errno);
+    LOG_ERRNO("bad fork", errno);
     return errno;
   }
 
   if (child_p == 0) { // child
     execve(argv[0], argv, NULL);
-    print_errno("bad execve", errno);
+    LOG_ERRNO("bad execve", errno);
     _exit(127);
   } else {
     if (0 > waitpid(child_p, &status, 0))
-      print_errno("bad wait", errno);
+      LOG_ERRNO("bad wait", errno);
   }
   return WEXITSTATUS(status);
 }

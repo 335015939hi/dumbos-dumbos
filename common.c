@@ -1,12 +1,20 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "common.h"
+
+#ifdef DEBUG_MODE
+int log_verbosity = LOG_VERBOSITY_MAX;
+#else
+int log_verbosity = LOG_VERBOSITY_NORMAL;
+#endif
 
 signed long parse_ushort(const char *str) {
   signed long ret;
@@ -118,9 +126,10 @@ char *malloc_read_string(const int fd) {
     return NULL;
   }
 
-  //security: error if the last byte isn't a \0, probably someone's trying to attack us
-  if(dest[len]!='\0'){
-    errno=EACCES;
+  // security: error if the last byte isn't a \0, probably someone's trying to
+  // attack us
+  if (dest[len] != '\0') {
+    errno = EACCES;
     return NULL;
   }
 
@@ -153,4 +162,13 @@ int write_string(const int fd, const char *const s) {
   }
 
   return 0;
+}
+
+const char *timestamp() {
+  static char ret[32] = {0};
+  time_t t = time(NULL);
+  struct tm tm;
+  localtime_r(&t, &tm);
+  strftime(ret, 32, "%Y-%m-%d %H:%M:%S", &tm);
+  return ret;
 }

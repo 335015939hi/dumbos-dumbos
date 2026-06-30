@@ -1,14 +1,17 @@
-#ifndef _COMMON_H
-#define _COMMON_H
+#ifndef _DUMBOS_COMMON_H
+#define _DUMBOS_COMMON_H
+
+#include <string.h>
+#include <unistd.h>
 
 #define _VERSION_MAJOR 0
-#define _VERSION_MINOR 1
+#define _VERSION_MINOR 2
 #define _VERSION_PATCH 0
 #define _VERSION_STRING "v0.2.0"
 
 // whether to compile with unsafe debug features
 // comment this out if you're not debugging
-//#define DEBUG_MODE 1
+#define DEBUG_MODE 1
 
 // full path of the default socket
 #define DEFAULT_SOCKET_PATH "/dev/socket/dumbosd.socket"
@@ -37,12 +40,55 @@
 #define VERSION_PATCH _VERSION_PATCH
 #endif
 
+// logging functions
+#ifdef LOG_USE_PID
+#define _LOG_PREFIX(f, p)                                                      \
+  fprintf(f, "[%s][%ld]%s ", timestamp(), (long)getpid(), p)
+#else
+#define _LOG_PREFIX(f, p) fprintf(f, "[%s]%s", timestamp(), p)
+#endif
+#define _LOG(v, f, p, s, ...)                                                  \
+  do {                                                                         \
+    if (log_verbosity >= v) {                                                  \
+      _LOG_PREFIX(f, p);                                                       \
+      fprintf(f, s, ##__VA_ARGS__);                                            \
+    }                                                                          \
+  } while (0)
+#define LOG(s, ...)                                                            \
+  _LOG(LOG_VERBOSITY_NORMAL, stderr, "[     ]", s, ##__VA_ARGS__)
+#define LOG_FATAL(s, ...)                                                      \
+  _LOG(LOG_VERBOSITY_FATAL, stderr, "[FATAL]", s, ##__VA_ARGS__)
+#define LOG_ERR(s, ...)                                                        \
+  _LOG(LOG_VERBOSITY_ERROR, stderr, "[ERROR]", s, ##__VA_ARGS__)
+#define LOG_WARN(s, ...)                                                       \
+  _LOG(LOG_VERBOSITY_WARN, stderr, "[WARN ]", s, ##__VA_ARGS__)
+#define LOG_VERBOSE(s, ...)                                                    \
+  _LOG(LOG_VERBOSITY_VERBOSE, stderr, "[VRBOS]", s, ##__VA_ARGS__)
+#define LOG_DEBUG(s, ...)                                                      \
+  _LOG(LOG_VERBOSITY_DEBUG, stderr, "[DEBUG]", s, ##__VA_ARGS__)
+#define LOG_ERRNO(s, err) LOG_ERR("%s:%s\n", s, strerror(err))
+// global variable controlling log verbosity
+extern int log_verbosity;
+// verbosity defs, the lower the less verbose
+#define LOG_VERBOSITY_NONE 0
+#define LOG_VERBOSITY_FATAL 7
+#define LOG_VERBOSITY_ERROR 124
+#define LOG_VERBOSITY_WARN 200
+#define LOG_VERBOSITY_NORMAL 387
+#define LOG_VERBOSITY_VERBOSE 1244
+#define LOG_VERBOSITY_DEBUG 4732
+#define LOG_VERBOSITY_MAX 9999
+
 // takes a string and tries to parse it as unsigned base 10 integer short.
 // returns -1 on fail, setting errno
 signed long parse_ushort(const char *str);
 
 void print_error(const char *const);
 void print_errno(const char *const s, const int err);
+
+// returns timestamp. beware the returned string is statically allocated and
+// will be overwritten on next call
+const char *timestamp();
 
 // reads unsigned short from fd, return <0 on error and sets errno
 signed long read_ushort(const int fd);

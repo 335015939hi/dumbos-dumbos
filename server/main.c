@@ -28,8 +28,8 @@ int main(int argc, char **argv) {
       display_help(stdout, argv[0]);
       break;
     case 'v':
-      fprintf(stdout, "dumbos_server version %s versioncode %d.%d.%d\n",
-              VERSION_STRING, VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
+      printf("dumbos_server version %s versioncode %d.%d.%d\n", VERSION_STRING,
+             VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
       return 0;
     case 'a':
       opt_addr = optarg;
@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
   }
 
   if (argc - optind != 2) {
-    print_error("wrong number of arguments\n");
+    LOG_ERR("wrong number of arguments\n");
     return EINVAL;
   }
 
@@ -58,10 +58,10 @@ int main(int argc, char **argv) {
     pid_t childp;
     childp = fork();
     if (childp < 0) {
-      print_errno("failed to fork", errno);
+      LOG_ERRNO("failed to fork", errno);
       return errno;
     } else if (childp != 0) { // parent
-      printf("forked to background. PID=%d", childp);
+      LOG("forked to background. PID=%d", childp);
       return 0;
     }
   }

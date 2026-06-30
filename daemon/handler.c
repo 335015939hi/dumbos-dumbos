@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define LOG_USE_PID
+
 #include "../common.h"
 #include "command.h"
 #include "handler.h"
@@ -19,11 +21,11 @@ int handler(const int client_fd, const char *const server,
 
   client_v_str = malloc_read_string(client_fd);
   if (client_v_str == NULL) {
-    print_errno("reading client version string fail", errno);
+    LOG_ERRNO("reading client version string fail", errno);
     return errno;
   }
 
-  fprintf(stdout, "client version string is %s\n", client_v_str);
+  LOG("client version string is %s\n", client_v_str);
   free(client_v_str);
 
   ret = read_ushort(client_fd);
@@ -39,15 +41,15 @@ int handler(const int client_fd, const char *const server,
     }
   }
   if (ret < 0) {
-    print_errno("reading client version code fail", errno);
+    LOG_ERRNO("reading client version code fail", errno);
     return errno;
   }
 
-  fprintf(stdout, "client version code is %hu.%hu.%hu\n", client_v_major,
-          client_v_minor, client_v_patch);
+  LOG("client version code is %hu.%hu.%hu\n", client_v_major, client_v_minor,
+      client_v_patch);
   if (client_v_major != (unsigned short)VERSION_MAJOR ||
       client_v_minor > (unsigned short)VERSION_MINOR) {
-    print_error("client has incompatible version. stopping\n");
+    LOG_ERR("client has incompatible version. stopping\n");
     return EPROTO;
   }
 
@@ -62,26 +64,26 @@ int handler(const int client_fd, const char *const server,
 
   ret = read_ushort(client_fd);
   if (ret < 0) {
-    print_errno("getting argc failed", errno);
+    LOG_ERRNO("getting argc failed", errno);
   }
   argc = ret;
   if (argc == 0) {
-    fprintf(stdout, "no command. exiting\n");
+    LOG("no command. exiting\n");
     return 0;
   }
-  fprintf(stdout, "client has %d arguments\n", argc);
+  LOG("client has %d arguments\n", argc);
   // TODO: bounds check, prevent bad argc causing bad mem
 
   argv = calloc(argc, sizeof(char *));
   if (argv == NULL) {
-    print_errno("alloc argv fail", errno);
+    LOG_ERRNO("alloc argv fail", errno);
   }
 
   for (int i = 0; i < argc; i++) {
     char *arg;
     arg = malloc_read_string(client_fd);
     if (arg == NULL) {
-      print_errno("alloc argv[] fail", errno);
+      LOG_ERRNO("alloc argv[] fail", errno);
       haserror = true;
       break;
     }

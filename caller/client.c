@@ -19,13 +19,13 @@ int client(int argc, char **argv, const char *const socket_path) {
 
   socket_addr = malloc(sizeof(*socket_addr));
   if (socket_addr == NULL) {
-    print_errno("cannot allocate memory", errno);
+    LOG_ERRNO("cannot allocate memory", errno);
     return errno;
   }
 
   socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (socket_fd < 0) {
-    print_errno("failed to socket", errno);
+    LOG_ERRNO("failed to socket", errno);
     return errno;
   }
 
@@ -37,7 +37,7 @@ int client(int argc, char **argv, const char *const socket_path) {
       connect(socket_fd, (struct sockaddr *)socket_addr, sizeof(*socket_addr));
   if (ret < 0) {
     free(socket_addr);
-    print_errno("failed to connect to socket", errno);
+    LOG_ERRNO("failed to connect to socket", errno);
     return errno;
   }
 
@@ -54,25 +54,25 @@ int client(int argc, char **argv, const char *const socket_path) {
     }
   }
   if (ret < 0) {
-    print_errno("write handshake failed", errno);
+    LOG_ERRNO("write handshake failed", errno);
   }
 
   ret = read_ushort(socket_fd); // should be 0 on handshake success
   if (ret < 0) {
-    print_errno("read handshake result failed", errno);
+    LOG_ERRNO("read handshake result failed", errno);
   } else if (ret != 0) {
-    print_errno("handshake failed", errno);
+    LOG_ERRNO("handshake failed", errno);
   }
 
   ret = write_ushort(socket_fd, argc);
   if (ret < 0) {
-    print_errno("failed to write argc", errno);
+    LOG_ERRNO("failed to write argc", errno);
   }
 
   for (int i = 0; i < argc; i++) {
     ret = write_string(socket_fd, argv[i]);
     if (ret < 0) {
-      print_errno("failed to write argv[]", errno);
+      LOG_ERRNO("failed to write argv[]", errno);
       return errno;
     }
   }
@@ -82,14 +82,14 @@ int client(int argc, char **argv, const char *const socket_path) {
 
   ret = read_ushort(socket_fd);
   if (ret < 0) {
-    print_errno("failed to read daemon return code", errno);
+    LOG_ERRNO("failed to read daemon return code", errno);
     return errno;
   }
   d_ret = ret;
 
   d_msg = malloc_read_string(socket_fd);
   if (d_msg == NULL) {
-    print_errno("faild to read daemon return message", errno);
+    LOG_ERRNO("faild to read daemon return message", errno);
     return errno;
   }
 

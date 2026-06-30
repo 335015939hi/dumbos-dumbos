@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#define LOG_USE_PID
+
 #include "../common.h"
 #include "server.h"
 
@@ -30,7 +32,7 @@ int do_server(const char *const addr, const char *const port,
   if (err) {
     if (err < 0)
       err = -err;
-    print_errno("getaddrinfo failed", err);
+    LOG_ERRNO("getaddrinfo failed", err);
     return err;
   }
 
@@ -48,7 +50,7 @@ int do_server(const char *const addr, const char *const port,
   }
 
   if (NULL == p) {
-    print_errno("failed to bind", err);
+    LOG_ERRNO("failed to bind", err);
     freeaddrinfo(res);
     return err;
   }
@@ -56,11 +58,11 @@ int do_server(const char *const addr, const char *const port,
 
   err = listen(serverfd, 16);
   if (err < 0) {
-    print_errno("failed to listen", errno);
+    LOG_ERRNO("failed to listen", errno);
     return errno;
   }
 
-  printf("listening on %s:%s\n", addr, port);
+  LOG("listening on %s:%s\n", addr, port);
 
   struct sockaddr_storage *client;
   socklen_t client_len;
@@ -78,17 +80,17 @@ int do_server(const char *const addr, const char *const port,
 
     clientfd = accept(serverfd, (struct sockaddr *)client, &client_len);
     if (clientfd < 0) {
-      print_errno("accept client failed", errno);
+      LOG_ERRNO("accept client failed", errno);
       continue;
     }
 
     childp = fork();
     if (childp < 0) {
-      print_errno("failed to fork", errno);
+      LOG_ERRNO("failed to fork", errno);
       close(clientfd);
       continue;
     } else if (childp != 0) {
-      printf("forked to accept client. PID=%d\n", childp);
+      LOG("forked to accept client. PID=%d\n", childp);
       close(clientfd);
       continue;
     }
@@ -96,11 +98,11 @@ int do_server(const char *const addr, const char *const port,
     err = getnameinfo((struct sockaddr *)client, client_len, host, NI_MAXHOST,
                       serv, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
     if (err != 0) {
-      print_errno("failed to getnameinfo", errno);
+      LOG_ERRNO("failed to getnameinfo", errno);
       break;
     }
 
-    printf("[PID%d] connection from %s:%s\n", getpid(), host, serv);
+    LOG("connection from %s:%s\n", host, serv);
 
     err = handle_client(clientfd);
 
@@ -124,7 +126,7 @@ static int handle_client(const int fd) {
 
   client_v_str = malloc_read_string(fd);
   if (client_v_str == NULL) {
-    print_errno("failed to read client version string", errno);
+    LOG_ERRNO("failed to read client version string", errno);
     return errno;
   }
 
@@ -139,13 +141,13 @@ static int handle_client(const int fd) {
     }
   }
   if (err < 0) {
-    print_errno("failed to read client version", errno);
+    LOG_ERRNO("failed to read client version", errno);
     free(client_v_str);
     return errno;
   }
 
-  printf("[PID%d] client %s (%hu.%hu.%hu)\n", getpid(), client_v_str,
-         client_v_maj, client_v_min, client_v_pat);
+  LOG("client %s (%hu.%hu.%hu)\n", client_v_str, client_v_maj, client_v_min,
+      client_v_pat);
 
   // version sanity check, semantic versioning
   if ((unsigned short)VERSION_MAJOR != client_v_maj ||

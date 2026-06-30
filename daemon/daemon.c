@@ -8,6 +8,8 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#define LOG_USE_PID
+
 #include "../common.h"
 #include "daemon.h"
 #include "handler.h"
@@ -24,12 +26,12 @@ int start_daemon(const char *const socket_path, const char *const server,
 
   socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (socket_fd < 0) {
-    print_errno("failed to create socket", errno);
+    LOG_ERRNO("failed to create socket", errno);
     return errno;
   }
 
   if (strlen(socket_path) >= MAX_SOCK_PATH) {
-    print_error("socket path too long, aborting\n");
+    LOG_ERR("socket path too long, aborting\n");
     free(sock_addr);
     return ENAMETOOLONG;
   }
@@ -41,25 +43,25 @@ int start_daemon(const char *const socket_path, const char *const server,
   sock_addr->sun_family = AF_UNIX;
 
   if (bind(socket_fd, (struct sockaddr *)sock_addr, sizeof(*sock_addr)) < 0) {
-    print_errno("failed to bind socket", errno);
+    LOG_ERRNO("failed to bind socket", errno);
     free(sock_addr);
     return errno;
   }
   free(sock_addr);
 
   if (chown(socket_path, sock_uid, sock_gid) < 0) {
-    print_errno("chown failed", errno);
+    LOG_ERRNO("chown failed", errno);
     unlink(socket_path);
     return errno;
   }
   if (chmod(socket_path, sock_mode) < 0) {
-    print_errno("chmod failed", errno);
+    LOG_ERRNO("chmod failed", errno);
     unlink(socket_path);
     return errno;
   }
 
   if (listen(socket_fd, 16) < 0) {
-    print_errno("listen failed", errno);
+    LOG_ERRNO("listen failed", errno);
     unlink(socket_path);
     return errno;
   }
@@ -69,13 +71,13 @@ int start_daemon(const char *const socket_path, const char *const server,
 
     client = accept(socket_fd, NULL, NULL);
     if (client == 0) {
-      print_errno("failed to accept client", errno);
+      LOG_ERRNO("failed to accept client", errno);
       continue;
     }
 
     pid_t child_pid = fork();
     if (child_pid < 0) {
-      print_errno("failed to fork:", errno);
+      LOG_ERRNO("failed to fork:", errno);
       close(client);
       continue;
     }
@@ -83,11 +85,11 @@ int start_daemon(const char *const socket_path, const char *const server,
     if (child_pid == 0) { // child
       close(socket_fd);
       int ret = handler(client, server, port);
-      fprintf(stdout, "Handler pid %d exited with %d\n", getpid(), ret);
+      LOG("Handler pid %d exited with %d\n", getpid(), ret);
       close(client);
       return ret;
     } else { // parent
-      fprintf(stdout, "Found client. Handler PID=%d\n", child_pid);
+      LOG("Forked to handle request. PID=%d\n", child_pid);
       close(client);
     }
   }
