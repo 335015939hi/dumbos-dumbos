@@ -47,6 +47,7 @@ int set_log_verbosity(const char *const lvl) {
 
 static ssize_t write_all(int fd, const void *buf, size_t len) {
   const char *p = buf;
+  const int written = len;
 
   while (len) {
     ssize_t r = write(fd, p, len);
@@ -59,12 +60,13 @@ static ssize_t write_all(int fd, const void *buf, size_t len) {
     p += r;
     len -= r;
   }
-  return len;
+  return written;
 }
 static ssize_t read_all(int fd, void *buf, size_t len) {
   char *p = buf;
+  const int readed = len //'read' is already taken
 
-  while (len) {
+      while (len) {
     ssize_t r = read(fd, p, len);
     if (r < 0) {
       return -1;
@@ -76,7 +78,7 @@ static ssize_t read_all(int fd, void *buf, size_t len) {
     len -= r;
   }
 
-  return len;
+  return readed;
 }
 
 signed long parse_ushort(const char *str) {
@@ -154,6 +156,11 @@ char *malloc_read_string(const int fd) {
     return NULL;
   }
 
+  if (len >= MAX_STRING) {
+    errno = EOVERFLOW;
+    return NULL;
+  }
+
   dest = malloc(len + 1);
   if (NULL == dest) {
     errno = ENOMEM;
@@ -162,11 +169,7 @@ char *malloc_read_string(const int fd) {
 
   ret = read_all(fd, dest, len + 1);
   if (ret < 0) {
-    return NULL;
-  }
-  if (ret != len + 1) {
-    // TODO: find better error code
-    errno = EINVAL;
+    free(dest);
     return NULL;
   }
 
@@ -185,7 +188,7 @@ int write_string(const int fd, const char *const s) {
   size_t len;
 
   len = strlen(s);
-  if (len + 1 > USHRT_MAX) {
+  if (len + 1 > USHRT_MAX || len >= MAX_STRING) {
     errno = EOVERFLOW;
     return -1;
   }
@@ -200,11 +203,6 @@ int write_string(const int fd, const char *const s) {
     return ret;
   }
 
-  if (ret != len + 1) {
-    errno = EINVAL;
-    return -1;
-  }
-
   return 0;
 }
 
@@ -213,7 +211,7 @@ int write_file(const int fd, const char *const path) {
   int srcfd;
   int err;
   void *buf;
-  off_t size;
+  uint64_t size;
 
   // open the file
   srcfd = open(path, O_RDONLY);
@@ -227,9 +225,15 @@ int write_file(const int fd, const char *const path) {
     return err;
   }
 
+  if (!S_ISREG(st.st_mode)) {
+    close(srcfd);
+    errno = EINVAL;
+    return -1;
+  }
+
   size = st.st_size;
   // weight control
-  if (size > MAX_FILE_SIZE || size < 0) {
+  if (size > MAX_FILE_SIZE || size <= 0) {
     close(srcfd);
     errno = EFBIG;
     return -1;
@@ -247,9 +251,6 @@ int write_file(const int fd, const char *const path) {
     free(buf);
     return -1;
   }
-
-  // update size to number of bytes actually read
-  size = err;
 
   // send filesize
   err = write_all(fd, &size, sizeof(size));
@@ -274,7 +275,7 @@ int read_file(const int fd, const char *const dest) {
   int destfd;
   int err;
   void *buf;
-  off_t size;
+  uint64_t size;
 
   // open for writing
   destfd = creat(dest, 0o600);
