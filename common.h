@@ -99,6 +99,9 @@ int set_log_verbosity(const char *const lvl);
 #define SERVER_CMD_SECRET_CODE 357
 #define SERVER_CMD_OK 128
 
+// allowed characters for the secret code
+#define SECRET_CODE_ALLOWED_CHARS "qwertyuiopasdfghjklzxcvbnm0123456789-_=+,"
+
 // takes a string and tries to parse it as unsigned base 10 integer short.
 // returns -1 on fail, setting errno
 signed long parse_ushort(const char *str);
