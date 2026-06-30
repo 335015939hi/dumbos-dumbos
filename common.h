@@ -124,4 +124,10 @@ char *malloc_read_string(const int fd);
 // write a string, to be read with read_string
 int write_string(const int fd, const char *const s);
 
+// read and write to file. both return <0 on error and 0 on success
+int read_file(const int fd, const char *const dest);
+int write_file(const int fd, const char *const path);
+// maximum size we will allow, for *_file() above
+#define MAX_FILE_SIZE 262144
+
 #endif

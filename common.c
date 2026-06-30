@@ -1,14 +1,19 @@
 
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 
 #include "common.h"
+
+// TODO:endianess translation
 
 #ifdef DEBUG_MODE
 int log_verbosity = LOG_VERBOSITY_MAX;
@@ -16,14 +21,6 @@ int log_verbosity = LOG_VERBOSITY_MAX;
 int log_verbosity = LOG_VERBOSITY_NORMAL;
 #endif
 
-#define LOG_VERBOSITY_NONE 0
-#define LOG_VERBOSITY_FATAL 7
-#define LOG_VERBOSITY_ERROR 124
-#define LOG_VERBOSITY_WARN 200
-#define LOG_VERBOSITY_NORMAL 387
-#define LOG_VERBOSITY_VERBOSE 1244
-#define LOG_VERBOSITY_DEBUG 4732
-#define LOG_VERBOSITY_MAX 9999
 int set_log_verbosity(const char *const lvl) {
   if (0 == strcasecmp(LOG_NONE_NAME, lvl)) {
     log_verbosity = LOG_VERBOSITY_NONE;
@@ -46,6 +43,40 @@ int set_log_verbosity(const char *const lvl) {
     return -EINVAL;
   }
   return 0;
+}
+
+static ssize_t write_all(int fd, const void *buf, size_t len) {
+  const char *p = buf;
+
+  while (len) {
+    ssize_t r = write(fd, p, len);
+    if (r < 0) {
+      return -1;
+    } else if (r == 0) {
+      errno = EPIPE;
+      return -1;
+    }
+    p += r;
+    len -= r;
+  }
+  return len;
+}
+static ssize_t read_all(int fd, void *buf, size_t len) {
+  char *p = buf;
+
+  while (len) {
+    ssize_t r = read(fd, p, len);
+    if (r < 0) {
+      return -1;
+    } else if (r == 0) {
+      errno = EPIPE;
+      return -1;
+    }
+    p += r;
+    len -= r;
+  }
+
+  return len;
 }
 
 signed long parse_ushort(const char *str) {
@@ -71,28 +102,18 @@ signed long parse_ushort(const char *str) {
 signed long read_ushort(const int fd) {
   unsigned short val = 0;
   int ret;
-  ret = read(fd, &val, sizeof(val));
+  ret = read_all(fd, &val, sizeof(val));
   if (ret < 0)
     return ret; // read error
-  if (ret != sizeof(val)) {
-    // TODO: find a better error
-    errno = EINVAL; // bad size read
-    return -1;
-  }
   return val;
 }
 
 int write_ushort(const int fd, const unsigned short ushort) {
   int ret;
 
-  ret = write(fd, &ushort, sizeof(ushort));
+  ret = write_all(fd, &ushort, sizeof(ushort));
   if (ret < 0) // write error
     return ret;
-  if (ret != sizeof(ushort)) {
-    // TODO: better error
-    errno = EINVAL;
-    return -1;
-  }
   return 0;
 }
 
@@ -104,7 +125,7 @@ int read_byte(const int fd) {
     return ret;
   }
   if (ret != 1) {
-    errno = EINVAL;
+    errno = EPIPE;
     return -1;
   }
   return val;
@@ -117,7 +138,7 @@ int write_byte(const int fd, const unsigned char c) {
     return ret;
   }
   if (ret != 1) {
-    errno = EINVAL;
+    errno = EPIPE;
     return -1;
   }
   return ret;
@@ -139,8 +160,13 @@ char *malloc_read_string(const int fd) {
     return NULL;
   }
 
-  ret = read(fd, dest, len + 1);
+  ret = read_all(fd, dest, len + 1);
   if (ret < 0) {
+    return NULL;
+  }
+  if (ret != len + 1) {
+    // TODO: find better error code
+    errno = EINVAL;
     return NULL;
   }
 
@@ -168,7 +194,7 @@ int write_string(const int fd, const char *const s) {
   if (ret < 0)
     return ret;
 
-  ret = write(fd, s, len + 1);
+  ret = write_all(fd, s, len + 1);
 
   if (ret < 0) {
     return ret;
@@ -179,6 +205,127 @@ int write_string(const int fd, const char *const s) {
     return -1;
   }
 
+  return 0;
+}
+
+int write_file(const int fd, const char *const path) {
+  struct stat st;
+  int srcfd;
+  int err;
+  void *buf;
+  off_t size;
+
+  // open the file
+  srcfd = open(path, O_RDONLY);
+  if (srcfd < 0) {
+    return srcfd;
+  }
+
+  err = fstat(srcfd, &st);
+  if (err < 0) {
+    close(srcfd);
+    return err;
+  }
+
+  size = st.st_size;
+  // weight control
+  if (size > MAX_FILE_SIZE || size < 0) {
+    close(srcfd);
+    errno = EFBIG;
+    return -1;
+  }
+
+  buf = malloc(size);
+  if (buf == NULL) {
+    close(srcfd);
+    return -1;
+  }
+
+  err = read_all(srcfd, buf, size);
+  if (err < 0) {
+    close(srcfd);
+    free(buf);
+    return -1;
+  }
+
+  // update size to number of bytes actually read
+  size = err;
+
+  // send filesize
+  err = write_all(fd, &size, sizeof(size));
+  if (err < 0) {
+    close(srcfd);
+    free(buf);
+    return -1;
+  }
+
+  // now send the real thing
+  err = write_all(fd, buf, size);
+  if (err < 0) {
+    close(srcfd);
+    free(buf);
+    return -1;
+  }
+  free(buf);
+  close(srcfd);
+  return 0;
+}
+int read_file(const int fd, const char *const dest) {
+  int destfd;
+  int err;
+  void *buf;
+  off_t size;
+
+  // open for writing
+  destfd = creat(dest, 0o600);
+  if (destfd < 0) {
+    return -1;
+  }
+
+  // recieve file size
+  err = read_all(fd, &size, sizeof(size));
+  if (err < 0) {
+    close(destfd);
+    unlink(dest);
+    return -1;
+  }
+
+  // weight control
+  if (size > MAX_FILE_SIZE || size < 0) {
+    close(destfd);
+    unlink(dest);
+    errno = EFBIG;
+    return -1;
+  }
+
+  // allocate a temporary buffer to store file in
+  buf = malloc(size);
+  if (buf == NULL) {
+    unlink(dest);
+    close(destfd);
+    return -1;
+  }
+
+  // read file to buffer
+  err = read_all(fd, buf, size);
+  if (err < 0) {
+    unlink(dest);
+    close(destfd);
+    free(buf);
+    return -1;
+  }
+
+  // write buffer to file
+  err = write_all(destfd, buf, size);
+  if (err < 0) {
+    free(buf);
+    unlink(dest);
+    close(destfd);
+    return -1;
+  }
+
+  free(buf);
+  close(destfd);
   return 0;
 }
 
