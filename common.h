@@ -15,7 +15,7 @@
 
 // whether to compile with unsafe debug features
 // comment this out if you're not debugging
-// #define DEBUG_MODE 1
+#define DEBUG_MODE 1
 
 // full path of the default socket
 #define DEFAULT_SOCKET_PATH "/dev/socket/dumbosd.socket"
@@ -132,6 +132,9 @@ int read_byte(const int fd);
 char *malloc_read_string(const int fd);
 // write a string, to be read with read_string
 int write_string(const int fd, const char *const s);
+// read or write len. guranteed to do finish len or fail (return <0 on fail)
+ssize_t read_all(int fd, void *buf, size_t len);
+ssize_t write_all(int fd, const void *buf, size_t len);
 
 // read and write to file. both return <0 on error and 0 on success
 int read_file(const int fd, const char *const dest);

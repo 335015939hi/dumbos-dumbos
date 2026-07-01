@@ -182,7 +182,8 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
 
       LOG_VERBOSE("verifying %s with %s", pathfil, pathsig);
       err = verify_sig(pathfil, pathsig);
-      if (err < 0) {
+      LOG_DEBUG("verify_sig() exited with %d", err);
+      if (err != 0) {
         LOG_ERRNO("verification failed", errno);
         can_verify = false;
       } else {

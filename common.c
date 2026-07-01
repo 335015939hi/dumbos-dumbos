@@ -44,7 +44,7 @@ int set_log_verbosity(const char *const lvl) {
   return 0;
 }
 
-static ssize_t write_all(int fd, const void *buf, size_t len) {
+ssize_t write_all(int fd, const void *buf, size_t len) {
   const char *p = buf;
   const int written = len;
 
@@ -61,7 +61,7 @@ static ssize_t write_all(int fd, const void *buf, size_t len) {
   }
   return written;
 }
-static ssize_t read_all(int fd, void *buf, size_t len) {
+ssize_t read_all(int fd, void *buf, size_t len) {
   char *p = buf;
   const int readed = len; //'read' is already taken
 

@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -109,8 +110,19 @@ int mkdir_p(const char *path) {
   return 0;
 }
 
+#define ED25519_PUBLIC_KEY_LEN 32
+#define ED25519_SIGNATURE_LEN 64
+
+int verify_ed25519_signature_hex_pubkey(
+    const void *data, int datalen, const void *sig, int siglen,
+    const char pubkey_hex[ED25519_PUBLIC_KEY_LEN * 2 + 1]);
+int verify_ed25519_signature(const void *data, int datalen, const void *sig,
+                             int siglen,
+                             const char pubkey_hex[ED25519_PUBLIC_KEY_LEN]);
+
 // TODO:
-static const char pubkey[] = {0};
+static const char _pubkey[ED25519_PUBLIC_KEY_LEN * 2 + 1] =
+    "8494f5310a4b05cf90cfdbaab71413e1ae490f5cb8b113eb47e73b6145dfd58c";
 int verify_sig(const char *file, const char *sig) {
   int sfd;
   int ffd;
@@ -166,6 +178,170 @@ int verify_sig(const char *file, const char *sig) {
   filesize = st.st_size;
   LOG_DEBUG("%s size is %ld", file, filesize);
 
-  errno = EINVAL;
+  // TODO:malloc check
+  sigbuf = malloc(sigsize);
+  filebuf = malloc(filesize);
+
+  // TODO:read check
+  LOG_DEBUG("reading files into RAM");
+  read_all(sfd, sigbuf, sigsize);
+  read_all(ffd, filebuf, filesize);
+
+  LOG_DEBUG("verifying signature");
+  err = verify_ed25519_signature_hex_pubkey(filebuf, filesize, sigbuf, sigsize,
+                                            _pubkey);
+  LOG_DEBUG("verify_ed25519_signature exited with %d", err);
+
+  free(sigbuf);
+  free(filebuf);
+  close(sfd);
+  close(ffd);
+  if (err == 1) {
+    return 0;
+  } else if (err == 0) {
+    errno = EACCES;
+    return EACCES;
+  } else if (err == -1) {
+    errno = EINVAL;
+    return EINVAL;
+  } else {
+    errno = EINVAL;
+    return EINVAL;
+  }
+}
+
+// ChatGpt code below. use with caution
+
+/*
+ * Returns:
+ *   1 = valid signature
+ *   0 = invalid signature
+ *  -1 = API / argument error
+ */
+int verify_ed25519_signature(const void *data, int datalen, const void *sig,
+                             int siglen,
+                             const char pubkey[ED25519_PUBLIC_KEY_LEN]) {
+  int result = -1;
+  LOG_DEBUG("verify_ed25519_signature()");
+  char *data_str;
+  char *sig_str;
+  data_str = calloc(1, datalen + 1);
+  sig_str = calloc(1, siglen + 1);
+  memcpy(data_str, data, datalen);
+  memcpy(sig_str, sig, siglen);
+  LOG_DEBUG("datalen=%d,data='%s'", datalen, data_str);
+  LOG_DEBUG("siglen =%d,sig ='%s'", siglen, sig_str);
+  free(sig_str);
+  free(data_str);
+
+  EVP_PKEY *pkey = NULL;
+  EVP_MD_CTX *ctx = NULL;
+
+  if (!data || datalen < 0) {
+    LOG_ERR("wrong data size");
+    return -1;
+  } else if (!sig || siglen != ED25519_SIGNATURE_LEN) {
+    LOG_ERR("wrong signature size");
+    return -1;
+  } else if (!pubkey) {
+    LOG_ERR("bad pubkey");
+    return -1;
+  }
+
+  pkey = EVP_PKEY_new_raw_public_key(EVP_PKEY_ED25519, NULL,
+                                     (const unsigned char *)pubkey,
+                                     ED25519_PUBLIC_KEY_LEN);
+
+  if (!pkey) {
+    LOG_ERR("pkey generate fail");
+    goto out;
+  }
+
+  ctx = EVP_MD_CTX_new();
+  if (!ctx) {
+    LOG_ERR("ctx fail");
+    goto out;
+  }
+
+  /*
+   * Ed25519 is digestless here.
+   * Do NOT pass EVP_sha256().
+   * Do NOT use EVP_DigestVerifyUpdate().
+   */
+  if (EVP_DigestVerifyInit(ctx, NULL, NULL, NULL, pkey) != 1) {
+    LOG_ERR("EVP_DigestVerifyInit fail");
+    goto out;
+  }
+
+  int ret = EVP_DigestVerify(ctx, (const unsigned char *)sig, (size_t)siglen,
+                             (const unsigned char *)data, (size_t)datalen);
+  LOG_DEBUG("EVP_DigestVerify return %d", ret);
+
+  if (ret == 1) {
+    result = 1; // signature valid
+  } else if (ret == 0) {
+    result = 0; // signature invalid
+  } else {
+    LOG_ERR("verify_ed25519_signature() internal error");
+    result = -1; // OpenSSL/BoringSSL error
+  }
+
+out:
+  EVP_MD_CTX_free(ctx);
+  EVP_PKEY_free(pkey);
+  return result;
+}
+
+static int hexval(int c) {
+  if (c >= '0' && c <= '9')
+    return c - '0';
+  if (c >= 'a' && c <= 'f')
+    return c - 'a' + 10;
+  if (c >= 'A' && c <= 'F')
+    return c - 'A' + 10;
+  LOG_DEBUG("bad hex character %c", c);
   return -1;
+}
+
+static int hex_decode_fixed(const char *hex, unsigned char *out,
+                            size_t out_len) {
+  for (size_t i = 0; i < out_len; i++) {
+    int hi = hexval((unsigned char)hex[i * 2]);
+    int lo = hexval((unsigned char)hex[i * 2 + 1]);
+
+    if (hi < 0 || lo < 0) {
+      return 0;
+    }
+
+    out[i] = (unsigned char)((hi << 4) | lo);
+  }
+
+  // return hex[out_len * 2] == '\0';
+  return true;
+}
+
+int verify_ed25519_signature_hex_pubkey(
+    const void *data, int datalen, const void *sig, int siglen,
+    const char pubkey_hex[ED25519_PUBLIC_KEY_LEN * 2 + 1]) {
+  unsigned char raw_pubkey[ED25519_PUBLIC_KEY_LEN];
+  // unsigned char raw_signature[ED25519_SIGNATURE_LEN];
+  // if(siglen!=ED25519_SIGNATURE_LEN*2 || !sig){
+  //  LOG_ERR("bad signature length: expected %d, got
+  //  %d",ED25519_SIGNATURE_LEN*2,siglen); return -1;
+  // }
+  // if(!hex_decode_fixed(sig,raw_signature,ED25519_SIGNATURE_LEN)){
+  // LOG_ERR("bad hexadecimal signature");
+  // return -1;
+  // }
+
+  if (!pubkey_hex) {
+    return -1;
+  }
+
+  if (!hex_decode_fixed(pubkey_hex, raw_pubkey, sizeof(raw_pubkey))) {
+    return -1;
+  }
+
+  return verify_ed25519_signature(data, datalen, sig, ED25519_SIGNATURE_LEN,
+                                  (const char *)raw_pubkey);
 }
