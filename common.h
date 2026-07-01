@@ -36,6 +36,8 @@
 // max string length, including NULL terminator
 // strings over this length will throw error somewhere
 #define MAX_STRING 4096
+// max number of args
+#define MAX_ARGS 256
 
 #ifdef DEBUG_MODE
 #define VERSION_STRING _VERSION_STRING "-debug"

@@ -30,7 +30,11 @@ cc_binary {
         "daemon/secret_code.c",
         "daemon/util.c"
     ],
-
+    
+    shared_libs: [
+        "libcrypto",
+        "liblog",
+    ],
 
     cflags: [
         "-Wall",

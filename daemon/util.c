@@ -85,7 +85,7 @@ int mkdir_p(const char *path) {
       *p = '\0';
       LOG_VERBOSE("creating '%s/'", tmp);
 
-      err = mkdir(tmp, 0o700);
+      err = mkdir(tmp, 0700);
       if (err < 0 && errno != EEXIST) {
         LOG_WARN("mkdir '%s' failed:%s", tmp, strerror(errno));
         free(tmp);
@@ -97,7 +97,7 @@ int mkdir_p(const char *path) {
   }
 
   LOG_VERBOSE("creating '%s/'", tmp);
-  err = mkdir(tmp, 0o700);
+  err = mkdir(tmp, 0700);
   if (err < 0 && errno != EEXIST) {
     LOG_WARN("mkdir '%s' failed:%s", tmp, strerror(errno));
     free(tmp);
@@ -223,6 +223,7 @@ int verify_ed25519_signature(const void *data, int datalen, const void *sig,
                              const char pubkey[ED25519_PUBLIC_KEY_LEN]) {
   int result = -1;
   LOG_DEBUG("verify_ed25519_signature()");
+#ifdef DEBUG_MODE
   char *data_str;
   char *sig_str;
   data_str = calloc(1, datalen + 1);
@@ -233,6 +234,7 @@ int verify_ed25519_signature(const void *data, int datalen, const void *sig,
   LOG_DEBUG("siglen =%d,sig ='%s'", siglen, sig_str);
   free(sig_str);
   free(data_str);
+#endif
 
   EVP_PKEY *pkey = NULL;
   EVP_MD_CTX *ctx = NULL;
@@ -324,15 +326,9 @@ int verify_ed25519_signature_hex_pubkey(
     const void *data, int datalen, const void *sig, int siglen,
     const char pubkey_hex[ED25519_PUBLIC_KEY_LEN * 2 + 1]) {
   unsigned char raw_pubkey[ED25519_PUBLIC_KEY_LEN];
-  // unsigned char raw_signature[ED25519_SIGNATURE_LEN];
-  // if(siglen!=ED25519_SIGNATURE_LEN*2 || !sig){
-  //  LOG_ERR("bad signature length: expected %d, got
-  //  %d",ED25519_SIGNATURE_LEN*2,siglen); return -1;
-  // }
-  // if(!hex_decode_fixed(sig,raw_signature,ED25519_SIGNATURE_LEN)){
-  // LOG_ERR("bad hexadecimal signature");
-  // return -1;
-  // }
+  if (siglen < ED25519_SIGNATURE_LEN) {
+    return -1;
+  }
 
   if (!pubkey_hex) {
     return -1;

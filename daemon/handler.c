@@ -56,8 +56,8 @@ int handler(const int client_fd, const char *const server,
 
   int argc;
   char **argv;
-  char *ret_msg;
-  int ret_val;
+  char *ret_msg = NULL;
+  int ret_val = EINVAL;
   bool haserror = false;
 
   ret = read_ushort(client_fd);
@@ -71,10 +71,15 @@ int handler(const int client_fd, const char *const server,
   }
   LOG("client has %d arguments", argc);
   // TODO: bounds check, prevent bad argc causing bad mem
+  if (argc > MAX_ARGS || argc < 0) {
+    LOG_ERR("too many arguments, max %d got %d", MAX_ARGS, argc);
+    return E2BIG;
+  }
 
   argv = calloc(argc, sizeof(char *));
   if (argv == NULL) {
     LOG_ERRNO("alloc argv fail", errno);
+    return errno;
   }
 
   for (int i = 0; i < argc; i++) {

@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netdb.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -69,8 +70,11 @@ int do_server(const char *const addr, const char *const port,
     if (serverfd < 0) {
       continue;
     }
+    int yes = 1;
+    if (setsockopt(serverfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0) {
+      LOG_WARN_ERRNO("setsockopt SO_REUSEADDR failed", errno);
+    }
 
-    setsockopt(serverfd, SOL_SOCKET, SO_REUSEADDR, NULL, 0);
     if (bind(serverfd, p->ai_addr, p->ai_addrlen) == 0)
       break;
     err = errno;

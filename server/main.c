@@ -1,6 +1,7 @@
 
 #include <errno.h>
 #include <getopt.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -51,6 +52,7 @@ int main(int argc, char **argv) {
       } else {
         LOG_DEBUG("log verbosity set to %d", log_verbosity);
       }
+      break;
     case 'a':
       LOG_DEBUG("found option address=%s", optarg);
       opt_addr = optarg;

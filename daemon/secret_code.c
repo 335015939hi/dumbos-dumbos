@@ -204,10 +204,10 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
         pid_t childp = fork();
         if (childp < 0) {
           LOG_ERRNO("fork failed", errno);
-          free(pathsig);
-          free(pathfil);
           unlink(pathsig);
           unlink(pathfil);
+          free(pathsig);
+          free(pathfil);
           *ret_val = errno;
           return malloc_str("Code valid but internal error 265");
         } else if (childp == 0) {
@@ -226,7 +226,7 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
           }
           LOG_VERBOSE("child %ld exited with raw %d", (long)childp, err);
           if (WIFEXITED(err)) {
-            err = WIFEXITED(err);
+            err = WEXITSTATUS(err);
             LOG("Script exited with %d", err);
             *ret_val = err;
             if (err != 0) {
@@ -235,7 +235,7 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
               return malloc_str("Code valid. Good job");
             }
           } else if (WIFSIGNALED(err)) {
-            err = WIFSIGNALED(err);
+            err = WTERMSIG(err);
             LOG("Script killed by signal %d", err);
             *ret_val = err;
             return malloc_str("Code valid but got signal");
@@ -245,10 +245,10 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
           }
         }
 
-        free(pathsig);
-        free(pathfil);
         unlink(pathsig);
         unlink(pathfil);
+        free(pathsig);
+        free(pathfil);
         *ret_val = err;
         return malloc_str("Code valid");
       } else {

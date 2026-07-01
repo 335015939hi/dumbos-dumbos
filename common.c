@@ -213,8 +213,8 @@ int write_file(const int fd, const char *const path) {
   int srcfd;
   int err;
   void *buf;
-  unsigned long size;
-  unsigned long nl;
+  uint32_t size;
+  uint32_t nl;
 
   // open the file
   srcfd = open(path, O_RDONLY);
@@ -279,10 +279,10 @@ int read_file(const int fd, const char *const dest) {
   int destfd;
   int err;
   void *buf;
-  unsigned long size;
+  uint32_t size;
 
   // open for writing
-  destfd = creat(dest, 0o600);
+  destfd = creat(dest, 0600);
   if (destfd < 0) {
     return -1;
   }

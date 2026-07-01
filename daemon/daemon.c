@@ -95,7 +95,7 @@ int start_daemon(const struct daemon_opts *const opt) {
 
     LOG_VERBOSE("waiting for  client...");
     client = accept(socket_fd, NULL, NULL);
-    if (client == 0) {
+    if (client < 0) {
       LOG_ERRNO("failed to accept client", errno);
       continue;
     }
