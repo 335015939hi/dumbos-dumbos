@@ -8,7 +8,7 @@
 #define _STR_(x) __STR__(x)
 
 #define _VERSION_MAJOR 1
-#define _VERSION_MINOR 0
+#define _VERSION_MINOR 1
 #define _VERSION_PATCH 0
 #define _VERSION_STRING                                                        \
   "v" _STR_(VERSION_MAJOR) "." _STR_(VERSION_MINOR) "." _STR_(VERSION_PATCH)
