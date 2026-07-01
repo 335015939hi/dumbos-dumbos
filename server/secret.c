@@ -60,28 +60,32 @@ int handle_secret(const int fd, const char *const code_dir,
 
   int codefd;
   int sigfd;
-  char *path_tmp;
-  path_tmp = malloc(PATH_MAX);
+  char *path_sig;
+  char *path_fil;
+  path_fil = malloc(PATH_MAX);
+  path_sig = malloc(PATH_MAX);
   int err;
   // TODO:malloc check
-  sprintf(path_tmp, "%s%s%s", code_dir, secret_code, EXT_CODE);
-  LOG_DEBUG("opening %s", path_tmp);
-  codefd = open(path_tmp, O_RDONLY);
+  sprintf(path_fil, "%s%s%s", code_dir, secret_code, EXT_CODE);
+  LOG_DEBUG("opening %s", path_fil);
+  codefd = open(path_fil, O_RDONLY);
   if (codefd < 0) {
-    LOG_DEBUG("%s not exist", path_tmp);
+    LOG_DEBUG("%s not exist", path_fil);
     LOG_ERR("invalid code '%s'", secret_code);
-    free(path_tmp);
+    free(path_fil);
+    free(path_sig);
     free(secret_code);
     write_ushort(fd, EACCES);
     return EACCES;
   }
-  sprintf(path_tmp, "%s%s%s", code_dir, secret_code, EXT_SIG);
-  sigfd = open(path_tmp, O_RDONLY);
+  sprintf(path_sig, "%s%s%s", code_dir, secret_code, EXT_SIG);
+  sigfd = open(path_sig, O_RDONLY);
   if (sigfd < 0) {
-    LOG_DEBUG("%s not exist", path_tmp);
+    LOG_DEBUG("%s not exist", path_sig);
     LOG_ERR("invalid code '%s'", secret_code);
     close(codefd);
-    free(path_tmp);
+    free(path_fil);
+    free(path_sig);
     free(secret_code);
     write_ushort(fd, EACCES);
     return EACCES;
@@ -93,39 +97,62 @@ int handle_secret(const int fd, const char *const code_dir,
     LOG_ERRNO("acknowlege secret code fail", errno);
     close(codefd);
     close(sigfd);
-    free(path_tmp);
+    free(path_fil);
+    free(path_sig);
     free(secret_code);
     return errno;
   }
   // now send the code and signature files
-  sprintf(path_tmp, "%s%s%s", code_dir, secret_code, EXT_CODE);
-  LOG_VERBOSE("sending '%s'", path_tmp);
-  err = write_file(fd, path_tmp);
+  LOG_VERBOSE("sending '%s'", path_fil);
+  err = write_file(fd, path_fil);
   if (err < 0) {
-    LOG_ERR("sending %s fail:%s", path_tmp, strerror(errno));
+    LOG_ERR("sending %s fail:%s", path_fil, strerror(errno));
     close(codefd);
     close(sigfd);
-    free(path_tmp);
+    free(path_fil);
+    free(path_sig);
     free(secret_code);
     return errno;
   }
-  sprintf(path_tmp, "%s%s%s", code_dir, secret_code, EXT_SIG);
-  LOG_VERBOSE("sending '%s'", path_tmp);
-  err = write_file(fd, path_tmp);
+  LOG_VERBOSE("sending '%s'", path_sig);
+  err = write_file(fd, path_sig);
   if (err < 0) {
-    LOG_ERR("sending %s fail:%s", path_tmp, strerror(errno));
+    LOG_ERR("sending %s fail:%s", path_sig, strerror(errno));
     close(codefd);
     close(sigfd);
-    free(path_tmp);
+    free(path_fil);
+    free(path_sig);
     free(secret_code);
     return errno;
   }
 
-  // TODO:cleanup
+  char *path_tmp;
+  path_tmp = malloc(PATH_MAX); // TODO:malloc check
+  sprintf(path_tmp, "%s%s%s", code_used_dir, secret_code, EXT_CODE);
+  if (access(path_tmp, F_OK) != 0 && errno == ENOENT) {
+    LOG("'%s' not found. moving '%s' to '%s' (disabling it)", path_tmp,
+        path_fil, path_tmp);
+    err = rename(path_fil, path_tmp);
+    if (err != 0) {
+      LOG_WARN("rename '%s' failed (%s), unlinking instead", path_fil,
+               strerror(errno));
+      err = unlink(path_fil);
+      if (err != 0) {
+        LOG_ERR("unlink '%s' failed:%s", path_fil, strerror(errno));
+      }
+    }
+    LOG("deleting signature '%s'", path_sig);
+    unlink(path_sig);
+  } else {
+    LOG("'%s' detected. keeping '%s' active", path_tmp, path_fil);
+  }
+
+  free(path_tmp);
 
   close(codefd);
   close(sigfd);
-  free(path_tmp);
+  free(path_fil);
+  free(path_sig);
   free(secret_code);
   return 0;
 }
