@@ -7,8 +7,8 @@
 #define __STR__(x) #x
 #define _STR_(x) __STR__(x)
 
-#define _VERSION_MAJOR 0
-#define _VERSION_MINOR 4
+#define _VERSION_MAJOR 1
+#define _VERSION_MINOR 0
 #define _VERSION_PATCH 0
 #define _VERSION_STRING                                                        \
   "v" _STR_(VERSION_MAJOR) "." _STR_(VERSION_MINOR) "." _STR_(VERSION_PATCH)
@@ -31,7 +31,7 @@
 // extension of signature file
 #define EXT_SIG ".sig"
 // extension of code (not secret code) file
-#define EXT_CODE ".sh"
+#define EXT_CODE ""
 
 // max string length, including NULL terminator
 // strings over this length will throw error somewhere

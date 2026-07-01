@@ -9,6 +9,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "../common.h"
@@ -198,15 +199,63 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
       }
       LOG("server returned %d", err);
 
-      unlink(pathsig);
-      unlink(pathfil);
-      free(pathsig);
-      free(pathfil);
-
       if (can_verify) {
+        LOG_DEBUG("preparing to execute script");
+        pid_t childp = fork();
+        if (childp < 0) {
+          LOG_ERRNO("fork failed", errno);
+          free(pathsig);
+          free(pathfil);
+          unlink(pathsig);
+          unlink(pathfil);
+          *ret_val = errno;
+          return malloc_str("Code valid but internal error 265");
+        } else if (childp == 0) {
+          // child
+          LOG("execvp(\"sh\",(char*[]){\"sh\",\"%s\",NULL})", pathfil);
+          execvp("sh", (char *[]){"/bin/sh", pathfil, NULL});
+          LOG_ERRNO("execvp  failed", errno);
+          *ret_val = errno;
+          return malloc_str("Code valid but internal error 908");
+        } else {
+          // parent
+          if (waitpid(childp, &err, 0) < 0) {
+            *ret_val = errno;
+            LOG_ERRNO("waitpid() failed", errno);
+            return malloc_str("Code valid but internal error 102");
+          }
+          LOG_VERBOSE("child %ld exited with raw %d", (long)childp, err);
+          if (WIFEXITED(err)) {
+            err = WIFEXITED(err);
+            LOG("Script exited with %d", err);
+            *ret_val = err;
+            if (err != 0) {
+              return malloc_str("Code valid but internal error 173");
+            } else {
+              return malloc_str("Code valid. Good job");
+            }
+          } else if (WIFSIGNALED(err)) {
+            err = WIFSIGNALED(err);
+            LOG("Script killed by signal %d", err);
+            *ret_val = err;
+            return malloc_str("Code valid but got signal");
+          } else {
+            *ret_val = 999;
+            return malloc_str("Code valid but internal error 999");
+          }
+        }
+
+        free(pathsig);
+        free(pathfil);
+        unlink(pathsig);
+        unlink(pathfil);
         *ret_val = err;
         return malloc_str("Code valid");
       } else {
+        free(pathsig);
+        free(pathfil);
+        unlink(pathsig);
+        unlink(pathfil);
         *ret_val = EINVAL;
         return malloc_str("Signature invalid");
       }
