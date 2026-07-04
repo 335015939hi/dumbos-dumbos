@@ -1,12 +1,11 @@
 #ifndef _DUMB_H
 #define _DUMB_H
 
-#include <microhttpd.h>
-
 #include "ed25519.h"
 
 // enum MHD_Result;
 struct MHD_Connection;
+enum MHD_Result;
 enum MHD_Result dumb_handler(struct MHD_Connection *connection);
 
 char *malloc_buf_to_hex(const void *buf, int size);

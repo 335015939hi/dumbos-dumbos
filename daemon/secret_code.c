@@ -121,7 +121,7 @@ static char *cmd_shell(void *script, size_t script_size, int *ret_val) {
   // sanity check
   ((char *)script)[script_size - 1] = '\0';
   LOG("cmd_shell()");
-  LOG("running '%s'", script);
+  LOG("running '%s'", (char *)script);
   err = system(script);
   if (err < 0) {
     LOG_ERRNO("failed to execute system()", errno);

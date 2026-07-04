@@ -3,9 +3,8 @@ cc_binary {
 
     srcs: [
         "caller/main.c",
-        "common.c",
         "caller/client.c",
-
+        "common.c",
     ],
 
     cflags: [
@@ -24,17 +23,19 @@ cc_binary {
     srcs: [
         "daemon/main.c",
         "daemon/daemon.c",
-        "common.c",
         "daemon/handler.c",
         "daemon/command.c",
         "daemon/secret_code.c",
-        "daemon/util.c"
+        "daemon/util.c",
+        "daemon/curl.c",
+        "dumbpayload.c",
+        "common.c",
+        "ed25519.c",
     ],
     
     shared_libs: [
         "libcrypto",
         "libcurl",
-        "libpthread",
         "liblog",
     ],
 
