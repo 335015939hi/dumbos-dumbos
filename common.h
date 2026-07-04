@@ -119,7 +119,7 @@ signed long parse_ushort(const char *str);
 
 // returns timestamp. beware the returned string is statically allocated and
 // will be overwritten on next call
-const char *timestamp();
+const char *timestamp(void);
 
 // reads unsigned short from fd, return <0 on error and sets errno
 signed long read_ushort(const int fd);

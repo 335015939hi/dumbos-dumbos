@@ -338,7 +338,7 @@ int read_file(const int fd, const char *const dest) {
 }
 
 // warning: not thread safe
-const char *timestamp() {
+const char *timestamp(void) {
   static char ret[32] = {0};
   time_t t = time(NULL);
   struct tm tm;

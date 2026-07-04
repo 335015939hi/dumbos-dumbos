@@ -22,7 +22,6 @@ static const char *path;
 static int verify_payload(const char *key) {
   struct DUMB_PAYLOAD *payload;
   size_t size;
-  int status;
 
   payload = dp_malloc_load(path, &size);
   if (NULL == payload) {

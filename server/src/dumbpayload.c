@@ -58,7 +58,6 @@ int dp_sign(struct DUMB_PAYLOAD *payload, size_t size,
 int dp_verify(struct DUMB_PAYLOAD *payload, size_t size,
               const char *pubkey_hex) {
   char signature[ED25519_SIGNATURE_HEX_SIZE];
-  int err;
   if (strlen(pubkey_hex) != ED25519_PUBLIC_KEY_HEX_SIZE - 1) {
     errno = EINVAL;
     return -1;
@@ -111,7 +110,6 @@ void *dp_malloc_load(const char *path, size_t *ret_size) {
 
   fd = open(path, O_RDONLY);
   if (fd < 0) {
-    maybe_free(path);
     LOG_ERRNO("104485 failed to open", errno);
     return NULL;
   }
