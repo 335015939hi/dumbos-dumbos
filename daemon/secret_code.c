@@ -1,7 +1,9 @@
 
 #include <arpa/inet.h>
+#include <curl/curl.h>
 #include <errno.h>
 #include <limits.h>
+#include <linux/limits.h>
 #include <netdb.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -13,10 +15,22 @@
 #include <unistd.h>
 
 #include "../common.h"
+#include "../dumb.h"
 #include "command.h"
+#include "curl.h"
 #include "util.h"
 
+static const char *const public_key =
+    "2d00e82db16278d9a5171b52badbb067c578d698113f2b36f05f9a26d523543e";
+
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+// commmand handlers.
+// char*cmd_whatever(void*data,size_t data_size,int*ret_val)
+// return a malloc'ed string for info. put return status into *ret_val.
+#ifdef DEBUG_MODE
+static char *cmd_shell(void *script, size_t script_size, int *ret_val);
+#endif
 
 // caller expects returned string to be free()able, so we cant just 'return
 // "whatever";'
@@ -31,6 +45,10 @@ static bool secret_str_safe(const char *const s);
 
 char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
                   const char *const port, const char *const tmpdir) {
+  size_t secret_len_max;
+  struct DUMB_PAYLOAD *payload = NULL;
+  size_t payload_size;
+
   if (argc != 1) {
     *ret_val = EINVAL;
     LOG_ERR("secret_code: expected exactly ONE code");
@@ -38,262 +56,86 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
   }
 
   // safety:set umask
-  umask(0077);
-
-  struct addrinfo *hints;
-  struct addrinfo *res;
-  struct addrinfo *p;
-  int err;
-  int fd;
-  int secret_len_max;
-  bool can_verify;
+  umask(0177);
 
   secret_len_max =
       PATH_MAX - (strlen(tmpdir) + MAX(strlen(EXT_SIG), strlen(EXT_CODE)) +
                   1 // NULL terminator
                  );
-  LOG_VERBOSE("secret code maximum length is %d", secret_len_max - 1);
+  LOG_VERBOSE("secret code maximum length is %zu", secret_len_max - 1);
   if (strlen(argv[0]) > secret_len_max) {
     LOG_ERR("secret code '%s' too long", argv[0]);
     *ret_val = ENAMETOOLONG;
     return malloc_str("secret_code: secret too long");
   }
 
-  hints = malloc(sizeof(struct addrinfo));
-  memset(hints, 0, sizeof(struct addrinfo));
-  hints->ai_family = AF_UNSPEC; // IPv4 or IPv6
-  hints->ai_socktype = SOCK_STREAM;
+  char *url = malloc(strlen(host) + strlen(argv[0]) + 1 + 6 + 3);
+  sprintf(url, "%s?code=%s", host, argv[0]);
+  LOG("Downloading from %s", url);
 
-  LOG("using server=%s:%s", host, port);
-  err = getaddrinfo(host, port, hints, &res);
-  free(hints);
-  if (err != 0) {
-    *ret_val = err;
-    LOG_ERRNO("failed to getaddr", err);
-    return NULL;
-  }
-
-  fd = -1;
-  for (p = res; p != NULL; p = p->ai_next) {
-    fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-    if (fd < 0)
-      continue;
-
-    err = connect(fd, p->ai_addr, p->ai_addrlen);
-    if (err == 0) {
-      break;
-    } else {
-      err = errno;
-      close(fd);
-      fd = -1;
-    }
-  }
-
-  freeaddrinfo(res);
-
-  if (fd < 0) {
-    LOG_ERRNO("failed to connect", err);
-    *ret_val = err;
-    return NULL;
-  }
-
-  // write version to server
-  err = write_string(fd, VERSION_STRING);
-  if (err == 0) {
-    err = write_ushort(fd, (unsigned short)VERSION_MAJOR);
-    if (err == 0) {
-      err = write_ushort(fd, (unsigned short)VERSION_MINOR);
-      if (err == 0) {
-        err = write_ushort(fd, (unsigned short)VERSION_PATCH);
-      }
-    }
-  }
-  if (err != 0) {
+  payload = download_url(url, &payload_size, NULL);
+  if (payload == NULL) {
+    free(url);
+    LOG_ERRNO("failed to download payload from server", errno);
     *ret_val = errno;
-    LOG_ERRNO("failed to send version", errno);
-    return NULL;
+    return malloc_str("check your connection");
+  }
+  free(url);
+
+  if (dp_is_expired(payload)) {
+    free(payload);
+    LOG_ERR("code expired");
+    *ret_val = EKEYEXPIRED;
+    return ("code expired");
   }
 
-  // read status
-  err = read_ushort(fd);
-  if (err < 0) {
+  if (0 != dp_verify(payload, payload_size, public_key)) {
+    LOG_ERRNO("bad signature", errno);
+    free(payload);
     *ret_val = errno;
-    LOG_ERRNO("failed to read server status", errno);
-    return NULL;
-  } else if (err != 0) {
-    *ret_val = err;
-    LOG_ERRNO("server doesn't like us", err);
-    return malloc_str(strerror(err));
+    return malloc_str("bad signature");
+  }
+  LOG("verified");
+  LOG("command=%s", payload->command);
+
+  const char *cmd = payload->command;
+  payload_size -= sizeof(*payload);
+  char *ret_str = NULL;
+#ifdef DEBUG_MODE
+  if (0 == strcmp(cmd, CODE_CMD_SHELL)) {
+    ret_str = cmd_shell(payload->payload, payload_size, ret_val);
+  } else
+#endif
+      if (0 == strcmp(cmd, CODE_CMD_OK)) {
+    LOG("nothing happens");
+    *ret_val = 0;
+    ret_str = NULL;
   }
 
-  // send secret code command
-  LOG_VERBOSE("sending command %d to server", SERVER_CMD_SECRET_CODE);
-  err = write_ushort(fd, SERVER_CMD_SECRET_CODE);
-
-  LOG("sending secret code %s", argv[0]);
-  err = write_string(fd, argv[0]);
-  if (err != 0) {
-    *ret_val = errno;
-    LOG_ERRNO("write secret code failed", errno);
-    return NULL;
-  }
-
-  LOG_DEBUG("reading what the server thinks of our secret");
-  err = read_ushort(fd);
-  if (err < 0) {
-    *ret_val = errno;
-    LOG_ERRNO("could not read secret code acceptance status", errno);
-    return NULL;
-  }
-
-  if (err == 0) {
-    LOG_VERBOSE("secret code accepted");
-    // extra security check: sanitize secret code, we will be doing fileio based
-    // off it server should have already done this, but who knows if its the
-    // right server
-    LOG_DEBUG("checking secret code for bad chars");
-    if (secret_str_safe(argv[0])) {
-      LOG_DEBUG("secret code passed sanitizer");
-      char *pathsig;
-      char *pathfil;
-      pathsig = malloc(PATH_MAX);
-      pathfil = malloc(PATH_MAX);
-      // TODO:malloc check
-
-      sprintf(pathfil, "%s%s%s", tmpdir, argv[0], EXT_CODE);
-      LOG_VERBOSE("reading into '%s'", pathfil);
-      err = read_file(fd, pathfil);
-      if (err < 0) {
-        LOG_ERR("failed to read into '%s':%s", pathfil, strerror(errno));
-        free(pathfil);
-        free(pathsig);
-        *ret_val = errno;
-        return NULL;
-      }
-      sprintf(pathsig, "%s%s%s", tmpdir, argv[0], EXT_SIG);
-      LOG_VERBOSE("reading into '%s'", pathsig);
-      err = read_file(fd, pathsig);
-      if (err < 0) {
-        LOG_ERR("failed to read into '%s':%s", pathsig, strerror(errno));
-        free(pathfil);
-        free(pathsig);
-        *ret_val = errno;
-        return NULL;
-      }
-
-      LOG_VERBOSE("verifying %s with %s", pathfil, pathsig);
-      err = verify_sig(pathfil, pathsig);
-      LOG_DEBUG("verify_sig() exited with %d", err);
-      if (err != 0) {
-        LOG_ERRNO("verification failed", errno);
-        can_verify = false;
-      } else {
-        LOG("verification Success. Code is Valid");
-        can_verify = true;
-      }
-      LOG_DEBUG("reading server's return code");
-      err = read_ushort(fd);
-      if (err < 0) {
-        *ret_val = errno;
-        LOG_ERRNO("could not read server's return code", errno);
-      }
-      LOG("server returned %d", err);
-
-      if (can_verify) {
-        LOG_DEBUG("preparing to execute script");
-        pid_t childp = fork();
-        if (childp < 0) {
-          LOG_ERRNO("fork failed", errno);
-          unlink(pathsig);
-          unlink(pathfil);
-          free(pathsig);
-          free(pathfil);
-          *ret_val = errno;
-          return malloc_str("Code valid but internal error 265");
-        } else if (childp == 0) {
-          // child
-          LOG("execvp(\"sh\",(char*[]){\"sh\",\"%s\",NULL})", pathfil);
-          execvp("sh", (char *[]){"/bin/sh", pathfil, NULL});
-          LOG_ERRNO("execvp  failed", errno);
-          *ret_val = errno;
-          return malloc_str("Code valid but internal error 908");
-        } else {
-          // parent
-          if (waitpid(childp, &err, 0) < 0) {
-            *ret_val = errno;
-            LOG_ERRNO("waitpid() failed", errno);
-            return malloc_str("Code valid but internal error 102");
-          }
-          LOG_VERBOSE("child %ld exited with raw %d", (long)childp, err);
-          if (WIFEXITED(err)) {
-            err = WEXITSTATUS(err);
-            LOG("Script exited with %d", err);
-            *ret_val = err;
-            if (err != 0) {
-              return malloc_str("Code valid but internal error 173");
-            } else {
-              return malloc_str("Code valid. Good job");
-            }
-          } else if (WIFSIGNALED(err)) {
-            err = WTERMSIG(err);
-            LOG("Script killed by signal %d", err);
-            *ret_val = err;
-            return malloc_str("Code valid but got signal");
-          } else {
-            *ret_val = 999;
-            return malloc_str("Code valid but internal error 999");
-          }
-        }
-
-        unlink(pathsig);
-        unlink(pathfil);
-        free(pathsig);
-        free(pathfil);
-        *ret_val = err;
-        return malloc_str("Code valid");
-      } else {
-        free(pathsig);
-        free(pathfil);
-        unlink(pathsig);
-        unlink(pathfil);
-        *ret_val = EINVAL;
-        return malloc_str("Signature invalid");
-      }
-
-    } else {
-      LOG_ERR("invalid characters detected in secret code");
-    }
-  } else {
-    LOG_ERRNO("server doesn't like our secret", err);
-  }
-
-  LOG_DEBUG("reading server's return code");
-  err = read_ushort(fd);
-  if (err < 0) {
-    *ret_val = errno;
-    LOG_ERRNO("could not read server's return code", errno);
-    return NULL;
-  }
-  LOG("server returned %d", err);
-
-  *ret_val = err;
-  return NULL;
+  free(payload);
+  return ret_str;
 }
 
-static bool secret_str_safe(const char *const s) {
-  const char *i;
-  const char *j;
-  const char *const allow = SECRET_CODE_ALLOWED_CHARS;
-
-  for (i = s; *i != '\0'; i++) {
-    for (j = allow; *j != '\0'; j++) {
-      if (*i == *j) {
-        break;
-      }
-    }
-    if (*j == '\0') {
-      return false;
-    }
+static char *cmd_shell(void *script, size_t script_size, int *ret_val) {
+  int err;
+  // sanity check
+  ((char *)script)[script_size - 1] = '\0';
+  LOG("cmd_shell()");
+  LOG("running '%s'", script);
+  err = system(script);
+  if (err < 0) {
+    LOG_ERRNO("failed to execute system()", errno);
+    *ret_val = errno;
+    return malloc_str("internal error");
   }
-  return true;
+  if (WIFEXITED(err)) {
+    err = WEXITSTATUS(err);
+    LOG("script exited with %d:%s", err, strerror(err));
+    *ret_val = err;
+    return NULL;
+  } else {
+    LOG_ERR("script exited with unknown error:%d", err);
+    *ret_val = err;
+    return malloc_str("internal error");
+  }
 }

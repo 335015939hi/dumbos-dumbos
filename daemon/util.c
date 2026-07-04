@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <linux/limits.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <stdbool.h>

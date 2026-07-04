@@ -111,6 +111,7 @@ int start_daemon(const struct daemon_opts *const opt) {
       close(socket_fd);
       int ret = handler(client, opt->server, opt->port, tmpdir);
       LOG("Handler pid %d exited with %d", getpid(), ret);
+      free(tmpdir);
       close(client);
       return ret;
     } else { // parent
