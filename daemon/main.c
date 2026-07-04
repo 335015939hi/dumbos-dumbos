@@ -39,7 +39,6 @@ int main(int argc, char **argv) {
   bool opt_fork = true;
   opt->path = DEFAULT_SOCKET_PATH;
   opt->server = DEFAULT_SERVER;
-  opt->port = DEFAULT_PORT;
   opt->con = DEFAULT_SOCKET_CONTEXT;
   opt->tmpdir = DEFAULT_TMPDIR;
   const char *opt_sock_mode_str = DEFAULT_SOCKET_MODE;
@@ -73,10 +72,6 @@ int main(int argc, char **argv) {
         LOG_DEBUG("log verbosity set to %d", log_verbosity);
       }
       break;
-    case 'F':
-      LOG_DEBUG("found option fore");
-      opt_fork = false;
-      break;
     case 's':
       LOG_DEBUG("found option socket=%s", optarg);
       opt->path = optarg;
@@ -92,10 +87,6 @@ int main(int argc, char **argv) {
     case 'm':
       LOG_DEBUG("found option mode=%s", optarg);
       opt_sock_mode_str = optarg;
-      break;
-    case 'p':
-      LOG_DEBUG("found option port=%s", optarg);
-      opt->port = optarg;
       break;
     case 'Z':
       LOG_DEBUG("found option context=%s", optarg);
@@ -182,17 +173,6 @@ int main(int argc, char **argv) {
 
   free(sock_own_str);
 
-  if (opt_fork) {
-    pid_t pid = fork();
-    if (pid < 0) {
-      LOG_FATAL_ERRNO("Fork failed", errno);
-      return errno;
-    } else if (pid != 0) { // parent
-      LOG("Forked to background. PID=%d", pid);
-      return 0;
-    }
-  }
-
   LOG_DEBUG("reached start_daemon()");
   err = start_daemon(opt);
   LOG_DEBUG("exited start_daemon() code %d", err);
@@ -204,11 +184,8 @@ static const struct option long_opts[] = {
     {"help", no_argument, 0, 'h'},
     {"version", no_argument, 0, 'v'},
     {"log-level", required_argument, 0, 'l'},
-    {"fore", no_argument, 0, 'F'},
-    {"foreground", no_argument, 0, 'F'},
     {"socket", required_argument, 0, 's'},
     {"host", required_argument, 0, 'H'},
-    {"port", required_argument, 0, 'p'},
     {"mode", required_argument, 0, 'm'},
     {"owner", required_argument, 0, 'o'},
     {"context", required_argument, 0, 'Z'},
@@ -218,7 +195,7 @@ static const struct option long_opts[] = {
     {"unlink", no_argument, 0, 'u'},
 #endif
     {0, 0, 0, 0}};
-static const char *const short_opts = "hvl:Fs:H:p:m:o:Z:t:"
+static const char *const short_opts = "hvl:s:H:m:o:Z:t:"
 #ifdef DEBUG_MODE
                                       "u"
 #endif
@@ -239,10 +216,8 @@ void display_help(FILE *file, const char *const argv0) {
       " " LOG_FATAL_NAME " " LOG_ERROR_NAME " " LOG_WARN_NAME
       " " LOG_NORMAL_NAME " " LOG_VERBOSE_NAME " " LOG_DEBUG_NAME
       " " LOG_MAX_NAME "\n"
-      " -F,--fore,--foreground  do not fork, stay in foreground\n"
       " -s,--socket=<path>      socket path, default " DEFAULT_SOCKET_PATH "\n"
       " -H,--host=<host>        server host, default " DEFAULT_SERVER "\n"
-      " -p,--port=<port>        server port, default " DEFAULT_PORT "\n"
       " -m,--mode=<octal>       socket permissions, "
       "default " DEFAULT_SOCKET_MODE "\n"
       " -o,--owner=<user:group> socket ownership, default " DEFAULT_SOCKET_OWNER

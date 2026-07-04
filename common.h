@@ -20,7 +20,7 @@
 // full path of the default socket
 #define DEFAULT_SOCKET_PATH "/dev/socket/dumbosd.socket"
 // default server
-#define DEFAULT_SERVER "192.168.12.1"
+#define DEFAULT_SERVER "http://192.168.12.1:8081/dumb"
 // default port
 #define DEFAULT_PORT "3850"
 // default socket permissions
@@ -104,11 +104,6 @@ extern int log_verbosity;
 // sets log verbosity. accepts one of LOG_*_NAME (case insensative), returns 0
 // on success
 int set_log_verbosity(const char *const lvl);
-
-// command codes, for server to daemon communication. type should be unsigned
-// short
-#define SERVER_CMD_SECRET_CODE 357
-#define SERVER_CMD_OK 128
 
 // allowed characters for the secret code
 #define SECRET_CODE_ALLOWED_CHARS "qwertyuiopasdfghjklzxcvbnm0123456789-_=+,"
