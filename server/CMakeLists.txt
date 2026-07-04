@@ -34,7 +34,7 @@ target_link_libraries(${PROJECT_NAME}
 
 target_link_libraries(dumb-code crypto)
 
-target_compile_options(c_http_server
+target_compile_options(${PROJECT_NAME}
     PRIVATE
         -Wall
         -Wextra
