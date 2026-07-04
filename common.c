@@ -1,5 +1,7 @@
 
+#define _POSIX_C_SOURCE 1
 #include <arpa/inet.h>
+#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -343,4 +345,49 @@ const char *timestamp() {
   localtime_r(&t, &tm);
   strftime(ret, 32, "%Y-%m-%d %H:%M:%S", &tm);
   return ret;
+}
+
+int parse_long_long(const char *str, signed long long *ret) {
+  char *end = NULL;
+  long long value;
+
+  if (str == NULL || ret == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  errno = 0;
+  value = strtoll(str, &end, 10);
+
+  /*
+   * No digits were parsed.
+   * Examples: "", "abc", "   "
+   */
+  if (end == str) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  /*
+   * Allow trailing whitespace, but reject trailing junk.
+   * Examples accepted: "123", "  -123", "123\n"
+   * Examples rejected: "123abc", "12 34"
+   */
+  while (*end != '\0') {
+    if (!isspace((unsigned char)*end)) {
+      errno = EINVAL;
+      return -1;
+    }
+    end++;
+  }
+
+  /*
+   * strtol sets errno to ERANGE on overflow or underflow.
+   */
+  if (errno == ERANGE) {
+    return -1;
+  }
+
+  *ret = value;
+  return 0;
 }

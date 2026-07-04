@@ -9,6 +9,10 @@ a.out
 /server/CMakeFiles/
 /server/Makefile
 /server/CMakeCache.txt
+/server/dumb-code
+/server/dumb-codes/
+/server/public/
+/server/cmake_install.cmake
 
 # Prerequisites
 *.d
