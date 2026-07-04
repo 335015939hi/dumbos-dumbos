@@ -33,7 +33,7 @@
  *     provide every library just because humans enjoy suffering.
  */
 
-#define _POSIX_C_SOURCE 1
+#define _GNU_SOURCE 1
 
 #include <curl/curl.h>
 

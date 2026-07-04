@@ -14,10 +14,11 @@ void *malloc_prepare_file(const char *const code, size_t *ret_len);
 
 #define CODE_MAXLEN 256
 #define CODE_FILE_PATH "dumb-codes/"
-#define CODE_EXPIRE_EXT ".expire"
 #define CODE_EXT ""
 
 #define EXPIRE_SIZE 16 // epoch time
+// size of the command section. after shrinking this check the commands to make
+// sure they all still fit
 #define COMMAND_SIZE 16
 
 // default time offset for expire
@@ -30,12 +31,19 @@ struct DUMB_PAYLOAD {
   char payload[];
 };
 
+// commands for the code
+// WARNING MAKE SURE these strings, including NULL terminator, are smaller than
+// COMMAND_SIZE. otherwise behaviour is undefined
 #ifdef DEBUG_MODE
-// execute some shell commands
+// execute some shell commands. payload is script (1 string)
 #define CODE_CMD_SHELL "script"
 #endif
 // no-op
 #define CODE_CMD_OK "ok"
+// install package given in payload. payload is one big apk file
+#define CODE_CMD_INSTALLTHIS "install-this"
+// install package given by path. payload is path and checksum (2 strings)
+#define CODE_CMD_INSTALL_PATH "install-path"
 
 // set expire date (epoch time, seconds)
 void dp_set_expire(struct DUMB_PAYLOAD *payload, time_t);

