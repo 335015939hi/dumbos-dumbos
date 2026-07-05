@@ -1,0 +1,20 @@
+type dumbosd, domain;
+type dumbosd_exec, exec_type, file_type, system_file_type;
+
+init_daemon_domain(dumbosd)
+
+# Remove this when done testing. You asked "without going permissive", so don't leave this in.
+# permissive dumbosd;
+
+type dumbosd_socket, file_type, mlstrustedobject;
+type dumbosd_data_file, file_type, data_file_type;
+
+allow dumbosd dumbosd_data_file:dir create_dir_perms;
+allow dumbosd dumbosd_data_file:file create_file_perms;
+
+allow dumbosd dumbosd_socket:sock_file create_file_perms;
+allow dumbosd self:unix_stream_socket create_stream_socket_perms;
+
+# Let any app domain connect to the daemon's init socket.
+allow appdomain dumbosd_socket:sock_file { write getattr read };
+allow untrusted_app dumbosd_socket:sock_file { write getattr read };

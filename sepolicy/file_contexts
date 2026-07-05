@@ -1,0 +1,3 @@
+/dev/socket/dumbosd.socket u:object_r:dumbosd_socket:s0
+#/product/bin/dumbos u:object_r:dumbosd_exec:s0
+#/product/bin/dumbosd u:object_r:dumbosd_exec:s0

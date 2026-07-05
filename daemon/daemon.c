@@ -1,5 +1,6 @@
 
 #include <errno.h>
+#include <selinux/selinux.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,7 +62,10 @@ int start_daemon(const struct daemon_opts *const opt) {
     return errno;
   }
 
-  // TODO:selinux
+  LOG_DEBUG("setting selinux context '%s'", opt->con);
+  if (setfilecon(opt->path, opt->con) < 0) {
+    LOG_WARN_ERRNO("setting selinux context failed", errno);
+  }
 
   if (listen(socket_fd, 16) < 0) {
     LOG_ERRNO("listen failed", errno);

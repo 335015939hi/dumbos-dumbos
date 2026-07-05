@@ -14,7 +14,7 @@
 
 // TODO: kill kids
 
-#define DEFAULT_SOCKET_CONTEXT ""
+#define DEFAULT_SOCKET_CONTEXT "u:object_r:dumbosd_socket:s0"
 #define DEFAULT_TMPDIR "/data/local/tmp/dumb/"
 
 static const struct option long_opts[];

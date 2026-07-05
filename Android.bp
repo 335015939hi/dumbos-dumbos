@@ -37,6 +37,7 @@ cc_binary {
         "libcrypto",
         "libcurl",
         "liblog",
+        "libselinux",
     ],
 
     cflags: [
