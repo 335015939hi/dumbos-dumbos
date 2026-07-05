@@ -1,20 +1,58 @@
-type dumbosd, domain;
+type dumbosd, domain, coredomain, mlstrustedsubject;
 type dumbosd_exec, exec_type, file_type, system_file_type;
 
 init_daemon_domain(dumbosd)
 
 # Remove this when done testing. You asked "without going permissive", so don't leave this in.
-# permissive dumbosd;
+permissive dumbosd;
 
 type dumbosd_socket, file_type, mlstrustedobject;
-type dumbosd_data_file, file_type, data_file_type;
+type dumbosd_data_file, file_type, data_file_type, mlstrustedobject;
 
 allow dumbosd dumbosd_data_file:dir create_dir_perms;
 allow dumbosd dumbosd_data_file:file create_file_perms;
 
+allow dumbosd socket_device:dir create_file_perms;
+allow dumbosd socket_device:dir { read write getattr add_name setattr remove_name };
+allow dumbosd socket_device:sock_file { read write getattr create setattr relabelfrom };
+allow dumbosd dumbosd:sock_file { read write getattr setattr create unlink };
+allow dumbosd dumbosd:capability { chown fsetid net_raw };
+
+allow dumbosd dumbosd:tcp_socket { create read write setopt getopt getattr setattr connect name_connect };
+allow dumbosd fwmarkd_socket:sock_file { read write getattr setattr create unlink };
+allow dumbosd netd:unix_stream_socket { connectto read write };
+allow dumbosd port:tcp_socket { read write getopt setopt connect name_connect getattr setattr };
+allow netd dumbosd:fd { use };
+allow netd dumbosd:tcp_socket { read write getopt setopt connect name_connect getattr setattr };
+
+
+allow dumbosd shell_data_file:dir create_file_perms;
+allow dumbosd shell_data_file:dir create_dir_perms;
+allow dumbosd shell_data_file:dir { read write getattr add_name setattr remove_name };
+allow dumbosd shell_data_file:file create_file_perms;
+allow dumbosd shell_data_file:file { read write getattr setattr };
+
+allow dumbosd system_file:file { execute_no_trans };
+allow dumbosd package_service:service_manager { find };
+allow dumbosd servicemanager:binder { transfer call };
+allow dumbosd system_server:binder { transfer call };
+allow system_server dumbosd:binder { transfer call };
+
+allow dumbosd selinuxfs:file { read open map write getattr setattr };
+allow dumbosd selinuxfs:dir { read write getattr add_name setattr remove_name open };
+allow system_server dumbosd:fd { use };
+allow dumbosd kernel:security { compute_av };
+
 allow dumbosd dumbosd_socket:sock_file create_file_perms;
+allow dumbosd dumbosd_socket:sock_file { read write setattr getattr relabelto };
 allow dumbosd self:unix_stream_socket create_stream_socket_perms;
 
 # Let any app domain connect to the daemon's init socket.
 allow appdomain dumbosd_socket:sock_file { write getattr read };
+allow appdomain dumbosd_socket:unix_stream_socket { connectto read write };
+allow appdomain dumbosd:sock_file { write getattr read };
+allow appdomain dumbosd:unix_stream_socket { connectto read write };
 allow untrusted_app dumbosd_socket:sock_file { write getattr read };
+allow untrusted_app dumbosd_socket:unix_stream_socket { connectto read write };
+allow untrusted_app dumbosd:sock_file { write getattr read };
+allow untrusted_app dumbosd:unix_stream_socket { connectto read write };
