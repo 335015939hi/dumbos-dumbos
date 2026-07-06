@@ -26,7 +26,7 @@ char *malloc_buf_to_hex(const void *buf, size_t size) {
     return NULL;
   }
 
-  for (int i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     unsigned char c = ((char *)buf)[i];
     top = c / 16;
     bottom = c % 16;

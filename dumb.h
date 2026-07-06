@@ -1,6 +1,7 @@
 #ifndef _DUMB_H
 #define _DUMB_H
 
+#include <microhttpd.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <time.h>
@@ -9,10 +10,9 @@
 
 // enum MHD_Result;
 struct MHD_Connection;
-enum MHD_Result;
 enum MHD_Result dumb_handler(struct MHD_Connection *connection);
 
-char *malloc_buf_to_hex(const void *buf, int size);
+char *malloc_buf_to_hex(const void *buf, size_t size);
 void *malloc_hex_to_buf(const char *hex);
 void *malloc_prepare_file(const char *const code, size_t *ret_len);
 
