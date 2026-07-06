@@ -9,8 +9,7 @@
 #include "command.h"
 #include "handler.h"
 
-int handler(const int client_fd, const char *const server,
-            const char *const port, const char *tmpdir) {
+int handler(const int client_fd, const char *const server, const char *tmpdir) {
   char *client_v_str;
   unsigned short client_v_major;
   unsigned short client_v_minor;
@@ -67,10 +66,11 @@ int handler(const int client_fd, const char *const server,
   argc = ret;
   if (argc == 0) {
     LOG("no command. exiting");
+    write_ushort(client_fd, 0);
+    write_string(client_fd, "No command");
     return 0;
   }
   LOG("client has %d arguments", argc);
-  // TODO: bounds check, prevent bad argc causing bad mem
   if (argc > MAX_ARGS || argc < 0) {
     LOG_ERR("too many arguments, max %d got %d", MAX_ARGS, argc);
     return E2BIG;
@@ -94,7 +94,7 @@ int handler(const int client_fd, const char *const server,
   }
 
   if (!haserror) {
-    ret_msg = do_command(argc, argv, &ret_val, server, port, tmpdir);
+    ret_msg = do_command(argc, argv, &ret_val, server, tmpdir);
   }
 
   for (int i = 0; i < argc; i++) {

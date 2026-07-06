@@ -43,11 +43,10 @@ static char *malloc_str(const char *const s) {
   strcpy(ret, s);
   return ret;
 }
-static bool secret_str_safe(const char *const s);
 static const char *tmpdir;
 
 char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
-                  const char *const port, const char *const _tmpdir) {
+                  const char *const _tmpdir) {
   size_t secret_len_max;
   struct DUMB_PAYLOAD *payload = NULL;
   size_t payload_size;
@@ -130,21 +129,40 @@ static char *cmd_install_file(void *apk, size_t apk_size, int *ret_val) {
   LOG_DEBUG("cmd_install_file()");
   int err;
   int fd;
+  LOG_DEBUG("cmd_install_file() apk_size=%ld", apk_size);
   char *path = malloc(PATH_MAX);
   if (path == NULL) {
-    // TODO:
-    return NULL;
+    LOG_ERRNO("failed to alloc", errno);
+    *ret_val = errno;
+    return malloc_str("Out of memory");
   }
 
   err = snprintf(path, PATH_MAX, "%s%s", tmpdir, "tmp.apk");
-  // TODO: handle err
+  if (err < 0) {
+    LOG_ERRNO("snprintf() failed", errno);
+    *ret_val = errno;
+    return malloc_str("Internal error");
+  } else if (err >= PATH_MAX) {
+    LOG_ERR("path too long");
+    *ret_val = ENAMETOOLONG;
+    return malloc_str("path too long");
+  }
   LOG_DEBUG("writing payload to %s", path);
 
   fd = open(path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
-  // TODO: handle error
+  if (fd < 0) {
+    LOG_ERRNO("open() failed", errno);
+    *ret_val = errno;
+    return malloc_str("internal error");
+  }
+  LOG_DEBUG("fd=%d", fd);
 
   err = write_all(fd, apk, apk_size);
-  // TODO: handle err
+  if (err < 0) {
+    LOG_ERRNO("write_all() failed", errno);
+    *ret_val = errno;
+    return malloc_str("internal error");
+  }
   close(fd);
 
   // TODO: don't use system(), probably unsafe

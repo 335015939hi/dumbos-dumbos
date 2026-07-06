@@ -35,8 +35,6 @@ int main(int argc, char **argv) {
   struct daemon_opts *opt;
   opt = malloc(sizeof(struct daemon_opts));
 
-  // whether to fork to background
-  bool opt_fork = true;
   opt->path = DEFAULT_SOCKET_PATH;
   opt->server = DEFAULT_SERVER;
   opt->con = DEFAULT_SOCKET_CONTEXT;
@@ -177,6 +175,7 @@ int main(int argc, char **argv) {
   err = start_daemon(opt);
   LOG_DEBUG("exited start_daemon() code %d", err);
   free(opt);
+  LOG("main() exiting with %d", err);
   return err;
 }
 

@@ -7,6 +7,5 @@ int rm_r(const char *const path);
 int mkdir_p(const char *path);
 // verify signature, 0 on success (verified), <0 on error (including bad
 // signature) both arguments are paths
-int verify_sig(const char *file, const char *sig);
 
 #endif //

@@ -87,11 +87,17 @@ int start_daemon(const struct daemon_opts *const opt) {
   // make sure tmpdir ends in a slash
   len = strlen(opt->tmpdir);
   tmpdir = malloc(len + 1 + 1); // NULL terminator, possible slash
-  // TODO:malloc check
+  if (tmpdir == NULL) {
+    LOG_ERRNO("failed to malloc()", errno);
+    err = errno;
+    unlink(opt->path);
+    return err;
+  }
+
   strcpy(tmpdir, opt->tmpdir);
-  if (tmpdir[len] != '/') {
-    tmpdir[len] = '/';
-    tmpdir[len + 1] = '\0';
+  if (tmpdir[len - 1] != '/') {
+    tmpdir[len - 1] = '/';
+    tmpdir[len] = '\0';
   }
 
   for (;;) {
@@ -113,7 +119,7 @@ int start_daemon(const struct daemon_opts *const opt) {
 
     if (child_pid == 0) { // child
       close(socket_fd);
-      int ret = handler(client, opt->server, opt->port, tmpdir);
+      int ret = handler(client, opt->server, tmpdir);
       LOG("Handler pid %d exited with %d", getpid(), ret);
       free(tmpdir);
       close(client);

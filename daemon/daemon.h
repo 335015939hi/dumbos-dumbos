@@ -6,9 +6,8 @@
 struct daemon_opts {
   // temp directory
   const char *tmpdir;
-  // server and port
+  // server URL
   const char *server;
-  const char *port;
   // path of socket
   const char *path;
   // sokcet permissions: mode, owner, group, selinux context
