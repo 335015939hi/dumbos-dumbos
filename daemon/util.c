@@ -63,6 +63,9 @@ int mkdir_p(const char *path) {
   LOG_DEBUG("mkdir_p(\"%s\") starting", path);
 
   len = strlen(path);
+  if (len == 0) {
+    return 0;
+  }
 
   if (len >= PATH_MAX) {
     errno = ENAMETOOLONG;

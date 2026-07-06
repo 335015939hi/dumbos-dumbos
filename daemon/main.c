@@ -129,11 +129,11 @@ int main(int argc, char **argv) {
   }
 
   char *sock_own_str = strdup(opt_sock_own_str);
-  char *colon = strchr(sock_own_str, ':');
   if (sock_own_str == NULL) {
     LOG_ERR("strdup() fail", errno);
     return errno;
   }
+  char *colon = strchr(sock_own_str, ':');
   if (NULL == colon) {
     LOG_ERR("bad user:group '%s'", opt_sock_own_str);
     free(sock_own_str);

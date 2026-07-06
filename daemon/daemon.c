@@ -34,7 +34,7 @@ int start_daemon(const struct daemon_opts *const opt) {
   socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (socket_fd < 0) {
     LOG_ERRNO("failed to create socket", errno);
-    free(sockaddr);
+    free(sock_addr);
     return errno;
   }
   LOG_DEBUG("socket_fd=%d", socket_fd);
@@ -107,7 +107,7 @@ int start_daemon(const struct daemon_opts *const opt) {
   }
 
   strcpy(tmpdir, opt->tmpdir);
-  if (tmpdir[len] != '/') {
+  if (tmpdir[len - 1] != '/') {
     tmpdir[len] = '/';
     tmpdir[len + 1] = '\0';
   }

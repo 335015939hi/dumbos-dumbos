@@ -106,7 +106,7 @@ extern int log_verbosity;
 int set_log_verbosity(const char *const lvl);
 
 // allowed characters for the secret code
-#define SECRET_CODE_ALLOWED_CHARS "qwertyuiopasdfghjklzxcvbnm0123456789-_=+,"
+#define SECRET_CODE_ALLOWED_CHARS "qwertyuiopasdfghjklzxcvbnm0123456789-_"
 
 // takes a string and tries to parse it as unsigned base 10 integer short.
 // returns -1 on fail, setting errno

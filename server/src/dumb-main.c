@@ -91,9 +91,11 @@ static int set_expire(const char *expire) {
   }
   if (strlen(expire) > EXPIRE_SIZE - 1) {
     LOG_ERR("expire string too long, mex length is %d", EXPIRE_SIZE - 1);
+    maybe_free(payload);
     return E2BIG;
   }
-  strncpy(payload->expire, expire, EXPIRE_SIZE - 1);
+  memset(payload->expire, 0, EXPIRE_SIZE);
+  snprintf(payload->expire, EXPIRE_SIZE, "%s", expire);
   LOG("new expire time:%s", payload->expire);
   fd = open(path, O_WRONLY);
   if (fd < 0) {
@@ -116,7 +118,7 @@ static int set_expire(const char *expire) {
 
 static void generate_key(void) {
   char publickey[ED25519_PUBLIC_KEY_HEX_SIZE];
-  char privatekey[ED25519_PUBLIC_KEY_HEX_SIZE];
+  char privatekey[ED25519_PRIVATE_KEY_HEX_SIZE];
   ed25519_generate_keypair_hex(publickey, privatekey);
   printf("public  = %s\nprivate = %s\n", publickey, privatekey);
 }

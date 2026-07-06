@@ -28,13 +28,18 @@ int client(int argc, char **argv, const char *const socket_path) {
   socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (socket_fd < 0) {
     LOG_ERRNO("failed to socket", errno);
-    free(sockaddr);
+    free(socket_addr);
     return errno;
   }
   LOG_DEBUG("socket_fd=%d", socket_fd);
 
   memset(socket_addr, 0, sizeof(*socket_addr));
   socket_addr->sun_family = AF_UNIX;
+  if (strlen(socket_path) >= SOCKET_PATH_MAX) {
+    free(socket_addr);
+    errno = ENAMETOOLONG;
+    return ENAMETOOLONG;
+  }
   strncpy(socket_addr->sun_path, socket_path, SOCKET_PATH_MAX);
 
   LOG_VERBOSE("socket_path=%s", socket_path);
@@ -79,7 +84,6 @@ int client(int argc, char **argv, const char *const socket_path) {
     close(socket_fd);
     return ret;
   } else if (ret != 0) {
-    ret = errno;
     LOG_ERRNO("handshake failed", ret);
     close(socket_fd);
     return ret;

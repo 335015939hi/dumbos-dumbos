@@ -45,6 +45,10 @@ int dp_sign(struct DUMB_PAYLOAD *payload, size_t size,
     errno = EINVAL;
     return -1;
   }
+  if (size < sizeof(struct DUMB_PAYLOAD)) {
+    errno = EINVAL;
+    return -1;
+  }
   memset(payload->signature, '\0', ED25519_SIGNATURE_HEX_SIZE);
 
   err = ed25519_sign_hex(private_key_hex, payload, size, signature);
@@ -62,6 +66,10 @@ int dp_verify(struct DUMB_PAYLOAD *payload, size_t size,
     errno = EINVAL;
     return -1;
   }
+  if (size < sizeof(struct DUMB_PAYLOAD)) {
+    errno = EINVAL;
+    return -1;
+  }
   memcpy(signature, payload->signature, ED25519_SIGNATURE_HEX_SIZE);
   memset(payload->signature, '\0', ED25519_SIGNATURE_HEX_SIZE);
   return ed25519_verify_hex(pubkey_hex, payload, size, signature);
@@ -69,7 +77,7 @@ int dp_verify(struct DUMB_PAYLOAD *payload, size_t size,
 
 void dp_set_expire(struct DUMB_PAYLOAD *payload, time_t expire) {
   memset(payload->expire, '\0', EXPIRE_SIZE);
-  snprintf(payload->expire, EXPIRE_SIZE - 1, "%ld", expire);
+  snprintf(payload->expire, EXPIRE_SIZE, "%ld", expire);
 }
 
 time_t dp_get_expire(const struct DUMB_PAYLOAD *payload) {

@@ -1,6 +1,10 @@
 #ifndef _CHATGPT_H
 #define _CHATGPT_H
 
+// enum MHD_Result;
+struct MHD_Connection;
+enum MHD_Result dumb_handler(struct MHD_Connection *connection);
+
 // function signatures of stuff written by ChatGPT
 
 #include <microhttpd.h>

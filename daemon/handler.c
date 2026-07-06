@@ -1,5 +1,6 @@
 
 #include <errno.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +16,8 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
   unsigned short client_v_minor;
   unsigned short client_v_patch;
   signed long ret;
+
+  signal(SIGCHLD, SIG_DFL);
 
   client_v_str = malloc_read_string(client_fd);
   if (client_v_str == NULL) {
