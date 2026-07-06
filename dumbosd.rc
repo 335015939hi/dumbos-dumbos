@@ -1,0 +1,4 @@
+service dumbosd /system/bin/dumbosd
+    class late_start
+    user root
+    group root
