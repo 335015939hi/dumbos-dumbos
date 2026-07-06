@@ -47,6 +47,7 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
   if (client_v_major != (unsigned short)VERSION_MAJOR ||
       client_v_minor > (unsigned short)VERSION_MINOR) {
     LOG_ERR("client has incompatible version. stopping");
+    write_ushort(client_fd, EPROTO);
     return EPROTO;
   }
 
@@ -62,6 +63,7 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
   ret = read_ushort(client_fd);
   if (ret < 0) {
     LOG_ERRNO("getting argc failed", errno);
+    return EPROTO;
   }
   argc = ret;
   if (argc == 0) {

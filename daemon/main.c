@@ -34,6 +34,10 @@ int main(int argc, char **argv) {
 
   struct daemon_opts *opt;
   opt = malloc(sizeof(struct daemon_opts));
+  if (opt == NULL) {
+    LOG_ERRNO("failed to malloc()", errno);
+    return errno;
+  }
 
   opt->path = DEFAULT_SOCKET_PATH;
   opt->server = DEFAULT_SERVER;
@@ -126,6 +130,10 @@ int main(int argc, char **argv) {
 
   char *sock_own_str = strdup(opt_sock_own_str);
   char *colon = strchr(sock_own_str, ':');
+  if (sock_own_str == NULL) {
+    LOG_ERR("strdup() fail", errno);
+    return errno;
+  }
   if (NULL == colon) {
     LOG_ERR("bad user:group '%s'", opt_sock_own_str);
     free(sock_own_str);

@@ -26,6 +26,7 @@ static int verify_payload(const char *key) {
   payload = dp_malloc_load(path, &size);
   if (NULL == payload) {
     LOG_ERRNO("failed to read file", errno);
+    return errno;
   }
 
   if (0 > dp_verify(payload, size, key)) {
@@ -40,6 +41,9 @@ static int verify_payload(const char *key) {
 
 static int new_payload() {
   struct DUMB_PAYLOAD *new = malloc(sizeof(struct DUMB_PAYLOAD));
+  if (new == NULL) {
+    abort();
+  }
   *new = (struct DUMB_PAYLOAD){
       "signature here (dont touch)",
       "expire here",
@@ -84,6 +88,10 @@ static int set_expire(const char *expire) {
     LOG_ERRNO("failed to load payload file", errno);
     maybe_free(payload);
     return errno;
+  }
+  if (strlen(expire) > EXPIRE_SIZE - 1) {
+    LOG_ERR("expire string too long, mex length is %d", EXPIRE_SIZE - 1);
+    return E2BIG;
   }
   strncpy(payload->expire, expire, EXPIRE_SIZE - 1);
   LOG("new expire time:%s", payload->expire);

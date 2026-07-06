@@ -47,7 +47,7 @@ int dp_sign(struct DUMB_PAYLOAD *payload, size_t size,
   }
   memset(payload->signature, '\0', ED25519_SIGNATURE_HEX_SIZE);
 
-  err = ed25519_sign_hex(ed25519_private_key, payload, size, signature);
+  err = ed25519_sign_hex(private_key_hex, payload, size, signature);
   if (err < 0) {
     return err;
   }
@@ -223,6 +223,7 @@ void *dp_malloc_check_load(const char *const code, size_t *ret_size) {
     return NULL;
   }
 
+  // not yet signed. do not write signed payload to disk.
   err = lseek(codefd, 0, SEEK_SET);
   if (err < 0) {
     LOG_ERR("134923 failed to lseek on fd=%d:%s", codefd, strerror(errno));
@@ -236,7 +237,13 @@ void *dp_malloc_check_load(const char *const code, size_t *ret_size) {
   close(codefd);
   *ret_size = size;
 
-  dp_sign(payload, size, ed25519_private_key);
+  // do not write signed payload to disk
+  err = dp_sign(payload, size, ed25519_private_key);
+  if (err < 0) {
+    LOG_ERRNO("dp_sign() failed", errno);
+    free(payload);
+    return NULL;
+  }
 
   return payload;
 }

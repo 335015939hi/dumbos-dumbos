@@ -81,15 +81,22 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
     free(url);
     LOG_ERRNO("failed to download payload from server", errno);
     *ret_val = errno;
-    return malloc_str("check your connection");
+    return malloc_str("check your connection (or bad code)");
   }
   free(url);
+
+  if (payload_size < sizeof(struct DUMB_PAYLOAD)) {
+    LOG_ERR("bad payload size, expected >=%d, got %ld",
+            sizeof(struct DUMB_PAYLOAD), payload_size);
+    *ret_val = EINVAL;
+    return malloc_str("invalid file");
+  }
 
   if (dp_is_expired(payload)) {
     free(payload);
     LOG_ERR("code expired");
     *ret_val = EKEYEXPIRED;
-    return ("code expired");
+    return malloc_str("code expired");
   }
 
   if (0 != dp_verify(payload, payload_size, public_key)) {
@@ -99,6 +106,9 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
     return malloc_str("bad signature");
   }
   LOG("verified");
+
+  // sanity: force NULL terminate command
+  payload->command[COMMAND_SIZE - 1] = '\0';
   LOG("command=%s", payload->command);
 
   const char *cmd = payload->command;
@@ -141,6 +151,7 @@ static char *cmd_install_file(void *apk, size_t apk_size, int *ret_val) {
   if (err < 0) {
     LOG_ERRNO("snprintf() failed", errno);
     *ret_val = errno;
+    free(path);
     return malloc_str("Internal error");
   } else if (err >= PATH_MAX) {
     LOG_ERR("path too long");
@@ -153,6 +164,7 @@ static char *cmd_install_file(void *apk, size_t apk_size, int *ret_val) {
   if (fd < 0) {
     LOG_ERRNO("open() failed", errno);
     *ret_val = errno;
+    free(path);
     return malloc_str("internal error");
   }
   LOG_DEBUG("fd=%d", fd);
@@ -161,6 +173,8 @@ static char *cmd_install_file(void *apk, size_t apk_size, int *ret_val) {
   if (err < 0) {
     LOG_ERRNO("write_all() failed", errno);
     *ret_val = errno;
+    free(path);
+    close(fd);
     return malloc_str("internal error");
   }
   close(fd);

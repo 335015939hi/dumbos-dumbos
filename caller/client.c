@@ -28,6 +28,7 @@ int client(int argc, char **argv, const char *const socket_path) {
   socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (socket_fd < 0) {
     LOG_ERRNO("failed to socket", errno);
+    free(sockaddr);
     return errno;
   }
   LOG_DEBUG("socket_fd=%d", socket_fd);
@@ -43,6 +44,7 @@ int client(int argc, char **argv, const char *const socket_path) {
       connect(socket_fd, (struct sockaddr *)socket_addr, sizeof(*socket_addr));
   if (ret < 0) {
     free(socket_addr);
+    close(socket_fd);
     LOG_ERRNO("failed to connect to socket", errno);
     return errno;
   }
@@ -65,29 +67,41 @@ int client(int argc, char **argv, const char *const socket_path) {
   }
   if (ret < 0) {
     LOG_ERRNO("write handshake failed", errno);
+    close(socket_fd);
     return errno;
   }
 
   ret = read_ushort(socket_fd); // should be 0 on handshake success
   LOG_VERBOSE("daemon feedback=%d", ret);
   if (ret < 0) {
-    LOG_ERRNO("read handshake result failed", errno);
+    ret = errno;
+    LOG_ERRNO("read handshake result failed", ret);
+    close(socket_fd);
+    return ret;
   } else if (ret != 0) {
-    LOG_ERRNO("handshake failed", errno);
+    ret = errno;
+    LOG_ERRNO("handshake failed", ret);
+    close(socket_fd);
+    return ret;
   }
 
   LOG_VERBOSE("sending argc %d", argc);
   ret = write_ushort(socket_fd, argc);
   if (ret < 0) {
-    LOG_ERRNO("failed to write argc", errno);
+    ret = errno;
+    LOG_ERRNO("failed to write argc", ret);
+    close(socket_fd);
+    return ret;
   }
 
   for (int i = 0; i < argc; i++) {
     LOG_VERBOSE("sending argv[%d] %s", i, argv[i]);
     ret = write_string(socket_fd, argv[i]);
     if (ret < 0) {
-      LOG_ERRNO("failed to write argv[]", errno);
-      return errno;
+      ret = errno;
+      close(socket_fd);
+      LOG_ERRNO("failed to write argv[]", ret);
+      return ret;
     }
   }
 
@@ -99,8 +113,10 @@ int client(int argc, char **argv, const char *const socket_path) {
   LOG_DEBUG("reading daemon return code");
   ret = read_ushort(socket_fd);
   if (ret < 0) {
-    LOG_ERRNO("failed to read daemon return code", errno);
-    return errno;
+    ret = errno;
+    close(socket_fd);
+    LOG_ERRNO("failed to read daemon return code", ret);
+    return ret;
   }
   d_ret = ret;
   LOG_VERBOSE("daemon returned %d", ret);
@@ -108,8 +124,9 @@ int client(int argc, char **argv, const char *const socket_path) {
   LOG_DEBUG("reading daemon message");
   d_msg = malloc_read_string(socket_fd);
   if (d_msg == NULL) {
-    LOG_ERRNO("faild to read daemon return message", errno);
-    return errno;
+    ret = errno;
+    LOG_ERRNO("faild to read daemon return message", ret);
+    return ret;
   }
   LOG_VERBOSE("daemon sent us %s", d_msg);
 

@@ -19,15 +19,22 @@
 
 int start_daemon(const struct daemon_opts *const opt) {
 
+  signal(SIGCHLD, SIG_IGN);
+
   int socket_fd;
   int err;
   int len;
   char *tmpdir;
   struct sockaddr_un *sock_addr = malloc(sizeof(struct sockaddr_un));
+  if (sock_addr == NULL) {
+    LOG_ERRNO("failed to malloc", errno);
+    return errno;
+  }
 
   socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (socket_fd < 0) {
     LOG_ERRNO("failed to create socket", errno);
+    free(sockaddr);
     return errno;
   }
   LOG_DEBUG("socket_fd=%d", socket_fd);
@@ -46,6 +53,7 @@ int start_daemon(const struct daemon_opts *const opt) {
 
   if (bind(socket_fd, (struct sockaddr *)sock_addr, sizeof(*sock_addr)) < 0) {
     LOG_ERRNO("failed to bind socket", errno);
+    close(socket_fd);
     free(sock_addr);
     return errno;
   }
@@ -53,11 +61,13 @@ int start_daemon(const struct daemon_opts *const opt) {
 
   if (chown(opt->path, opt->uid, opt->gid) < 0) {
     LOG_ERRNO("chown failed", errno);
+    close(socket_fd);
     unlink(opt->path);
     return errno;
   }
   if (chmod(opt->path, opt->mode) < 0) {
     LOG_ERRNO("chmod failed", errno);
+    close(socket_fd);
     unlink(opt->path);
     return errno;
   }
@@ -69,6 +79,7 @@ int start_daemon(const struct daemon_opts *const opt) {
 
   if (listen(socket_fd, 16) < 0) {
     LOG_ERRNO("listen failed", errno);
+    close(socket_fd);
     unlink(opt->path);
     return errno;
   }
@@ -89,15 +100,16 @@ int start_daemon(const struct daemon_opts *const opt) {
   tmpdir = malloc(len + 1 + 1); // NULL terminator, possible slash
   if (tmpdir == NULL) {
     LOG_ERRNO("failed to malloc()", errno);
+    close(socket_fd);
     err = errno;
     unlink(opt->path);
     return err;
   }
 
   strcpy(tmpdir, opt->tmpdir);
-  if (tmpdir[len - 1] != '/') {
-    tmpdir[len - 1] = '/';
-    tmpdir[len] = '\0';
+  if (tmpdir[len] != '/') {
+    tmpdir[len] = '/';
+    tmpdir[len + 1] = '\0';
   }
 
   for (;;) {

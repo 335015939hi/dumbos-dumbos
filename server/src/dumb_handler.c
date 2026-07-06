@@ -15,7 +15,7 @@
 #include "common.h"
 #include "dumb.h"
 
-char *malloc_buf_to_hex(const void *buf, int size) {
+char *malloc_buf_to_hex(const void *buf, size_t size) {
   const char *const hex = "0123456789ABCDEF";
   char *output;
   uint8_t top;
@@ -41,9 +41,9 @@ static int hexchartoval(const char c) {
   if ('0' <= c && c <= '9') {
     return c - '0';
   } else if ('a' <= c && c <= 'f') {
-    return c - 'a';
+    return c - 'a' + 10;
   } else if ('A' <= c && c <= 'F') {
-    return c - 'A';
+    return c - 'A' + 10;
   } else {
     return -1;
   }

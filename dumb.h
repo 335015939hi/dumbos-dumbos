@@ -1,6 +1,10 @@
 #ifndef _DUMB_H
 #define _DUMB_H
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <time.h>
+
 #include "ed25519.h"
 
 // enum MHD_Result;
@@ -60,8 +64,10 @@ void *dp_malloc_check_load(const char *const code, size_t *ret_size);
 // load payload by path. does no checks. return malloc'ed buffer
 void *dp_malloc_load(const char *path, size_t *ret_size);
 
+//!!!this will delete the signature from memory!!!
 int dp_verify(struct DUMB_PAYLOAD *payload, size_t size,
               const char *pubkey_hex);
+
 int dp_sign(struct DUMB_PAYLOAD *payload, size_t size,
             const char *private_key_hex);
 
