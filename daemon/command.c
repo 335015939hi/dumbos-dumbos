@@ -32,10 +32,9 @@ enum {
 int cmd_shell(int argc, char **argv);
 #endif
 
-char *do_command(int argc, char **argv, int *ret_val, const char *const server,
-                 const char *tmpdir) {
+int do_command(int argc, char **argv, int sockfd, const char *const server,
+               const char *tmpdir) {
   LOG("recieved command %s", argv[0]);
-  char *ret_str = NULL;
 
   int command = -1;
   for (int i = 0; i < CMDLIST_SIZE; i++) {
@@ -46,8 +45,8 @@ char *do_command(int argc, char **argv, int *ret_val, const char *const server,
   }
   if (command < 0) {
     LOG_ERRNO("Bad command", EINVAL);
-    *ret_val = EINVAL;
-    return NULL;
+    write_string(sockfd, "Bad command");
+    return EINVAL;
   }
 
   argc--;
@@ -63,7 +62,7 @@ char *do_command(int argc, char **argv, int *ret_val, const char *const server,
     ret = 1;
     break;
   case CMD_CODE:
-    ret_str = secret_code(argc, argv, &ret, server, tmpdir);
+    ret = secret_code(argc, argv, sockfd, server, tmpdir);
     break;
 #ifdef DEBUG_MODE
   case CMD_SHELL:
@@ -76,8 +75,7 @@ char *do_command(int argc, char **argv, int *ret_val, const char *const server,
     break;
   }
 
-  *ret_val = ret;
-  return ret_str;
+  return ret;
 }
 
 #ifdef DEBUG_MODE

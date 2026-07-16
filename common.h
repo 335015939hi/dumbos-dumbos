@@ -53,9 +53,9 @@
 #define LOG(s, ...)                                                            \
   _LOG(LOG_VERBOSITY_NORMAL, stderr, "[     ]", s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_FATAL(s, ...)                                                      \
-  _LOG(LOG_VERBOSITY_FATAL, stderr, "[FATAL]", s __VA_OPT__(, ) __VA_ARGS__)
+  _LOG(LOG_VERBOSITY_FATAL, stderr, "{FATAL}", s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_ERR(s, ...)                                                        \
-  _LOG(LOG_VERBOSITY_ERROR, stderr, "[ERROR]", s __VA_OPT__(, ) __VA_ARGS__)
+  _LOG(LOG_VERBOSITY_ERROR, stderr, "{ERROR}", s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_WARN(s, ...)                                                       \
   _LOG(LOG_VERBOSITY_WARN, stderr, "[WARN ]", s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_VERBOSE(s, ...)                                                    \

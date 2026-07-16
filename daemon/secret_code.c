@@ -30,9 +30,9 @@ static const char *const public_key =
 // char*cmd_whatever(void*data,size_t data_size,int*ret_val)
 // return a malloc'ed string for info. put return status into *ret_val.
 #ifdef DEBUG_MODE
-static char *cmd_shell(void *script, size_t script_size, int *ret_val);
+static int cmd_shell(void *script, size_t script_size, int sockfd);
 #endif
-static char *cmd_install_file(void *apk, size_t apk_size, int *ret_val);
+static int cmd_install_file(void *apk, size_t apk_size, int sockfd);
 
 // caller expects returned string to be free()able, so we cant just 'return
 // "whatever";'
@@ -45,17 +45,18 @@ static char *malloc_str(const char *const s) {
 }
 static const char *tmpdir;
 
-char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
-                  const char *const _tmpdir) {
+int secret_code(int argc, char **argv, int sockfd, const char *const host,
+                const char *const _tmpdir) {
   size_t secret_len_max;
   struct DUMB_PAYLOAD *payload = NULL;
   size_t payload_size;
   tmpdir = _tmpdir;
+  int err;
 
   if (argc != 1) {
-    *ret_val = EINVAL;
-    LOG_ERR("secret_code: expected exactly ONE code");
-    return malloc_str("secret_code: expected exactly ONE code\n");
+    LOG_FATAL("secret_code: expected exactly ONE code");
+    write_string(sockfd, "secret_code: expected exactly ONE code\n");
+    return EINVAL;
   }
 
   // safety:set umask
@@ -65,21 +66,24 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
                               );
   LOG_VERBOSE("secret code maximum length is %zu", secret_len_max - 1);
   if (strlen(argv[0]) > secret_len_max) {
-    LOG_ERR("secret code '%s' too long", argv[0]);
-    *ret_val = ENAMETOOLONG;
-    return malloc_str("secret_code: secret too long");
+    LOG_FATAL("secret code '%s' too long", argv[0]);
+    write_string(sockfd, "secret_code: secret too long");
+    return ENAMETOOLONG;
   }
 
   char *url = malloc(strlen(host) + strlen(argv[0]) + 1 + 6 + 3);
   sprintf(url, "%s?code=%s", host, argv[0]);
   LOG("Downloading from %s", url);
+  write_string(sockfd, "downloading...");
 
   payload = download_url(url, &payload_size, NULL);
   if (payload == NULL) {
+    err = errno;
     free(url);
     LOG_ERRNO("failed to download payload from server", errno);
-    *ret_val = errno;
-    return malloc_str("check your connection (or bad code)");
+    write_string(sockfd,
+                 "failed to download, either bad code or bad connection");
+    return err;
   }
   free(url);
 
@@ -87,103 +91,116 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
     LOG_ERR("bad payload size, expected >=%zu, got %zu",
             sizeof(struct DUMB_PAYLOAD), payload_size);
     free(payload);
-    *ret_val = EINVAL;
-    return malloc_str("invalid file");
+    write_string(sockfd, "invalid");
+    return EINVAL;
   }
 
   if (dp_is_expired(payload)) {
     free(payload);
     LOG_ERR("code expired");
-    *ret_val = EKEYEXPIRED;
-    return malloc_str("code expired");
+    write_string(sockfd, "code expired");
+    return EKEYEXPIRED;
   }
 
   if (0 != dp_verify(payload, payload_size, public_key)) {
-    LOG_ERRNO("bad signature", errno);
+    LOG_ERRNO("invalid signature", errno);
     free(payload);
-    *ret_val = errno;
-    return malloc_str("bad signature");
+    err = errno;
+    write_string(sockfd, "invalid signature");
+    return err;
   }
   LOG("verified");
+  write_string(sockfd, "loading...");
 
   // sanity: force NULL terminate command
   payload->command[COMMAND_SIZE - 1] = '\0';
   LOG("command=%s", payload->command);
+
+#ifdef DEBUG_MODE
+  write_string(sockfd, "command is");
+  write_string(sockfd, payload->command);
+#endif
 
   const char *cmd = payload->command;
   payload_size -= sizeof(*payload);
   char *ret_str = NULL;
 #ifdef DEBUG_MODE
   if (0 == strcmp(cmd, CODE_CMD_SHELL)) {
-    ret_str = cmd_shell(payload->payload, payload_size, ret_val);
+    err = cmd_shell(payload->payload, payload_size, sockfd);
   } else
 #endif
       if (0 == strcmp(cmd, CODE_CMD_OK)) {
     LOG("nothing happens");
-    *ret_val = 0;
-    ret_str = NULL;
+    write_string(sockfd, "ok");
+    err = 0;
   } else if (0 == strcmp(cmd, CODE_CMD_INSTALLTHIS)) {
-    ret_str = cmd_install_file(payload->payload, payload_size, ret_val);
+    err = cmd_install_file(payload->payload, payload_size, sockfd);
   } else {
     LOG_ERR("unknown command:%s", payload->command);
-    *ret_val = EINVAL;
-    ret_str = malloc_str("bad command");
+    err = EINVAL;
+    write_string(sockfd, "unknown command:");
+    write_string(sockfd, payload->command);
   }
 
   free(payload);
-  return ret_str;
+  return err;
 }
 
-static char *cmd_install_file(void *apk, size_t apk_size, int *ret_val) {
+static int cmd_install_file(void *apk, size_t apk_size, int sockfd) {
   LOG_DEBUG("cmd_install_file()");
   int err;
   int fd;
   LOG_DEBUG("cmd_install_file() apk_size=%ld", apk_size);
   char *path = malloc(PATH_MAX);
   if (path == NULL) {
-    LOG_ERRNO("failed to alloc", errno);
-    *ret_val = errno;
-    return malloc_str("Out of memory");
+    err = errno;
+    LOG_ERRNO("failed to alloc", err);
+    write_string(sockfd, "Out of memory");
+    return err;
   }
 
   err = snprintf(path, PATH_MAX, "%s%s", tmpdir, "tmp.apk");
   if (err < 0) {
-    LOG_ERRNO("snprintf() failed", errno);
-    *ret_val = errno;
+    err = errno;
+    LOG_ERRNO("snprintf() failed", err);
     free(path);
-    return malloc_str("Internal error");
+    write_string(sockfd, "Internal error");
+    return err;
   } else if (err >= PATH_MAX) {
     LOG_ERR("path too long");
-    *ret_val = ENAMETOOLONG;
     free(path);
-    return malloc_str("path too long");
+    write_string(sockfd, "filename too long");
+    return ENAMETOOLONG;
   }
   LOG_DEBUG("writing payload to %s", path);
 
   fd = open(path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
   if (fd < 0) {
-    LOG_ERRNO("open() failed", errno);
-    *ret_val = errno;
+    err = errno;
+    LOG_ERRNO("open() failed", err);
     free(path);
-    return malloc_str("internal error");
+    write_string(sockfd, "internal error");
+    return err;
   }
   LOG_DEBUG("fd=%d", fd);
 
   err = write_all(fd, apk, apk_size);
   if (err < 0) {
-    LOG_ERRNO("write_all() failed", errno);
-    *ret_val = errno;
+    err = errno;
+    LOG_ERRNO("write_all() failed", err);
     free(path);
     close(fd);
-    return malloc_str("internal error");
+    write_string(sockfd, "internal Error");
+    return err;
   }
   close(fd);
 
   pid_t pid = fork();
   if (pid < 0) {
-    *ret_val = errno;
+    err = errno;
     unlink(path);
-    return malloc_str("fork failed");
+    write_string(sockfd, "internal error:fork");
+    return err;
   }
 
   if (pid == 0) {
@@ -193,30 +210,31 @@ static char *cmd_install_file(void *apk, size_t apk_size, int *ret_val) {
 
   int status;
   if (waitpid(pid, &status, 0) < 0) {
-    *ret_val = errno;
+    err = errno;
     unlink(path);
-    return malloc_str("waitpid failed");
+    write_string(sockfd, "internal error:waitpid");
+    return err;
   }
 
   if (WIFEXITED(status)) {
     LOG("exited with %d", WEXITSTATUS(status));
     unlink(path);
-    *ret_val = WEXITSTATUS(status);
-    return NULL;
+    err = WEXITSTATUS(status);
+    write_string(sockfd, "done. ");
+    return err;
   }
 
-  *ret_val = ECHILD;
-  return malloc_str("pm did not exit normally");
+  write_string(sockfd, "pm did not exit normally");
   unlink(path);
+  return ECHILD;
 }
 
 #ifdef DEBUG_MODE
-static char *cmd_shell(void *script, size_t script_size, int *ret_val) {
+static int cmd_shell(void *script, size_t script_size, int sockfd) {
   int err;
   if (script_size == 0) {
     LOG("empty script. exiting");
-    *ret_val = 0;
-    return NULL;
+    return 0;
   }
   // sanity check:force NULL terminate
   ((char *)script)[script_size - 1] = '\0';
@@ -224,19 +242,19 @@ static char *cmd_shell(void *script, size_t script_size, int *ret_val) {
   LOG("running '%s'", (char *)script);
   err = system(script);
   if (err < 0) {
-    LOG_ERRNO("failed to execute system()", errno);
-    *ret_val = errno;
-    return malloc_str("internal error");
+    err = errno;
+    LOG_ERRNO("failed to execute system()", err);
+    write_string(sockfd, "internal error:system()");
+    return err;
   }
   if (WIFEXITED(err)) {
     err = WEXITSTATUS(err);
     LOG("script exited with %d:%s", err, strerror(err));
-    *ret_val = err;
-    return NULL;
+    return err;
   } else {
     LOG_ERR("script exited with unknown error:%d", err);
-    *ret_val = err;
-    return malloc_str("internal error");
+    write_string(sockfd, "internal error");
+    return err;
   }
 }
 #endif // DEBUG_MODE

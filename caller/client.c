@@ -114,6 +114,26 @@ int client(int argc, char **argv, const char *const socket_path) {
   int d_ret;
   char *d_msg;
 
+  LOG_DEBUG("reading daemon messages");
+  for (;;) {
+    d_msg = malloc_read_string(socket_fd);
+    if (d_msg == NULL) {
+      ret = errno;
+      LOG_ERRNO("failed to read daemon return message", ret);
+      return ret;
+    }
+    if (strlen(d_msg) == 0) {
+      LOG_VERBOSE(
+          "daemon sent us empty string, that means finished all messages");
+      free(d_msg);
+      break;
+    } else {
+      LOG_VERBOSE("daemon sent us %s", d_msg);
+      printf("%s\n", d_msg);
+      free(d_msg);
+    }
+  }
+
   LOG_DEBUG("reading daemon return code");
   ret = read_ushort(socket_fd);
   if (ret < 0) {
@@ -125,18 +145,6 @@ int client(int argc, char **argv, const char *const socket_path) {
   d_ret = ret;
   LOG_VERBOSE("daemon returned %d", ret);
 
-  LOG_DEBUG("reading daemon message");
-  d_msg = malloc_read_string(socket_fd);
-  if (d_msg == NULL) {
-    ret = errno;
-    LOG_ERRNO("faild to read daemon return message", ret);
-    return ret;
-  }
-  LOG_VERBOSE("daemon sent us %s", d_msg);
-
-  printf("%s\n", d_msg);
-
-  free(d_msg);
   LOG_DEBUG("client() returning %d", d_ret);
   return d_ret;
 };

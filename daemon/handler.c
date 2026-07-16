@@ -15,7 +15,7 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
   unsigned short client_v_major;
   unsigned short client_v_minor;
   unsigned short client_v_patch;
-  signed long ret;
+  int err;
 
   signal(SIGCHLD, SIG_DFL);
 
@@ -28,19 +28,19 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
   LOG("client version string is %s", client_v_str);
   free(client_v_str);
 
-  ret = read_ushort(client_fd);
-  if (ret >= 0) {
-    client_v_major = ret;
-    ret = read_ushort(client_fd);
-    if (ret >= 0) {
-      client_v_minor = ret;
-      ret = read_ushort(client_fd);
-      if (ret >= 0) {
-        client_v_patch = ret;
+  err = read_ushort(client_fd);
+  if (err >= 0) {
+    client_v_major = err;
+    err = read_ushort(client_fd);
+    if (err >= 0) {
+      client_v_minor = err;
+      err = read_ushort(client_fd);
+      if (err >= 0) {
+        client_v_patch = err;
       }
     }
   }
-  if (ret < 0) {
+  if (err < 0) {
     LOG_ERRNO("reading client version code fail", errno);
     return errno;
   }
@@ -56,12 +56,15 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
   }
 
   // success! tell it to the client
-  write_ushort(client_fd, 0);
+  err = write_ushort(client_fd, 0);
+  if (err == 0) {
+    LOG_ERRNO("failed to write_ushort() for handshake success", errno);
+  }
 
   int argc;
   char **argv;
   char *ret_msg = NULL;
-  int ret_val = EINVAL;
+  int ret = EINVAL;
   bool haserror = false;
 
   ret = read_ushort(client_fd);
@@ -72,27 +75,35 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
   argc = ret;
   if (argc == 0) {
     LOG("no command. exiting");
-    write_ushort(client_fd, 0);
     write_string(client_fd, "No command");
+    write_ushort(client_fd, 0);
     return 0;
   }
   LOG("client has %d arguments", argc);
   if (argc > MAX_ARGS || argc < 0) {
     LOG_ERR("too many arguments, max %d got %d", MAX_ARGS, argc);
+    write_string(client_fd, "too many arguments");
+    write_ushort(client_fd, E2BIG);
     return E2BIG;
   }
 
   argv = calloc(argc, sizeof(char *));
   if (argv == NULL) {
-    LOG_ERRNO("alloc argv fail", errno);
-    return errno;
+    err = errno;
+    LOG_ERRNO("alloc argv fail", err);
+    write_string(client_fd, "internal error");
+    write_ushort(client_fd, err);
+    return err;
   }
 
   for (int i = 0; i < argc; i++) {
     char *arg;
     arg = malloc_read_string(client_fd);
     if (arg == NULL) {
-      LOG_ERRNO("alloc argv[] fail", errno);
+      ret = errno;
+      LOG_ERRNO("alloc argv[] fail", err);
+      write_string(client_fd, "internal error");
+      write_ushort(client_fd, err);
       haserror = true;
       break;
     }
@@ -100,7 +111,14 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
   }
 
   if (!haserror) {
-    ret_msg = do_command(argc, argv, &ret_val, server, tmpdir);
+    ret = do_command(argc, argv, client_fd, server, tmpdir);
+    LOG_DEBUG("do_command exited with %d", ret);
+  }
+
+  LOG_DEBUG("writing empty string");
+  err = write_string(client_fd, "");
+  if (err != 0) {
+    LOG_ERRNO("write_string(\"\") failed", errno);
   }
 
   for (int i = 0; i < argc; i++) {
@@ -109,14 +127,10 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
   }
   free(argv);
 
-  write_ushort(client_fd, (unsigned short)ret_val);
-
-  if (ret_msg) {
-    write_string(client_fd, ret_msg);
-    free(ret_msg);
-  } else {
-    write_string(client_fd, "Done");
+  err = write_ushort(client_fd, (unsigned short)ret);
+  if (err != 0) {
+    LOG_ERRNO("writing return code to client failed", errno);
   }
 
-  return ret_val;
+  return ret;
 };
