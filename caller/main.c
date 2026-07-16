@@ -7,6 +7,9 @@
 #include "../common.h"
 #include "client.h"
 
+// full path of the default socket. see daemon/main.c
+#define DEFAULT_SOCKET_PATH "/dev/socket/dumbosd.socket"
+
 static const struct option long_opts[];
 static const char *const short_opts;
 void display_help(FILE *, const char *const);

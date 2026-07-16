@@ -16,6 +16,16 @@
 
 #define DEFAULT_SOCKET_CONTEXT "u:object_r:dumbosd_socket:s0"
 #define DEFAULT_TMPDIR "/data/local/tmp/dumb/"
+// full path of the default socket
+#define DEFAULT_SOCKET_PATH "/dev/socket/dumbosd.socket"
+// default server
+#define DEFAULT_SERVER "http://192.168.12.1:8081/dumb"
+// default port
+#define DEFAULT_PORT "3850"
+// default socket permissions
+#define DEFAULT_SOCKET_MODE "666"
+// default socket ownership
+#define DEFAULT_SOCKET_OWNER "root:system"
 
 static const struct option long_opts[];
 static const char *const short_opts;

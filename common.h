@@ -17,22 +17,6 @@
 // comment this out if you're not debugging
 #define DEBUG_MODE 1
 
-// full path of the default socket
-#define DEFAULT_SOCKET_PATH "/dev/socket/dumbosd.socket"
-// default server
-#define DEFAULT_SERVER "http://192.168.12.1:8081/dumb"
-// default port
-#define DEFAULT_PORT "3850"
-// default socket permissions
-#define DEFAULT_SOCKET_MODE "666"
-// default socket ownership
-#define DEFAULT_SOCKET_OWNER "root:system"
-
-// extension of signature file
-#define EXT_SIG ".sig"
-// extension of code (not secret code) file
-#define EXT_CODE ""
-
 // max string length, including NULL terminator
 // strings over this length will throw error somewhere
 #define MAX_STRING 4096

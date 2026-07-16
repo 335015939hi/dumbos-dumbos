@@ -61,10 +61,8 @@ char *secret_code(int argc, char **argv, int *ret_val, const char *const host,
   // safety:set umask
   umask(0177);
 
-  secret_len_max =
-      PATH_MAX - (strlen(tmpdir) + MAX(strlen(EXT_SIG), strlen(EXT_CODE)) +
-                  1 // NULL terminator
-                 );
+  secret_len_max = PATH_MAX - (strlen(tmpdir) + 1 // NULL terminator
+                              );
   LOG_VERBOSE("secret code maximum length is %zu", secret_len_max - 1);
   if (strlen(argv[0]) > secret_len_max) {
     LOG_ERR("secret code '%s' too long", argv[0]);
