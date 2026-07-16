@@ -48,7 +48,8 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
   LOG("client version code is %hu.%hu.%hu", client_v_major, client_v_minor,
       client_v_patch);
   if (client_v_major != (unsigned short)VERSION_MAJOR ||
-      client_v_minor > (unsigned short)VERSION_MINOR) {
+      client_v_minor != (unsigned short)VERSION_MINOR ||
+      client_v_patch != (unsigned short)VERSION_PATCH) {
     LOG_ERR("client has incompatible version. stopping");
     write_ushort(client_fd, EPROTO);
     return EPROTO;
