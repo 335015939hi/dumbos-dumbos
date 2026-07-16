@@ -81,8 +81,14 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
     err = errno;
     free(url);
     LOG_ERRNO("failed to download payload from server", errno);
-    write_string(sockfd,
-                 "failed to download, either bad code or bad connection");
+    if (errno == ECONNREFUSED) {
+      write_string(sockfd, "check your connection");
+    } else if (errno == EPROTO) {
+      write_string(sockfd, "invalid code");
+    } else {
+      write_string(sockfd,
+                   "failed to download, either bad code or bad connection");
+    }
     return err;
   }
   free(url);
