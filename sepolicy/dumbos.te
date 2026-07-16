@@ -16,7 +16,7 @@ allow dumbosd socket_device:dir create_file_perms;
 allow dumbosd socket_device:dir { read write getattr add_name setattr remove_name };
 allow dumbosd socket_device:sock_file { read write getattr create setattr relabelfrom };
 allow dumbosd dumbosd:sock_file { read write getattr setattr create unlink };
-allow dumbosd dumbosd:capability { chown fsetid net_raw };
+allow dumbosd dumbosd:capability { chown fsetid net_raw dac_read_search dac_override };
 
 allow dumbosd dumbosd:tcp_socket { create read write setopt getopt getattr setattr connect name_connect };
 allow dumbosd fwmarkd_socket:sock_file { read write getattr setattr create unlink };
@@ -56,3 +56,10 @@ allow untrusted_app dumbosd_socket:sock_file { write getattr read };
 allow untrusted_app dumbosd_socket:unix_stream_socket { connectto read write };
 allow untrusted_app dumbosd:sock_file { write getattr read };
 allow untrusted_app dumbosd:unix_stream_socket { connectto read write };
+
+allow dumbosd mnt_user_file:file create_file_perms;
+allow dumbosd mnt_user_file:file { read open map write getattr setattr };
+allow dumbosd mnt_user_file:dir { read write getattr add_name setattr remove_name open search };
+allow dumbosd media_rw_data_file:file create_file_perms;
+allow dumbosd media_rw_data_file:file { read open map write getattr setattr };
+allow dumbosd media_rw_data_file:dir { read write getattr add_name setattr remove_name open search };

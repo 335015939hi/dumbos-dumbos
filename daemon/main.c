@@ -32,6 +32,7 @@ static const char *const short_opts;
 void display_help(FILE *, const char *const);
 
 int main(int argc, char **argv) {
+  rotate_logfile("/data/dumnbosd.log", false);
 #ifdef DEBUG_MODE
   LOG_WARN("running in debug mode. if you are not developing this "
            "program, please report this to someone.");

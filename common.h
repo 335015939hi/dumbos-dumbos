@@ -1,6 +1,8 @@
 #ifndef _DUMBOS_COMMON_H
 #define _DUMBOS_COMMON_H
 
+#include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -36,32 +38,33 @@
 #endif
 
 // logging functions
-// #ifdef LOG_USE_PID
+FILE *_log_output;
+int rotate_logfile(const char *path, bool closeold);
 #define _LOG_PREFIX(f, p)                                                      \
   fprintf(f, "[%s][%ld]%s ", timestamp(), (long)getpid(), p)
-// #else
-// #define _LOG_PREFIX(f, p) fprintf(f, "[%s]%s", timestamp(), p)
-// #endif
-#define _LOG(v, f, p, s, ...)                                                  \
+#define _LOG(v, p, s, ...)                                                     \
   do {                                                                         \
     if (log_verbosity >= v) {                                                  \
-      _LOG_PREFIX(f, p);                                                       \
-      fprintf(f, s __VA_OPT__(, ) __VA_ARGS__);                                \
-      fprintf(f, "\n");                                                        \
+      if (_log_output == NULL)                                                 \
+        _log_output = stderr;                                                  \
+      _LOG_PREFIX(_log_output, p);                                             \
+      fprintf(_log_output, s __VA_OPT__(, ) __VA_ARGS__);                      \
+      fprintf(_log_output, "\n");                                              \
+      fflush(_log_output);                                                     \
     }                                                                          \
   } while (0)
 #define LOG(s, ...)                                                            \
-  _LOG(LOG_VERBOSITY_NORMAL, stderr, "[     ]", s __VA_OPT__(, ) __VA_ARGS__)
+  _LOG(LOG_VERBOSITY_NORMAL, "[     ]", s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_FATAL(s, ...)                                                      \
-  _LOG(LOG_VERBOSITY_FATAL, stderr, "{FATAL}", s __VA_OPT__(, ) __VA_ARGS__)
+  _LOG(LOG_VERBOSITY_FATAL, "{FATAL}", s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_ERR(s, ...)                                                        \
-  _LOG(LOG_VERBOSITY_ERROR, stderr, "{ERROR}", s __VA_OPT__(, ) __VA_ARGS__)
+  _LOG(LOG_VERBOSITY_ERROR, "{ERROR}", s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_WARN(s, ...)                                                       \
-  _LOG(LOG_VERBOSITY_WARN, stderr, "[WARN ]", s __VA_OPT__(, ) __VA_ARGS__)
+  _LOG(LOG_VERBOSITY_WARN, "[WARN ]", s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_VERBOSE(s, ...)                                                    \
-  _LOG(LOG_VERBOSITY_VERBOSE, stderr, "[VRBOS]", s __VA_OPT__(, ) __VA_ARGS__)
+  _LOG(LOG_VERBOSITY_VERBOSE, "[VRBOS]", s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_DEBUG(s, ...)                                                      \
-  _LOG(LOG_VERBOSITY_DEBUG, stderr, "[DEBUG]", s __VA_OPT__(, ) __VA_ARGS__)
+  _LOG(LOG_VERBOSITY_DEBUG, "[DEBUG]", s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_WARN_ERRNO(s, err) LOG_WARN("%s:%s", s, strerror(err))
 #define LOG_ERRNO(s, err) LOG_ERR("%s:%s", s, strerror(err))
 #define LOG_ERROR_ERRNO(s, err) LOG_ERRNO(s, err)

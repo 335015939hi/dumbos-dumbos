@@ -57,7 +57,7 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
 
   // success! tell it to the client
   err = write_ushort(client_fd, 0);
-  if (err == 0) {
+  if (err != 0) {
     LOG_ERRNO("failed to write_ushort() for handshake success", errno);
   }
 
@@ -76,6 +76,7 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
   if (argc == 0) {
     LOG("no command. exiting");
     write_string(client_fd, "No command");
+    write_string(client_fd, "");
     write_ushort(client_fd, 0);
     return 0;
   }
@@ -92,6 +93,7 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
     err = errno;
     LOG_ERRNO("alloc argv fail", err);
     write_string(client_fd, "internal error");
+    write_string(client_fd, "");
     write_ushort(client_fd, err);
     return err;
   }
@@ -103,6 +105,7 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
       ret = errno;
       LOG_ERRNO("alloc argv[] fail", err);
       write_string(client_fd, "internal error");
+      write_string(client_fd, "");
       write_ushort(client_fd, err);
       haserror = true;
       break;

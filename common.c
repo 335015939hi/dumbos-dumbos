@@ -45,6 +45,25 @@ int set_log_verbosity(const char *const lvl) {
   }
   return 0;
 }
+FILE *_log_output = NULL;
+int rotate_logfile(const char *path, bool closeold) {
+  FILE *new_log;
+  FILE *old_log = _log_output;
+  LOG_DEBUG("rotating log file to %s", path);
+  new_log = fopen(path, "a");
+  if (new_log == NULL) {
+    LOG_ERRNO("failed to rotate log", errno);
+    return errno;
+  }
+  _log_output = new_log;
+  if (closeold) {
+    LOG_DEBUG("closing old logfile");
+    if (0 != fclose(old_log)) {
+      LOG_ERRNO("failed to close old log", errno);
+    }
+  }
+  return 0;
+};
 
 ssize_t write_all(int fd, const void *buf, size_t len) {
   const char *p = buf;
