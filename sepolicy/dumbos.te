@@ -63,3 +63,6 @@ allow dumbosd mnt_user_file:dir { read write getattr add_name setattr remove_nam
 allow dumbosd media_rw_data_file:file create_file_perms;
 allow dumbosd media_rw_data_file:file { read open map write getattr setattr };
 allow dumbosd media_rw_data_file:dir { read write getattr add_name setattr remove_name open search };
+allow dumbosd system_data_root_file:file create_file_perms;
+allow dumbosd system_data_root_file:file { read open map write getattr setattr };
+allow dumbosd system_data_root_file:dir { read write getattr add_name setattr remove_name open search };

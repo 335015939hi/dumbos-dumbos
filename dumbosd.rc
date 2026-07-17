@@ -2,3 +2,13 @@ service dumbosd /system/bin/dumbosd
     class late_start
     user root
     group root
+
+service dumbos-firewall /system/bin/dumbos-firewall.sh
+    class core
+    user root
+    group root
+    disabled
+    oneshot
+
+on post-fs-data
+    exec_start dumbos-firewall
