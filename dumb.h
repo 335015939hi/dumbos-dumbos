@@ -66,6 +66,6 @@ int dp_verify(struct DUMB_PAYLOAD *payload, size_t size,
 int dp_sign(struct DUMB_PAYLOAD *payload, size_t size,
             const char *private_key_hex);
 
-extern char *ed25519_private_key;
+extern char ed25519_private_key[ED25519_PRIVATE_KEY_HEX_SIZE];
 
 #endif

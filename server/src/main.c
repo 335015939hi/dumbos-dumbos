@@ -26,6 +26,7 @@
 #include <unistd.h>
 
 #include "chatgpt.h"
+#include "common.h"
 #include "dumb.h"
 
 /*
@@ -429,86 +430,8 @@ enum MHD_Result serve_static_file(struct MHD_Connection *connection,
  * Query values are fetched with MHD_lookup_connection_value().
  */
 enum MHD_Result handle_get(struct MHD_Connection *connection, const char *url) {
-  if (strcmp(url, "/") == 0) {
-    const char *html =
-        "<!doctype html>\n"
-        "<html>\n"
-        "<head>\n"
-        "  <meta charset=\"utf-8\">\n"
-        "  <title>C HTTP Server Demo</title>\n"
-        "</head>\n"
-        "<body>\n"
-        "  <h1>C HTTP Server Demo</h1>\n"
-        "  <p>Routes:</p>\n"
-        "  <ul>\n"
-        "    <li><a href=\"/hello?name=Tony\">/hello?name=Tony</a></li>\n"
-        "    <li><a href=\"/json\">/json</a></li>\n"
-        "    <li><a href=\"/headers\">/headers</a></li>\n"
-        "    <li><a href=\"/static/demo.txt\">/static/demo.txt</a></li>\n"
-        "  </ul>\n"
-        "  <p>Try POST /echo with curl.</p>\n"
-        "</body>\n"
-        "</html>\n";
-
-    return queue_text_response(connection, MHD_HTTP_OK,
-                               "text/html; charset=utf-8", html);
-  }
-
-  if (strcmp(url, "/hello") == 0) {
-    const char *name;
-    char body[256];
-
-    name =
-        MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "name");
-
-    if (name == NULL || name[0] == '\0') {
-      name = "world";
-    }
-
-    snprintf(body, sizeof(body), "Hello, %s.\n", name);
-
-    return queue_text_response(connection, MHD_HTTP_OK,
-                               "text/plain; charset=utf-8", body);
-  }
-
-  if (strcmp(url, "/json") == 0) {
-    const char *json = "{\n"
-                       "  \"ok\": true,\n"
-                       "  \"server\": \"c-http-server-demo\",\n"
-                       "  \"library\": \"libmicrohttpd\"\n"
-                       "}\n";
-
-    return queue_text_response(connection, MHD_HTTP_OK,
-                               "application/json; charset=utf-8", json);
-  }
-
   if (strcmp(url, "/dumb") == 0) {
     return dumb_handler(connection);
-  }
-
-  if (strcmp(url, "/headers") == 0) {
-    const char *user_agent;
-    const char *host;
-    char body[1024];
-
-    user_agent =
-        MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "User-Agent");
-
-    host = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Host");
-
-    snprintf(body, sizeof(body),
-             "Some request headers:\n"
-             "Host: %s\n"
-             "User-Agent: %s\n",
-             host != NULL ? host : "(missing)",
-             user_agent != NULL ? user_agent : "(missing)");
-
-    return queue_text_response(connection, MHD_HTTP_OK,
-                               "text/plain; charset=utf-8", body);
-  }
-
-  if (starts_with(url, STATIC_PREFIX)) {
-    return serve_static_file(connection, url);
   }
 
   return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
@@ -610,34 +533,6 @@ enum MHD_Result handle_request(void *cls, struct MHD_Connection *connection,
     return handle_get(connection, url);
   }
 
-  if (strcmp(method, MHD_HTTP_METHOD_POST) == 0) {
-    /*
-     * libmicrohttpd may deliver POST data in chunks.
-     *
-     * If upload_data_size is nonzero:
-     * - consume the data
-     * - set *upload_data_size to 0
-     * - return MHD_YES
-     *
-     * Then libmicrohttpd calls us again. When upload_data_size becomes 0,
-     * the full request body has been received.
-     */
-    if (*upload_data_size != 0) {
-      append_upload_data(state, upload_data, *upload_data_size);
-
-      /*
-       * Critical: tell libmicrohttpd we consumed this chunk.
-       * If you forget this, the library may call you again with the same
-       * data. Small omissions, large suffering.
-       */
-      *upload_data_size = 0;
-
-      return MHD_YES;
-    }
-
-    return handle_post(connection, url, state);
-  }
-
   return queue_method_not_allowed(connection);
 }
 
@@ -685,12 +580,34 @@ bool parse_port(const char *s, unsigned int *out_port) {
   return true;
 }
 
+static int read_keyfile(char key[ED25519_PRIVATE_KEY_HEX_SIZE],
+                        const char *path) {
+  LOG_VERBOSE("reading keyfile %s", path);
+  FILE *f = fopen(path, "r");
+  if (f == NULL) {
+    LOG_ERRNO("failed to open file for reading", errno);
+    return errno;
+  }
+  if (ED25519_PRIVATE_KEY_HEX_SIZE - 1 !=
+      fread(key, 1, ED25519_PRIVATE_KEY_HEX_SIZE - 1, f)) {
+    LOG_ERRNO("failed reading key file", errno);
+    if (errno == 0)
+      errno = ENOMSG;
+    fclose(f);
+    return errno;
+  }
+  fclose(f);
+  key[ED25519_PRIVATE_KEY_HEX_SIZE - 1] = '\0';
+  return 0;
+}
+
 int main(int argc, char **argv) {
   unsigned int port;
+  int err;
   struct MHD_Daemon *daemon;
 
   if (argc != 3) {
-    fprintf(stderr, "usage: %s <port> <private_key_hex>\n", argv[0]);
+    fprintf(stderr, "usage: %s <port> <private_key_path>\n", argv[0]);
     return EXIT_FAILURE;
   }
 
@@ -699,7 +616,10 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  ed25519_private_key = argv[2];
+  if ((err = read_keyfile(ed25519_private_key, argv[2])) != 0) {
+    LOG_FATAL("failed to read key file. exiting");
+    return err;
+  }
 
   signal(SIGINT, handle_signal);
   signal(SIGTERM, handle_signal);
@@ -726,7 +646,7 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  printf("server listening on http://127.0.0.1:%u\n", port);
+  printf("server listening on port %u\n", port);
   printf("press Ctrl+C to stop\n");
 
   /*

@@ -14,6 +14,9 @@ a.out
 /server/public/
 /server/cmake_install.cmake
 
+#keys
+/keys/
+
 # Prerequisites
 *.d
 

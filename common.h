@@ -38,7 +38,7 @@
 #endif
 
 // logging functions
-FILE *_log_output;
+extern FILE *_log_output;
 int rotate_logfile(const char *path, bool closeold);
 #define _LOG_PREFIX(f, p)                                                      \
   fprintf(f, "[%s][%ld]%s ", timestamp(), (long)getpid(), p)

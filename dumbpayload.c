@@ -15,7 +15,7 @@
 #include "dumb.h"
 #include "ed25519.h"
 
-char *ed25519_private_key;
+char ed25519_private_key[ED25519_PRIVATE_KEY_HEX_SIZE];
 
 static bool check_code_allowed_chars(const char *const code) {
   unsigned int len = strlen(code);
