@@ -130,6 +130,7 @@ int client(int argc, char **argv, const char *const socket_path) {
     } else {
       LOG_VERBOSE("daemon sent us %s", d_msg);
       printf("%s\n", d_msg);
+      fflush(stdout);
       free(d_msg);
     }
   }
