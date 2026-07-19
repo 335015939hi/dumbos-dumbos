@@ -1,3 +1,5 @@
 /dev/socket/dumbosd.socket u:object_r:dumbosd_socket:s0
 #/system/bin/dumbos u:object_r:dumbosd_exec:s0
 /system/bin/dumbosd u:object_r:dumbosd_exec:s0
+/system/bin/dumbos-firewall-init.sh u:object_r:dumbosd_exec:s0
+/system/bin/dumbos-firewall.sh u:object_r:dumbosd_exec:s0

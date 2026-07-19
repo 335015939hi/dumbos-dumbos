@@ -54,3 +54,14 @@ sh_binary {
     name:"dumbos-firewall.sh",
     src:"firewall/dumbos-firewall.sh"
 }
+
+sh_binary {
+    name:"dumbos-firewall-init.sh",
+    src:"firewall/dumbos-firewall-init.sh"
+}
+
+prebuilt_etc {
+    name: "dumbos-firewall.conf",
+    src: "firewall/dumbos-firewall.conf",
+    filename: "dumbos-firewall.conf",
+}

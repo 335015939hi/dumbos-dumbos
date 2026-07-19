@@ -4,7 +4,7 @@ type dumbosd_exec, exec_type, file_type, system_file_type;
 init_daemon_domain(dumbosd)
 
 # Remove this when done testing. You asked "without going permissive", so don't leave this in.
-permissive dumbosd;
+# permissive dumbosd;
 
 type dumbosd_socket, file_type, mlstrustedobject;
 type dumbosd_data_file, file_type, data_file_type, mlstrustedobject;
@@ -16,7 +16,7 @@ allow dumbosd socket_device:dir create_file_perms;
 allow dumbosd socket_device:dir { read write getattr add_name setattr remove_name };
 allow dumbosd socket_device:sock_file { read write getattr create setattr relabelfrom };
 allow dumbosd dumbosd:sock_file { read write getattr setattr create unlink };
-allow dumbosd dumbosd:capability { chown fsetid net_raw dac_read_search dac_override };
+allow dumbosd dumbosd:capability { chown fsetid net_raw dac_read_search dac_override net_admin };
 
 allow dumbosd dumbosd:tcp_socket { create read write setopt getopt getattr setattr connect name_connect };
 allow dumbosd fwmarkd_socket:sock_file { read write getattr setattr create unlink };
@@ -66,3 +66,17 @@ allow dumbosd media_rw_data_file:dir { read write getattr add_name setattr remov
 allow dumbosd system_data_root_file:file create_file_perms;
 allow dumbosd system_data_root_file:file { read open map write getattr setattr };
 allow dumbosd system_data_root_file:dir { read write getattr add_name setattr remove_name open search };
+allow dumbosd system_file:file { read open map write getattr setattr lock };
+
+allow dumbosd netutils_wrapper_exec:file { read open map write getattr setattr execute execute_no_trans };
+allow dumbosd dumbosd_exec:file { read open map write getattr setattr execute execute_no_trans };
+allow dumbosd dumbosd:rawip_socket { create read write getopt getattr setopt setattr };
+allow dumbosd usermodehelper:file { read getattr execute execute_no_trans open };
+allow dumbosd proc_net:file { getattr open read write };
+
+allow dumbosd fs_bpf:dir { search };
+allow dumbosd fs_bpf_netd_shared:dir { search };
+allow dumbosd fs_bpf_netd_shared:file { read open getattr };
+
+allow dumbosd bpfloader:bpf { prog_run };
+
