@@ -71,6 +71,11 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
     return ENAMETOOLONG;
   }
 
+  // TODO:
+  // get time from network (dont trust system time)
+  // save current time (in case download takes a long time and it expires
+  // meanwhile)
+
   char *url = malloc(strlen(host) + strlen(argv[0]) + 1 + 6 + 3);
   sprintf(url, "%s?code=%s", host, argv[0]);
   LOG("Downloading from %s", url);
@@ -101,6 +106,8 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
     return EINVAL;
   }
 
+  // TODO: dont check against current time, check against saved network time
+  // from before download
   if (dp_is_expired(payload)) {
     free(payload);
     LOG_ERR("code expired");

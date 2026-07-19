@@ -12,6 +12,8 @@
  * application logic: routes, responses, POST body handling, etc.
  */
 
+#define _GNU_SOURCE
+
 #include <microhttpd.h>
 
 #include <errno.h>
@@ -22,7 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <time.h>
 #include <unistd.h>
 
 #include "chatgpt.h"
@@ -432,10 +434,18 @@ enum MHD_Result serve_static_file(struct MHD_Connection *connection,
 enum MHD_Result handle_get(struct MHD_Connection *connection, const char *url) {
   if (strcmp(url, "/dumb") == 0) {
     return dumb_handler(connection);
+  } else if (strcmp(url, "/time") == 0) {
+    char *time_str;
+    asprintf(&time_str, "%ld", time(NULL));
+    // TODO:error check
+    enum MHD_Result result = queue_text_response(
+        connection, MHD_HTTP_OK, "text/plain; charset=utf-8", time_str);
+    free(time_str);
+    return result;
+  } else {
+    return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
+                               "text/plain; charset=utf-8", "404 Not Found\n");
   }
-
-  return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
-                             "text/plain; charset=utf-8", "404 Not Found\n");
 }
 
 /*
