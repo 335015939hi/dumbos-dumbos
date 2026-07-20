@@ -21,8 +21,11 @@
 #include "curl.h"
 #include "util.h"
 
-static const char *const public_key =
-    "2d00e82db16278d9a5171b52badbb067c578d698113f2b36f05f9a26d523543e";
+// this header file should define static const char * const
+// _ed25519_public_key_hex as a 64 character +1 byte NULL (32 decoded bytes)
+// hexadecimal string that contained the public ed25519 public key used for
+// verification
+#include "../keys/public.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
@@ -132,7 +135,7 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
     return EKEYEXPIRED;
   }
 
-  if (0 != dp_verify(payload, payload_size, public_key)) {
+  if (0 != dp_verify(payload, payload_size, _ed25519_public_key_hex)) {
     LOG_ERRNO("invalid signature", errno);
     free(payload);
     err = errno;
