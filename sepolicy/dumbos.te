@@ -80,3 +80,7 @@ allow dumbosd fs_bpf_netd_shared:file { read open getattr };
 
 allow dumbosd bpfloader:bpf { prog_run };
 
+allow dumbosd dumbosd:udp_socket { create read write };
+allow dumbosd dnsproxyd_socket:sock_file { read write };
+
+

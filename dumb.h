@@ -52,6 +52,9 @@ time_t dp_get_expire(const struct DUMB_PAYLOAD *payload);
 time_t dp_get_expire_or_set(struct DUMB_PAYLOAD *payload);
 // true if expired, flase otherwise. will use dp_get_expire_or_set()
 bool dp_is_expired(struct DUMB_PAYLOAD *payload);
+// similar to dp_is_expired, but compares against given time instead of system
+// time.
+bool dp_is_expired_compare(struct DUMB_PAYLOAD *payload, time_t cur_time);
 // find and load a secret code payload, returning NULL on error. will return
 // malloc'ed buffer this will also perform checks such as expiry and
 // automatically sign

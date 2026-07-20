@@ -107,6 +107,11 @@ bool dp_is_expired(struct DUMB_PAYLOAD *payload) {
   return expire <= time(NULL);
 }
 
+bool dp_is_expired_compare(struct DUMB_PAYLOAD *payload, time_t cur_time) {
+  time_t expire = dp_get_expire_or_set(payload);
+  return expire <= cur_time;
+}
+
 void *dp_malloc_load(const char *path, size_t *ret_size) {
   size_t size;
   int fd;
