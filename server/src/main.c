@@ -590,45 +590,19 @@ bool parse_port(const char *s, unsigned int *out_port) {
   return true;
 }
 
-static int read_keyfile(char key[ED25519_PRIVATE_KEY_HEX_SIZE],
-                        const char *path) {
-  LOG_VERBOSE("reading keyfile %s", path);
-  FILE *f = fopen(path, "r");
-  if (f == NULL) {
-    LOG_ERRNO("failed to open file for reading", errno);
-    return errno;
-  }
-  if (ED25519_PRIVATE_KEY_HEX_SIZE - 1 !=
-      fread(key, 1, ED25519_PRIVATE_KEY_HEX_SIZE - 1, f)) {
-    LOG_ERRNO("failed reading key file", errno);
-    if (errno == 0)
-      errno = ENOMSG;
-    fclose(f);
-    return errno;
-  }
-  fclose(f);
-  key[ED25519_PRIVATE_KEY_HEX_SIZE - 1] = '\0';
-  return 0;
-}
-
 int main(int argc, char **argv) {
   unsigned int port;
   int err;
   struct MHD_Daemon *daemon;
 
-  if (argc != 3) {
-    fprintf(stderr, "usage: %s <port> <private_key_path>\n", argv[0]);
+  if (argc != 2) {
+    fprintf(stderr, "usage: %s <port>\n", argv[0]);
     return EXIT_FAILURE;
   }
 
   if (!parse_port(argv[1], &port)) {
     fprintf(stderr, "invalid port: %s\n", argv[1]);
     return EXIT_FAILURE;
-  }
-
-  if ((err = read_keyfile(ed25519_private_key, argv[2])) != 0) {
-    LOG_FATAL("failed to read key file. exiting");
-    return err;
   }
 
   signal(SIGINT, handle_signal);

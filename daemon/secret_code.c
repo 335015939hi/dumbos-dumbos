@@ -25,7 +25,7 @@
 // _ed25519_public_key_hex as a 64 character +1 byte NULL (32 decoded bytes)
 // hexadecimal string that contained the public ed25519 public key used for
 // verification
-#include "../keys/public.h"
+#include "../keys/key_public.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 

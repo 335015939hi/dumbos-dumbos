@@ -1,4 +1,6 @@
 
+#define _GNU_SOURCE
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -17,6 +19,9 @@
 #define CMD_KEY "mkkey"
 #define CMD_VERIFY "verify"
 #define CMD_HELP "help"
+
+#define PUBKEY_HEADER "key_public.h"
+#define PRIVKEY_HEADER "key_private.h"
 
 static const char *path;
 
@@ -75,8 +80,8 @@ static void display_help(const char *argv0) {
          "Commands:\n" CMD_HELP
          " [cmd] prints generic help, or more details on a specific command. "
          "<file> is ignored\n" CMD_NEW " creates a new payload\n" CMD_KEY
-         " generates new keypair to files key_public.h and key_private.h. "
-         "<file> ignored. \n" CMD_EXPIRE
+         " generates new keypair to files " PUBKEY_HEADER " and " PRIVKEY_HEADER
+         ". <file> ignored. \n" CMD_EXPIRE
          " <epoch> sets new expiry date. YOU are responsible for making sure "
          "<epoch> is a valid epoch time\n" CMD_VERIFY
          " <pubkeyhex> verifies payload using <pubkeyhex>\n",
@@ -104,7 +109,14 @@ static int cmd_help(const char *argv0, const char *cmd) {
                 " an invalid time will result in the code expireing after "
                 "first use automatically (which is default behavior)\n";
   } else if (!strcmp(cmd, CMD_KEY)) {
-    help_text = "help for this not yet written\n";
+    help_text = "Usage: %s (ignored) " CMD_KEY "\n"
+                " this command generates a new ed25519 keypair and writes to "
+                "the C header files " PUBKEY_HEADER " and " PRIVKEY_HEADER ".\n"
+                " You are responsible for moving the resultant files into the "
+                "appropriate directory (or just execute inside appropriate "
+                "directory), which should be <project_root>/keys/\n"
+                " the first argument (argv[1]) is ignored.\n";
+
   } else if (!strcmp(cmd, CMD_VERIFY)) {
     help_text = "help for this not yet written\n";
   } else {
@@ -151,11 +163,79 @@ static int set_expire(const char *expire) {
   return 0;
 }
 
-static void generate_key(void) {
+static int generate_key(void) {
   char publickey[ED25519_PUBLIC_KEY_HEX_SIZE];
   char privatekey[ED25519_PRIVATE_KEY_HEX_SIZE];
   ed25519_generate_keypair_hex(publickey, privatekey);
-  printf("public  = %s\nprivate = %s\n", publickey, privatekey);
+  FILE *pubkey_file = fopen(PUBKEY_HEADER, "w");
+  FILE *privkey_file = fopen(PRIVKEY_HEADER, "w");
+  int err;
+  char *text;
+  int textlen;
+  // check if files opened for writing
+  if (pubkey_file == NULL || privkey_file == NULL) {
+    err = errno;
+    LOG_ERRNO("failed to open " PUBKEY_HEADER " or " PRIVKEY_HEADER
+              " for writing",
+              err);
+    if (pubkey_file)
+      fclose(pubkey_file);
+    if (privkey_file)
+      fclose(privkey_file);
+    return err;
+  }
+
+  textlen = err =
+      asprintf(&text,
+               "#ifndef _PUBKEY_HEADER_H\n"
+               "#define _PUBKEY_HEADER_H\n"
+               "static const char _ed25519_public_key_hex[] =\"%s\";\n"
+               "#endif",
+               publickey);
+  if (err < 0) {
+    err = errno;
+    LOG_ERRNO("failed to asprintf", err);
+    fclose(pubkey_file);
+    fclose(privkey_file);
+    return err;
+  }
+  errno = 0;
+  err = fwrite(text, 1, textlen, pubkey_file);
+  free(text);
+  if (err != textlen) {
+    err = errno;
+    LOG_ERRNO("failed to write to " PUBKEY_HEADER, errno);
+    fclose(pubkey_file);
+    fclose(privkey_file);
+    return err;
+  }
+  textlen = err =
+      asprintf(&text,
+               "#ifndef _PRIVKEY_HEADER_H\n"
+               "#define _PRIVKEY_HEADER_H\n"
+               "static const char _ed25519_private_key_hex[] =\"%s\";\n"
+               "#endif",
+               privatekey);
+  if (err < 0) {
+    err = errno;
+    LOG_ERRNO("failed to asprintf", err);
+    fclose(pubkey_file);
+    fclose(privkey_file);
+    return err;
+  }
+  errno = 0;
+  err = fwrite(text, 1, textlen, privkey_file);
+  free(text);
+  if (err != textlen) {
+    err = errno;
+    LOG_ERRNO("failed to write to " PRIVKEY_HEADER, errno);
+    fclose(pubkey_file);
+    fclose(privkey_file);
+    return err;
+  }
+  fclose(pubkey_file);
+  fclose(privkey_file);
+  return 0;
 }
 
 int main(int argc, char **argv) {
@@ -170,8 +250,7 @@ int main(int argc, char **argv) {
         return set_expire(argv[3]);
       }
     } else if (strcmp(CMD_KEY, argv[2]) == 0) {
-      generate_key();
-      return 0;
+      return generate_key();
     } else if (strcmp(CMD_VERIFY, argv[2]) == 0) {
       if (argc == 4) {
         return verify_payload(argv[3]);

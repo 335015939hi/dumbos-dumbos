@@ -15,6 +15,8 @@
 #include "common.h"
 #include "dumb.h"
 
+#include "../../keys/key_private.h"
+
 char *malloc_buf_to_hex(const void *buf, size_t size) {
   const char *const hex = "0123456789ABCDEF";
   char *output;
@@ -86,7 +88,7 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
                                "text/plain; charset=utf-8", "404 Not Found\n");
   }
 
-  response = dp_malloc_check_load(code, &responselen);
+  response = dp_malloc_check_load(code, &responselen, _ed25519_private_key_hex);
   if (response == NULL) {
     return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
                                "text/plain; charset=utf-8", "404 Not Found\n");

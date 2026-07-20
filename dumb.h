@@ -58,7 +58,8 @@ bool dp_is_expired_compare(struct DUMB_PAYLOAD *payload, time_t cur_time);
 // find and load a secret code payload, returning NULL on error. will return
 // malloc'ed buffer this will also perform checks such as expiry and
 // automatically sign
-void *dp_malloc_check_load(const char *const code, size_t *ret_size);
+void *dp_malloc_check_load(const char *const code, size_t *ret_size,
+                           const char *ed25519_private_key);
 // load payload by path. does no checks. return malloc'ed buffer
 void *dp_malloc_load(const char *path, size_t *ret_size);
 
@@ -68,7 +69,5 @@ int dp_verify(struct DUMB_PAYLOAD *payload, size_t size,
 
 int dp_sign(struct DUMB_PAYLOAD *payload, size_t size,
             const char *private_key_hex);
-
-extern char ed25519_private_key[ED25519_PRIVATE_KEY_HEX_SIZE];
 
 #endif

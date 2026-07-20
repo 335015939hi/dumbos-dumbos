@@ -15,8 +15,6 @@
 #include "dumb.h"
 #include "ed25519.h"
 
-char ed25519_private_key[ED25519_PRIVATE_KEY_HEX_SIZE];
-
 static bool check_code_allowed_chars(const char *const code) {
   unsigned int len = strlen(code);
   if (len > CODE_MAXLEN) {
@@ -164,7 +162,8 @@ void *dp_malloc_load(const char *path, size_t *ret_size) {
   return payload;
 }
 
-void *dp_malloc_check_load(const char *const code, size_t *ret_size) {
+void *dp_malloc_check_load(const char *const code, size_t *ret_size,
+                           const char *ed25519_private_key) {
   char *path;
   int err;
   struct stat stat;
