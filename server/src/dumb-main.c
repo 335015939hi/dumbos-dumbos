@@ -16,6 +16,7 @@
 #define CMD_EXPIRE "expire"
 #define CMD_KEY "mkkey"
 #define CMD_VERIFY "verify"
+#define CMD_HELP "help"
 
 static const char *path;
 
@@ -71,12 +72,46 @@ static int new_payload() {
 }
 static void display_help(const char *argv0) {
   printf("Usage:%s <file> <cmd> [args]\n"
-         "Commands:\n" CMD_NEW " creates a new payload\n" CMD_KEY
-         " generates new keypair to stdout. <file> ignored. \n" CMD_EXPIRE
-         "<epoch> sets new expiry date. YOU are responsible for making sure "
+         "Commands:\n" CMD_HELP
+         " [cmd] prints generic help, or more details on a specific command. "
+         "<file> is ignored\n" CMD_NEW " creates a new payload\n" CMD_KEY
+         " generates new keypair to files key_public.h and key_private.h. "
+         "<file> ignored. \n" CMD_EXPIRE
+         " <epoch> sets new expiry date. YOU are responsible for making sure "
          "<epoch> is a valid epoch time\n" CMD_VERIFY
-         "<pubkeyhex> verifies payload using <pubkeyhex>\n",
+         " <pubkeyhex> verifies payload using <pubkeyhex>\n",
+
          argv0);
+}
+static int cmd_help(const char *argv0, const char *cmd) {
+  const char *help_text;
+  if (!strcmp(cmd, CMD_NEW)) {
+    help_text =
+        "Usage: %s <file> " CMD_NEW "\n"
+        " this command creates a new payload and writes to filename <file>\n";
+  } else if (!strcmp(cmd, CMD_HELP)) {
+    help_text =
+        "Usage: %s (ignored) " CMD_HELP " [cmd]\n"
+        " this command display general help, or specific help for [cmd] is "
+        "given. the  1st argument '(ignored)' (argv[1]) is ignored.\n";
+  } else if (!strcmp(cmd, CMD_EXPIRE)) {
+    help_text = "Usage: %s <file> " CMD_HELP " <epoch>\n"
+                " this command sets the expiry date of the payload file <file> "
+                "to <epoch>. epoch is seconds since the Epoch, or Epoch Time "
+                "(not to be confused with The Epoch Times)\n"
+                " <epoch> should look something like '1784588405' for the date "
+                "'July 20, 2026 11:00:05 PM UTC'\n"
+                " an invalid time will result in the code expireing after "
+                "first use automatically (which is default behavior)\n";
+  } else if (!strcmp(cmd, CMD_KEY)) {
+    help_text = "help for this not yet written\n";
+  } else if (!strcmp(cmd, CMD_VERIFY)) {
+    help_text = "help for this not yet written\n";
+  } else {
+    help_text = "No help available for this option\n";
+  }
+  printf(help_text, argv0);
+  return 0;
 }
 
 static int set_expire(const char *expire) {
@@ -140,6 +175,13 @@ int main(int argc, char **argv) {
     } else if (strcmp(CMD_VERIFY, argv[2]) == 0) {
       if (argc == 4) {
         return verify_payload(argv[3]);
+      }
+    } else if (strcmp(CMD_HELP, argv[2]) == 0) {
+      if (argc == 4) {
+        return cmd_help(argv[0], argv[3]);
+      } else {
+        display_help(argv[0]);
+        return 0;
       }
     }
   }
