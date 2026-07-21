@@ -19,6 +19,11 @@
 #define CMD_KEY "mkkey"
 #define CMD_VERIFY "verify"
 #define CMD_HELP "help"
+#define CMD_DUMP_DATA "data-dump"
+#define CMD_DATA_SET "data-set"
+#define CMD_COMMAND_SET_RAW "set-cmd-raw"
+#define CMD_GET_COMMAND "get-cmd"
+#define CMD_COMMAND_SET "set-cmd"
 
 #define PUBKEY_HEADER "key_public.h"
 #define PRIVKEY_HEADER "key_private.h"
@@ -84,7 +89,13 @@ static void display_help(const char *argv0) {
          ". <file> ignored. \n" CMD_EXPIRE
          " <epoch> sets new expiry date. YOU are responsible for making sure "
          "<epoch> is a valid epoch time\n" CMD_VERIFY
-         " <pubkeyhex> verifies payload using <pubkeyhex>\n",
+         " <pubkeyhex> verifies payload using <pubkeyhex>\n" CMD_COMMAND_SET_RAW
+         " <command> sets the command, withou being friendly. not "
+         "recommended\n" CMD_COMMAND_SET
+         " <command> [command-specific] sets the command, with auto formatting "
+         "data\n" CMD_GET_COMMAND " prints command\n" CMD_DATA_SET
+         " <file> dumps contents of file as the data\n" CMD_DUMP_DATA
+         "dumps data to stdout. you may want to pipe into file\n",
 
          argv0);
 }
@@ -123,7 +134,71 @@ static int cmd_help(const char *argv0, const char *cmd) {
                 " the first argument (argv[1]) is ignored.\n";
 
   } else if (!strcmp(cmd, CMD_VERIFY)) {
-    help_text = "help for this not yet written\n";
+    help_text = "Usage:%s <file> " CMD_VERIFY " <pubkey>\n"
+                "This command verifies the payload against <pubkey>, which is "
+                "a 32-byte (64 character) hex string. note that payloads are "
+                "automatically signed before sending to devices, and the "
+                "signature is not written to disk\n";
+  } else if (!strcmp(cmd, CMD_GET_COMMAND)) {
+    help_text = "Usage:%s <file> " CMD_GET_COMMAND "\n"
+                "this command prints the current command specified in the "
+                "file. doesn't do much else. you may have to read source code "
+                "to see if the command is valid or not\n";
+  } else if (!strcmp(cmd, CMD_COMMAND_SET_RAW)) {
+    help_text =
+        "Usage:%s <file> " CMD_COMMAND_SET_RAW " <command>\n"
+        "sets the command in the file to <command>. does not check if command "
+        "is valid, nor sets and formats data\n"
+        "you are not recommended to use this command, use " CMD_COMMAND_SET
+        " instead\n";
+  } else if (!strcmp(cmd, CMD_COMMAND_SET)) {
+    help_text =
+        "Usage:%s <file> " CMD_COMMAND_SET
+        " <command> [command arguments described below]\n"
+        "sets payload command, and then sets the data according to "
+        "command-specific arguments and stuff. \n"
+        "details of each command:\n"
+        "'" CODE_CMD_OK "' (no arguments) -- a no-op. useful for testing\n"
+        "'" CODE_CMD_INSTALLTHIS "' <apk> -- installes a apk file given in "
+        "data. <apk> is the apk file to embed\n"
+        "'" CODE_CMD_INSTALL_PATH
+        "' <path> <sha256sum> -- installed a apk file by local path (on "
+        "recieving device), verifying it using the provided sha256  checksum. "
+        "this can be useful to avoid large downloads\n"
+        "'" CODE_CMD_FILE_EXPORT "' (no argument) -- mounts an external drive "
+        "and copies internal files out\n"
+        "'" CODE_CMD_FILE_IMPORT "' (no argument) -- mounts an external drive "
+        "and copies drive files in\n"
+        "'" CODE_CMD_ADB_ENABLE "/" CODE_CMD_ADB_DISABLE
+        "' (no argument) -- enables or disables ADB, respectively\n"
+        "'" CODE_CMD_WIFI_ENABLE "/" CODE_CMD_WIFI_DISABLE
+        "' (no argument) -- enables or disables wifi, respectively\n"
+        "'" CODE_CMD_OEM_UNLOCK "/" CODE_CMD_OEM_LOCK
+        "' (no argument) -- enables or disables OEM/bootloader unlocking, "
+        "respectively\n"
+        "'" CODE_CMD_COMPOSITE
+        "' <file1> [file2 [...]] -- packs other payloads into one. each "
+        "payload file will still be verified seperately, so make sure they're "
+        "signed and won't expire before the master code\n"
+        "'" CODE_CMD_FW_ALLOW "/" CODE_CMD_FW_DENY
+        "' <packageID> [packageID2 [...]] -- allow or deny, respectively, "
+        "certain apps internet, by the apps' package ID. note that this is UID "
+        "based, and some apps (especially system apps) share a UID, so "
+        "allowing one app in such a group will allow all apps too. if you're "
+        "denying, you have to make sure all apps in the group are denied; one "
+        "app still allowed will keep all apps allowed\n"
+        "'" CODE_CMD_FW_FLUSH
+        "' (no argument) -- resets internet allowed apps.\n"
+        "'" CODE_CMD_FW_TEMP_ADD
+        "' <packageID> [packageID2 [...]] -- temporarily allow some apps "
+        "internet, until the next time firewall is refreshed (e.g. "
+        "with " CODE_CMD_FW_ALLOW " or " CODE_CMD_FW_FLUSH " or a reboot)\n";
+  } else if (!strcmp(cmd, CMD_DUMP_DATA)) {
+    help_text = "not yet written\n";
+
+  } else if (!strcmp(cmd, CMD_DATA_SET)) {
+    help_text = "not yet written\n";
+
   } else {
     help_text = "No help available for this option\n";
   }
@@ -147,7 +222,7 @@ static int get_or_set_expire(const char *expire) {
     long long expire_real = dp_get_expire_or_set(payload);
     printf("effective expire time (as if used right now) is\n");
     printf("               %lld\n", expire_real);
-    printf("system time is %lld\n", time(NULL));
+    printf("system time is %ld\n", time(NULL));
     if (dp_is_expired(payload)) {
       printf("the code is expired\n");
     } else {
