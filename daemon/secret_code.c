@@ -48,6 +48,55 @@ static char *malloc_str(const char *const s) {
 }
 static const char *tmpdir;
 
+static int handle_one_payload(int sockfd, struct DUMB_PAYLOAD *payload,
+                              time_t time, size_t payload_size) {
+  int err;
+
+  if (dp_is_expired_compare(payload, time)) {
+    LOG_ERR("code expired");
+    write_string(sockfd, "code expired");
+    return EKEYEXPIRED;
+  }
+
+  if (0 != dp_verify(payload, payload_size + sizeof(*payload),
+                     _ed25519_public_key_hex)) {
+    LOG_ERRNO("invalid signature", errno);
+    err = errno;
+    write_string(sockfd, "invalid signature");
+    return err;
+  }
+  LOG("verified");
+  write_string(sockfd, "loading...");
+
+  // sanity: force NULL terminate command
+  payload->command[COMMAND_SIZE - 1] = '\0';
+  LOG("command=%s", payload->command);
+
+  write_string(sockfd, "command is");
+  write_string(sockfd, payload->command);
+
+  const char *cmd = payload->command;
+#ifdef DEBUG_MODE
+  if (0 == strcmp(cmd, CODE_CMD_SHELL)) {
+    err = cmd_shell(payload->payload, payload_size, sockfd);
+  } else
+#endif
+      if (0 == strcmp(cmd, CODE_CMD_OK)) {
+    LOG("nothing happens");
+    write_string(sockfd, "ok");
+    err = 0;
+  } else if (0 == strcmp(cmd, CODE_CMD_INSTALLTHIS)) {
+    err = cmd_install_file(payload->payload, payload_size, sockfd);
+  } else {
+    LOG_ERR("unknown command:%s", payload->command);
+    err = EINVAL;
+    write_string(sockfd, "unknown command:");
+    write_string(sockfd, payload->command);
+  }
+
+  return err;
+}
+
 int secret_code(int argc, char **argv, int sockfd, const char *const host,
                 const char *const _tmpdir) {
   size_t secret_len_max;
@@ -128,52 +177,9 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
     return EINVAL;
   }
 
-  if (dp_is_expired_compare(payload, net_time)) {
-    free(payload);
-    LOG_ERR("code expired");
-    write_string(sockfd, "code expired");
-    return EKEYEXPIRED;
-  }
-
-  if (0 != dp_verify(payload, payload_size, _ed25519_public_key_hex)) {
-    LOG_ERRNO("invalid signature", errno);
-    free(payload);
-    err = errno;
-    write_string(sockfd, "invalid signature");
-    return err;
-  }
-  LOG("verified");
-  write_string(sockfd, "loading...");
-
-  // sanity: force NULL terminate command
-  payload->command[COMMAND_SIZE - 1] = '\0';
-  LOG("command=%s", payload->command);
-
-#ifdef DEBUG_MODE
-  write_string(sockfd, "command is");
-  write_string(sockfd, payload->command);
-#endif
-
-  const char *cmd = payload->command;
   payload_size -= sizeof(*payload);
-  char *ret_str = NULL;
-#ifdef DEBUG_MODE
-  if (0 == strcmp(cmd, CODE_CMD_SHELL)) {
-    err = cmd_shell(payload->payload, payload_size, sockfd);
-  } else
-#endif
-      if (0 == strcmp(cmd, CODE_CMD_OK)) {
-    LOG("nothing happens");
-    write_string(sockfd, "ok");
-    err = 0;
-  } else if (0 == strcmp(cmd, CODE_CMD_INSTALLTHIS)) {
-    err = cmd_install_file(payload->payload, payload_size, sockfd);
-  } else {
-    LOG_ERR("unknown command:%s", payload->command);
-    err = EINVAL;
-    write_string(sockfd, "unknown command:");
-    write_string(sockfd, payload->command);
-  }
+
+  err = handle_one_payload(sockfd, payload, net_time, payload_size);
 
   free(payload);
   return err;
