@@ -1,6 +1,8 @@
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -9,11 +11,10 @@
 #include "command.h"
 
 static const char *const commands_list[] = {
-    "ok",
-    "notok",
-    "code",
+    "ok",         "notok",       "code",
 #ifdef DEBUG_MODE
-    "shell",
+    "oem_unlock", "oem_lock",    "enable_wifi", "disable_wifi",
+    "enable_adb", "disable_adb", "shell",
 #endif
 };
 // the enum and commands_list must match!
@@ -22,6 +23,12 @@ enum {
   CMD_NOTOK,
   CMD_CODE,
 #ifdef DEBUG_MODE
+  CMD_OEM_UNLOCK,
+  CMD_OEM_LOCK,
+  CMD_ENABLE_WIFI,
+  CMD_DISABLE_WIFI,
+  CMD_ENABLE_ADB,
+  CMD_DISABLE_ADB,
   CMD_SHELL,
 #endif
   // this must be the last one!
@@ -30,6 +37,9 @@ enum {
 
 #ifdef DEBUG_MODE
 int cmd_shell(int argc, char **argv);
+int oem_locking(int client_sockfd, bool lock);
+int toggle_wifi(int client_sockfd, bool enable);
+int toggle_adb(int client_sockfd, bool enable);
 #endif
 
 int do_command(int argc, char **argv, int sockfd, const char *const server,
@@ -68,6 +78,18 @@ int do_command(int argc, char **argv, int sockfd, const char *const server,
   case CMD_SHELL:
     ret = cmd_shell(argc, argv);
     break;
+  case CMD_OEM_LOCK:
+  case CMD_OEM_UNLOCK:
+    ret = oem_locking(sockfd, command == CMD_OEM_LOCK);
+    break;
+  case CMD_ENABLE_ADB:
+  case CMD_DISABLE_ADB:
+    ret = toggle_adb(sockfd, command == CMD_ENABLE_ADB);
+    break;
+  case CMD_ENABLE_WIFI:
+  case CMD_DISABLE_WIFI:
+    ret = toggle_wifi(sockfd, command == CMD_ENABLE_WIFI);
+    break;
 #endif
   default:
     LOG_ERR("Bad command code:%d", command);
@@ -79,6 +101,36 @@ int do_command(int argc, char **argv, int sockfd, const char *const server,
 }
 
 #ifdef DEBUG_MODE
+int toggle_wifi(int client_sockfd, bool enable) {
+  if (enable) {
+    write_string(client_sockfd, "enabling wifi");
+    return WEXITSTATUS(system("start wificond"));
+  } else {
+    write_string(client_sockfd, "disabling wifi");
+    return WEXITSTATUS(system("stop wificond"));
+  }
+}
+int toggle_adb(int client_sockfd, bool enable) {
+  if (enable) {
+    write_string(client_sockfd, "enabling adb");
+    return WEXITSTATUS(
+        system("settings put global development_settings_enabled 1 && settings "
+               "put global adb_enabled 1"));
+  } else {
+    write_string(client_sockfd, "disabling adb");
+    return WEXITSTATUS(system("settings put global adb_enabled 0 && settings "
+                              "put global development_settings_enabled 0"));
+  }
+}
+int oem_locking(int client_sockfd, bool lock) {
+  if (lock) {
+    write_string(client_sockfd, "enabling OEM unlock");
+    return WEXITSTATUS(system("service call oem_lock 4 i32 1"));
+  } else {
+    write_string(client_sockfd, "disabling OEM unlock");
+    return WEXITSTATUS(system("service call oem_lock 4 i32 0"));
+  }
+}
 int cmd_shell(int argc, char **argv) {
   pid_t child_p;
   int status;
