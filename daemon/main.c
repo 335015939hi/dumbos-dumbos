@@ -244,7 +244,6 @@ void display_help(FILE *file, const char *const argv0) {
       " -Z,--context=<con>      socket SELinux context, "
       "default " DEFAULT_SOCKET_CONTEXT "\n"
       " -t,--tmpdir=<tmp>       use <tmp> as tempoary directory instead "
-      "!!!<tmp> will be cleared!!! "
       "of " DEFAULT_TMPDIR "\n"
       "\n"
 

@@ -84,11 +84,6 @@ int start_daemon(const struct daemon_opts *const opt) {
     return errno;
   }
 
-  LOG_VERBOSE("clearing tmpdir '%s'", opt->tmpdir);
-  err = rm_r(opt->tmpdir);
-  if (err != 0) {
-    LOG_WARN_ERRNO("clearing tmpdir failed", errno);
-  }
   LOG_VERBOSE("creating tmpdir '%s'", opt->tmpdir);
   err = mkdir_p(opt->tmpdir);
   if (err != 0) {
