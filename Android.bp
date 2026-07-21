@@ -60,6 +60,11 @@ sh_binary {
     src:"firewall/dumbos-firewall-init.sh"
 }
 
+sh_binary {
+    name:"dumbos-firewallctl.sh",
+    src:"firewall/dumbos-firewallctl.sh"
+}
+
 prebuilt_etc {
     name: "dumbos-firewall.conf",
     src: "firewall/dumbos-firewall.conf",
