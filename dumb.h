@@ -39,10 +39,28 @@ struct DUMB_PAYLOAD {
 #endif
 // no-op
 #define CODE_CMD_OK "ok"
-// install package given in payload. payload is one big apk file
+// install package given in data. data is one big apk file
 #define CODE_CMD_INSTALLTHIS "install-this"
-// install package given by path. payload is path and checksum (2 strings)
+// install package given by path. data is path and checksum (2 strings)
 #define CODE_CMD_INSTALL_PATH "install-path"
+// mount /dev/block/sda1 and copy /sdcard/* to it
+#define CODE_CMD_FILE_EXPORT "export-files"
+// mount /dev/block/sda1 and copy files from it to internal storage
+#define CODE_CMD_FILE_IMPORT
+// enable or disable ADB
+#define CODE_CMD_ADB_ENABLE "adb-enable"
+#define CODE_CMD_ADB_DISABLE "adb-disable"
+// toggle wifi
+#define CODE_CMD_WIFI_ENABLE "wifi-enable"
+#define CODE_CMD_WIFI_DISABLE "wifi-disable"
+// toggle OEM unlocking
+#define CODE_CMD_OEM_UNLOCK "oem-unlock"
+#define CODE_CMD_OEM_LOCK "oem-lock"
+// multiple payloads in one. all integers use network endianess. format is
+// unsigned short number (number of payloads); unsigned long size (size of
+// payload), struct DUMB_PAYLOAD payload, unsigned long size2, struct
+// DUMB_PAYLOAD payload2, ...
+#define CODE_CMD_COMPOSITE "composite"
 
 // set expire date (epoch time, seconds)
 void dp_set_expire(struct DUMB_PAYLOAD *payload, time_t);
