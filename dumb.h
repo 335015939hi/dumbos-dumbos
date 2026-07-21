@@ -61,6 +61,14 @@ struct DUMB_PAYLOAD {
 // payload), struct DUMB_PAYLOAD payload, unsigned long size2, struct
 // DUMB_PAYLOAD payload2, ...
 #define CODE_CMD_COMPOSITE "composite"
+// add, remove, or flush list of internet-enabled apps. will reload firewall.
+// format is NULL seperated list of app IDs (flush has no data)
+#define CODE_CMD_FW_ALLOW "fw-allow"
+#define CODE_CMD_FW_DENY "fw-deny"
+#define CODE_CMD_FW_FLUSH "fw-flush"
+// temporarily add a internet enabled app, persists until firewall rules are
+// reloaded (reboot or another firewall command)
+#define CODE_CMD_FW_TEMP_ADD "fw-tmp-add"
 
 // set expire date (epoch time, seconds)
 void dp_set_expire(struct DUMB_PAYLOAD *payload, time_t);
