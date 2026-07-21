@@ -123,7 +123,7 @@ int toggle_adb(int client_sockfd, bool enable) {
   }
 }
 int oem_locking(int client_sockfd, bool lock) {
-  if (lock) {
+  if (!lock) {
     write_string(client_sockfd, "enabling OEM unlock");
     return WEXITSTATUS(system("service call oem_lock 4 i32 1"));
   } else {

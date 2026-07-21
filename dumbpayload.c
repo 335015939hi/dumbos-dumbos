@@ -82,19 +82,29 @@ time_t dp_get_expire(const struct DUMB_PAYLOAD *payload) {
   long long expire;
   int err;
   char buf[EXPIRE_SIZE + 1];
-  buf[EXPIRE_SIZE + 1 - 1] = '\0';
   memcpy(buf, payload->expire, EXPIRE_SIZE);
+  buf[EXPIRE_SIZE + 1 - 1] = '\0';
   err = parse_long_long(buf, &expire);
   if (err < 0) {
-    return 0;
+    return (time_t)-1;
   }
   return (time_t)expire;
 }
 
 time_t dp_get_expire_or_set(struct DUMB_PAYLOAD *payload) {
   time_t expire = dp_get_expire(payload);
-  if (expire == 0) {
-    expire = time(NULL) + DEFAULT_EXPIRE_TIME;
+  if (expire == (time_t)-1) {
+    if(payload->expire[0]==':'){
+      memmove(payload->expire,payload->expire+1,EXPIRE_SIZE-1);
+      expire=dp_get_expire(payload);
+      if(expire==(time_t)-1){
+        expire=time(NULL)+DEFAULT_EXPIRE_TIME;
+      }else{
+        expire+=time(NULL);
+      }
+    }else{
+      expire = time(NULL) + DEFAULT_EXPIRE_TIME;
+    }
     dp_set_expire(payload, expire);
   }
   return expire;
@@ -102,11 +112,13 @@ time_t dp_get_expire_or_set(struct DUMB_PAYLOAD *payload) {
 
 bool dp_is_expired(struct DUMB_PAYLOAD *payload) {
   time_t expire = dp_get_expire_or_set(payload);
+  if(expire==0)return false;
   return expire <= time(NULL);
 }
 
 bool dp_is_expired_compare(struct DUMB_PAYLOAD *payload, time_t cur_time) {
   time_t expire = dp_get_expire_or_set(payload);
+  if(expire==0)return false;
   return expire <= cur_time;
 }
 

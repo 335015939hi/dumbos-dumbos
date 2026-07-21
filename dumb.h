@@ -72,11 +72,11 @@ struct DUMB_PAYLOAD {
 
 // set expire date (epoch time, seconds)
 void dp_set_expire(struct DUMB_PAYLOAD *payload, time_t);
-// get expire date only, try not to use. return 0 on fail
+// get expire date only, try not to use. return (time_t)-1 on fail
 time_t dp_get_expire(const struct DUMB_PAYLOAD *payload);
 // get expire date, setting it if not exist. use this one
 time_t dp_get_expire_or_set(struct DUMB_PAYLOAD *payload);
-// true if expired, flase otherwise. will use dp_get_expire_or_set()
+// true if expired, false otherwise. will use dp_get_expire_or_set()
 bool dp_is_expired(struct DUMB_PAYLOAD *payload);
 // similar to dp_is_expired, but compares against given time instead of system
 // time.

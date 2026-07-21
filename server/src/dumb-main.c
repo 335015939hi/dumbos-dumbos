@@ -100,14 +100,19 @@ static int cmd_help(const char *argv0, const char *cmd) {
         " this command display general help, or specific help for [cmd] is "
         "given. the  1st argument '(ignored)' (argv[1]) is ignored.\n";
   } else if (!strcmp(cmd, CMD_EXPIRE)) {
-    help_text = "Usage: %s <file> " CMD_HELP " <epoch>\n"
-                " this command sets the expiry date of the payload file <file> "
-                "to <epoch>. epoch is seconds since the Epoch, or Epoch Time "
-                "(not to be confused with The Epoch Times)\n"
-                " <epoch> should look something like '1784588405' for the date "
-                "'July 20, 2026 11:00:05 PM UTC'\n"
-                " an invalid time will result in the code expireing after "
-                "first use automatically (which is default behavior)\n";
+    help_text =
+        "Usage: %s <file> " CMD_HELP " [epoch]\n"
+        " this command gets (no 3rd argument) or sets the expiry date of the "
+        "payload file <file> "
+        "to <epoch>. epoch is seconds since the Epoch, or Epoch Time "
+        "(not to be confused with The Epoch Times)\n"
+        " <epoch> should look something like '1784588405' for the date "
+        "'July 20, 2026 11:00:05 PM UTC'\n"
+        " an invalid time will result in the code expireing after "
+        "first use automatically (which is default behavior)\n"
+        "a time prefixed with ':' will be interpreter as <epoch> seconds after "
+        "first use, i.e. expire that many seconds after someone uses it\n"
+        "a time of 0 is no expiry\n";
   } else if (!strcmp(cmd, CMD_KEY)) {
     help_text = "Usage: %s (ignored) " CMD_KEY "\n"
                 " this command generates a new ed25519 keypair and writes to "
@@ -126,7 +131,7 @@ static int cmd_help(const char *argv0, const char *cmd) {
   return 0;
 }
 
-static int set_expire(const char *expire) {
+static int get_or_set_expire(const char *expire) {
   int err;
   size_t size;
   int fd;
@@ -136,31 +141,47 @@ static int set_expire(const char *expire) {
     maybe_free(payload);
     return errno;
   }
-  if (strlen(expire) > EXPIRE_SIZE - 1) {
-    LOG_ERR("expire string too long, mex length is %d", EXPIRE_SIZE - 1);
+  if (expire == NULL) {
+    expire = payload->expire;
+    printf("raw expiry time is '%s'\n", expire);
+    long long expire_real = dp_get_expire_or_set(payload);
+    printf("effective expire time (as if used right now) is\n");
+    printf("               %lld\n", expire_real);
+    printf("system time is %lld\n", time(NULL));
+    if (dp_is_expired(payload)) {
+      printf("the code is expired\n");
+    } else {
+      printf("the code is valid\n");
+    }
     maybe_free(payload);
-    return E2BIG;
-  }
-  memset(payload->expire, 0, EXPIRE_SIZE);
-  snprintf(payload->expire, EXPIRE_SIZE, "%s", expire);
-  LOG("new expire time:%s", payload->expire);
-  fd = open(path, O_WRONLY);
-  if (fd < 0) {
-    LOG_ERRNO("failed to open file for writing", errno);
-    maybe_free(payload);
-    return errno;
-  }
-  err = write_all(fd, payload, size);
-  if (err < 0) {
-    LOG_ERRNO("failed to write to file", errno);
+    return 0;
+  } else {
+    if (strlen(expire) > EXPIRE_SIZE - 1) {
+      LOG_ERR("expire string too long, max length is %d", EXPIRE_SIZE - 1);
+      maybe_free(payload);
+      return E2BIG;
+    }
+    memset(payload->expire, 0, EXPIRE_SIZE);
+    snprintf(payload->expire, EXPIRE_SIZE, "%s", expire);
+    LOG("new expire time:%s", payload->expire);
+    fd = open(path, O_WRONLY);
+    if (fd < 0) {
+      LOG_ERRNO("failed to open file for writing", errno);
+      maybe_free(payload);
+      return errno;
+    }
+    err = write_all(fd, payload, size);
+    if (err < 0) {
+      LOG_ERRNO("failed to write to file", errno);
+      close(fd);
+      maybe_free(payload);
+      return errno;
+    }
+    LOG("%zu bytes written", size);
     close(fd);
     maybe_free(payload);
-    return errno;
+    return 0;
   }
-  LOG("%zu bytes written", size);
-  close(fd);
-  maybe_free(payload);
-  return 0;
 }
 
 static int generate_key(void) {
@@ -247,7 +268,9 @@ int main(int argc, char **argv) {
       }
     } else if (strcmp(CMD_EXPIRE, argv[2]) == 0) {
       if (argc == 4) {
-        return set_expire(argv[3]);
+        return get_or_set_expire(argv[3]);
+      } else if (argc == 3) {
+        return get_or_set_expire(NULL);
       }
     } else if (strcmp(CMD_KEY, argv[2]) == 0) {
       return generate_key();
