@@ -30,6 +30,8 @@
 
 static const char *path;
 
+int cmd_command_set(int argc, const char **argv);
+
 static int verify_payload(const char *key) {
   struct DUMB_PAYLOAD *payload;
   size_t size;
@@ -95,7 +97,7 @@ static void display_help(const char *argv0) {
          " <command> [command-specific] sets the command, with auto formatting "
          "data\n" CMD_GET_COMMAND " prints command\n" CMD_DATA_SET
          " <file> dumps contents of file as the data\n" CMD_DUMP_DATA
-         "dumps data to stdout. you may want to pipe into file\n",
+         " dumps data to stdout. you may want to pipe into file\n",
 
          argv0);
 }
@@ -334,6 +336,108 @@ static int generate_key(void) {
   return 0;
 }
 
+static int cmd_command_set_raw(const char *command) {
+  if (strlen(command) + 1 > COMMAND_SIZE) {
+    LOG_ERR("command '%s' too long, max length is %d", command,
+            COMMAND_SIZE - 1);
+  }
+  size_t size;
+  struct DUMB_PAYLOAD *payload = dp_malloc_load(path, &size);
+  if (payload == NULL) {
+    LOG_ERRNO("failed to load payload file", errno);
+    maybe_free(payload);
+    return errno;
+  }
+  LOG("setting command to '%s'", command);
+  strcpy(payload->command, command);
+  int fd = open(path, O_WRONLY);
+  if (fd < 0) {
+    LOG_ERRNO("failed to open file for writing", errno);
+    maybe_free(payload);
+    return errno;
+  }
+  int err = write_all(fd, payload, size);
+  if (err < 0) {
+    LOG_ERRNO("failed to write to file", errno);
+    close(fd);
+    maybe_free(payload);
+    return errno;
+  }
+  LOG("%zu bytes written", size);
+  close(fd);
+  maybe_free(payload);
+  return 0;
+}
+
+static int cmd_get_command() {
+  size_t size;
+  struct DUMB_PAYLOAD *payload = dp_malloc_load(path, &size);
+  if (payload == NULL) {
+    LOG_ERRNO("failed to load payload file", errno);
+    maybe_free(payload);
+    return errno;
+  }
+  printf("%s\n", payload->command);
+  maybe_free(payload);
+  return 0;
+}
+
+static int cmd_dump_data() {
+  size_t size;
+  struct DUMB_PAYLOAD *payload = dp_malloc_load(path, &size);
+  if (payload == NULL) {
+    LOG_ERRNO("failed to load payload file", errno);
+    maybe_free(payload);
+    return errno;
+  }
+  fwrite(payload->payload, 1, size - sizeof(*payload), stdout);
+  maybe_free(payload);
+  return 0;
+}
+static int cmd_set_data(const char *data_path) {
+  size_t size;
+  struct DUMB_PAYLOAD *payload = dp_malloc_load(path, &size);
+  if (payload == NULL) {
+    LOG_ERRNO("failed to load payload file", errno);
+    maybe_free(payload);
+    return errno;
+  }
+  FILE *data = fopen(data_path, "r");
+  if (data == NULL) {
+    LOG_ERRNO("failed to open data file for reading", errno);
+    maybe_free(payload);
+    return errno;
+  }
+  FILE *dest = fopen(path, "w");
+  if (dest == NULL) {
+    LOG_ERRNO("failed to open file for writing", errno);
+    fclose(data);
+    maybe_free(payload);
+    return errno;
+  }
+
+  fwrite(payload, 1, sizeof(*payload), dest);
+
+  int written;
+  int chunk_written = -1;
+  const int buf_size = 4096;
+  char *buf = malloc(buf_size);
+  do {
+    chunk_written++;
+    written = fread(buf, 1, buf_size, data);
+    written = fwrite(buf, 1, written, dest);
+  } while (written == buf_size);
+  LOG("%zu bytes written, of which %d bytes is data",
+      chunk_written * buf_size + written + sizeof(*payload),
+      chunk_written * buf_size + written);
+
+  maybe_free(buf);
+  maybe_free(payload);
+  fclose(dest);
+  fclose(data);
+  return 0;
+}
+
 int main(int argc, char **argv) {
   if (argc >= 3) {
     path = argv[1];
@@ -358,7 +462,27 @@ int main(int argc, char **argv) {
         return cmd_help(argv[0], argv[3]);
       } else {
         display_help(argv[0]);
-        return 0;
+        return 1;
+      }
+    } else if (strcmp(CMD_COMMAND_SET_RAW, argv[2]) == 0) {
+      if (argc == 4) {
+        return cmd_command_set_raw(argv[3]);
+      }
+    } else if (strcmp(CMD_COMMAND_SET, argv[2]) == 0) {
+      if (argc >= 4) {
+        return cmd_command_set(argc - 3, &argv[3]);
+      }
+    } else if (strcmp(CMD_GET_COMMAND, argv[2]) == 0) {
+      if (argc == 3) {
+        return cmd_get_command();
+      }
+    } else if (strcmp(CMD_DUMP_DATA, argv[2]) == 0) {
+      if (argc == 3) {
+        return cmd_dump_data();
+      }
+    } else if (strcmp(CMD_DATA_SET, argv[2]) == 0) {
+      if (argc == 4) {
+        return cmd_set_data(argv[3]);
       }
     }
   }

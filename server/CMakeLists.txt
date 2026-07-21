@@ -21,6 +21,7 @@ add_executable(${PROJECT_NAME}
 
 add_executable(dumb-code
   src/dumb-main.c
+  src/dumb-tool-cmd-set.c
   src/dumbpayload.c
   src/common.c
   src/ed25519.c
