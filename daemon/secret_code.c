@@ -30,9 +30,8 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define streq(a, b) (!strcmp(a, b))
 
-static int handle_one_payload(int sockfd, struct DUMB_PAYLOAD *payload,
-                              time_t time, size_t payload_size,
-                              const char *tmpdir) {
+int handle_one_payload(int sockfd, struct DUMB_PAYLOAD *payload, time_t time,
+                       size_t payload_size, const char *tmpdir) {
   int err;
 
   if (dp_is_expired_compare(payload, time)) {
