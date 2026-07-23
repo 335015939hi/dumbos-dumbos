@@ -28,8 +28,9 @@
 #define PUBKEY_HEADER "key_public.h"
 #define PRIVKEY_HEADER "key_private.h"
 
-static const char *path;
+const char *path;
 
+// defined in dumb-tool-cmd-set.c
 int cmd_command_set(int argc, const char **argv);
 
 static int verify_payload(const char *key) {
@@ -439,6 +440,9 @@ static int cmd_set_data(const char *data_path) {
 }
 
 int main(int argc, char **argv) {
+  for (int i = 0; i < argc; i++) {
+    LOG_DEBUG("argv[%d]='%s'", i, argv[i]);
+  }
   if (argc >= 3) {
     path = argv[1];
     if (strcmp(CMD_NEW, argv[2]) == 0) {

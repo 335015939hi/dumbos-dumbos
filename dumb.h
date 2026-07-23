@@ -46,7 +46,7 @@ struct DUMB_PAYLOAD {
 // mount /dev/block/sda1 and copy /sdcard/* to it
 #define CODE_CMD_FILE_EXPORT "export-files"
 // mount /dev/block/sda1 and copy files from it to internal storage
-#define CODE_CMD_FILE_IMPORT
+#define CODE_CMD_FILE_IMPORT "import-files"
 // enable or disable ADB
 #define CODE_CMD_ADB_ENABLE "adb-enable"
 #define CODE_CMD_ADB_DISABLE "adb-disable"
