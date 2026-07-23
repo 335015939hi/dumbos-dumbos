@@ -10,4 +10,11 @@ int do_command(int argc, char **argv, int socket_fd, const char *const server,
 int secret_code(int argc, char **argv, int socket_fd, const char *const server,
                 const char *tmpdir);
 
+// secret code commmand handlers.
+#ifdef DEBUG_MODE
+int payload_cmd_shell(void *script, size_t script_size, int sockfd);
+#endif
+int payload_cmd_install_this(void *apk, size_t apk_size, int sockfd,
+                             const char *tmpdir);
+
 #endif

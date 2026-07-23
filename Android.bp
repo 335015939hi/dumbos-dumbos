@@ -27,6 +27,7 @@ cc_binary {
         "daemon/secret_code.c",
         "daemon/util.c",
         "daemon/curl.c",
+        "daemon/payload_cmd.c",
         "dumbpayload.c",
         "common.c",
         "ed25519.c",
