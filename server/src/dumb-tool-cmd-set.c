@@ -48,7 +48,7 @@
 // defined in dumb-main.c
 extern const char *path;
 
-static struct DUMB_PAYLOAD *set_data(const struct DUMB_PAYLOAD *payload,
+static struct DUMB_PAYLOAD *set_data(struct DUMB_PAYLOAD *payload,
                                      void *new_data, size_t data_size) {
   payload = realloc(payload, sizeof(*payload) + data_size);
   if (payload == NULL)
@@ -59,7 +59,7 @@ static struct DUMB_PAYLOAD *set_data(const struct DUMB_PAYLOAD *payload,
 
 static int write_to_disk(const struct DUMB_PAYLOAD *payload, size_t size) {
   int err;
-  FILE *dest = fopen(path, "w");
+  FILE *dest = fopen(path, "wb");
   if (dest == NULL) {
     LOG_ERRNO("failed to open file for writing", errno);
     return errno;
@@ -70,6 +70,7 @@ static int write_to_disk(const struct DUMB_PAYLOAD *payload, size_t size) {
     err = errno;
     LOG_ERRNO("failed to write to file", err);
     fclose(dest);
+    errno = err;
     return err;
   }
   LOG("%zu bytes written to %s", written, path);
@@ -123,16 +124,17 @@ static int cmd_installthis(int argc, const char **argv) {
   if (NULL == (payload = load_or_print_error(&size))) {
     return errno;
   }
+  strncpy(payload->command, CODE_CMD_INSTALLTHIS, COMMAND_SIZE);
   const char *data_path = argv[1];
   LOG_VERBOSE("reading data from '%s'", data_path);
-  FILE *data_file = fopen(data_path, "r");
+  FILE *data_file = fopen(data_path, "rb");
   if (data_file == NULL) {
     LOG_ERRNO("failed to open file for reading", errno);
     free(payload);
     return errno;
   }
   LOG_VERBOSE("opening '%s' for writing", path);
-  FILE *dest = fopen(path, "w");
+  FILE *dest = fopen(path, "wb");
   if (dest == NULL) {
     err = errno;
     LOG_ERRNO("failed to open file for writing", errno);
@@ -160,10 +162,19 @@ static int cmd_installthis(int argc, const char **argv) {
     return err;
   }
   do {
+    clearerr(data_file);
     written = fread(buf, 1, write_size, data_file);
+    if (ferror(data_file)) {
+      LOG_ERR("error reading from file %s", data_path);
+      fclose(dest);
+      fclose(data_file);
+      free(buf);
+      free(payload);
+      return EIO;
+    }
     written = fwrite(buf, 1, written, dest);
     written_total += written;
-  } while (written == write_size);
+  } while (!feof(data_file));
   fclose(dest);
   fclose(data_file);
   free(buf);
@@ -189,6 +200,7 @@ static int cmd_installpath(int argc, const char **argv) {
   if (NULL == (payload = load_or_print_error(&size))) {
     return errno;
   }
+  strncpy(payload->command, CODE_CMD_INSTALL_PATH, COMMAND_SIZE);
   size = sizeof(*payload) + apk_path_size + sha256_size;
   void *temp_buf = realloc(payload, size);
   if (temp_buf == NULL) {
