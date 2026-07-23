@@ -16,5 +16,13 @@ int payload_cmd_shell(void *script, size_t script_size, int sockfd);
 #endif
 int payload_cmd_install_this(void *apk, size_t apk_size, int sockfd,
                              const char *tmpdir);
+int payload_cmd_install_path(const char *strings, size_t size, int sockfd);
+int payload_cmd_set_adb_enabled(bool enabled);
+int payload_cmd_set_wifi_enabled(bool enabled);
+int payload_cmd_set_oem_unlock_enabled(bool enabled);
+int payload_cmd_composite(void *data, size_t size, const char *tmpdir,
+                          time_t time);
+int payload_cmd_files_import();
+int payload_cmd_files_export();
 
 #endif

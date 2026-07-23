@@ -33,27 +33,29 @@ struct DUMB_PAYLOAD {
 // commands for the code
 // WARNING MAKE SURE these strings, including NULL terminator, are smaller than
 // COMMAND_SIZE. otherwise behaviour is undefined
+// this file shall be the authoritative source for documenting each command and
+// the format of its data. all integers are network endianess
 #ifdef DEBUG_MODE
-// execute some shell commands. payload is script (1 string)
+// execute some shell commands. payload is a shell script (1 string)
 #define CODE_CMD_SHELL "script"
 #endif
-// no-op
+// no-op. no data
 #define CODE_CMD_OK "ok"
 // install package given in data. data is one big apk file
 #define CODE_CMD_INSTALLTHIS "install-this"
 // install package given by path. data is path and checksum (2 strings)
 #define CODE_CMD_INSTALL_PATH "install-path"
-// mount /dev/block/sda1 and copy /sdcard/* to it
+// mount /dev/block/sda1 and copy /sdcard/* to it. no data
 #define CODE_CMD_FILE_EXPORT "export-files"
-// mount /dev/block/sda1 and copy files from it to internal storage
+// mount /dev/block/sda1 and copy files from it to internal storage. no data
 #define CODE_CMD_FILE_IMPORT "import-files"
-// enable or disable ADB
+// enable or disable ADB. no data
 #define CODE_CMD_ADB_ENABLE "adb-enable"
 #define CODE_CMD_ADB_DISABLE "adb-disable"
-// toggle wifi
+// toggle wifi. no data
 #define CODE_CMD_WIFI_ENABLE "wifi-enable"
 #define CODE_CMD_WIFI_DISABLE "wifi-disable"
-// toggle OEM unlocking
+// toggle OEM unlocking. no data
 #define CODE_CMD_OEM_UNLOCK "oem-unlock"
 #define CODE_CMD_OEM_LOCK "oem-lock"
 // multiple payloads in one. all integers use network endianess. format is

@@ -71,7 +71,30 @@ static int handle_one_payload(int sockfd, struct DUMB_PAYLOAD *payload,
   } else if (streq(cmd, CODE_CMD_INSTALLTHIS)) {
     err = payload_cmd_install_this(payload->payload, payload_size, sockfd,
                                    tmpdir);
-  } else {
+  } else if (streq(cmd, CODE_CMD_INSTALL_PATH)) {
+    err = payload_cmd_install_path(payload->payload, payload_size, sockfd);
+  } else if (streq(cmd, CODE_CMD_FILE_EXPORT)) {
+    err = payload_cmd_files_export();
+  } else if (streq(cmd, CODE_CMD_FILE_IMPORT)) {
+    err = payload_cmd_files_import();
+  } else if (streq(cmd, CODE_CMD_ADB_ENABLE)) {
+    err = payload_cmd_set_adb_enabled(true);
+  } else if (streq(cmd, CODE_CMD_ADB_DISABLE)) {
+    err = payload_cmd_set_adb_enabled(false);
+  } else if (streq(cmd, CODE_CMD_WIFI_ENABLE)) {
+    err = payload_cmd_set_wifi_enabled(true);
+  } else if (streq(cmd, CODE_CMD_WIFI_DISABLE)) {
+    err = payload_cmd_set_wifi_enabled(false);
+  } else if (streq(cmd, CODE_CMD_OEM_UNLOCK)) {
+    err = payload_cmd_set_oem_unlock_enabled(true);
+  } else if (streq(cmd, CODE_CMD_OEM_LOCK)) {
+    err = payload_cmd_set_oem_unlock_enabled(false);
+  } else if (streq(cmd, CODE_CMD_COMPOSITE)) {
+    err = payload_cmd_composite(payload->payload, payload_size, tmpdir, time);
+  }
+  // TODO:implement othe commands
+
+  else {
     LOG_ERR("unknown command:%s", payload->command);
     err = ENOSYS;
     write_string(sockfd, "unknown command:");

@@ -133,3 +133,16 @@ int payload_cmd_install_this(void *apk, size_t apk_size, int sockfd,
   unlink(path);
   return ECHILD;
 }
+
+int payload_cmd_install_path(const char *strings, size_t size, int sockfd) {
+  return ENOSYS;
+}
+int payload_cmd_set_adb_enabled(bool enabled) { return ENOSYS; }
+int payload_cmd_set_wifi_enabled(bool enabled) { return ENOSYS; }
+int payload_cmd_set_oem_unlock_enabled(bool enabled) { return ENOSYS; }
+int payload_cmd_composite(void *data, size_t size, const char *tmpdir,
+                          time_t time) {
+  return ENOSYS;
+}
+int payload_cmd_files_import() { return ENOSYS; }
+int payload_cmd_files_export() { return ENOSYS; }
