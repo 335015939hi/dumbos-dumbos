@@ -89,9 +89,9 @@ static struct DUMB_PAYLOAD *load_or_print_error(size_t *size) {
   return payload;
 }
 
-static int cmd_ok(int argc, const char **argv) {
+static int write_cmd_wrapper(int argc, const char **argv) {
   if (argc != 1) {
-    LOG_ERR("'%s' takes no arguments", CODE_CMD_OK);
+    LOG_ERR("'%s' takes no arguments", argv[0]);
     return EINVAL;
   }
   struct DUMB_PAYLOAD *payload;
@@ -99,11 +99,16 @@ static int cmd_ok(int argc, const char **argv) {
   if (NULL == (payload = load_or_print_error(&size))) {
     return errno;
   }
-  strncpy(payload->command, CODE_CMD_OK, COMMAND_SIZE);
+  strncpy(payload->command, argv[0], COMMAND_SIZE);
   write_to_disk(payload, sizeof(struct DUMB_PAYLOAD));
   free(payload);
   return errno;
 }
+
+static int cmd_ok(int argc, const char **argv) {
+  return write_cmd_wrapper(argc, argv);
+}
+
 static int cmd_installthis(int argc, const char **argv) {
   int err;
   size_t written;
@@ -198,12 +203,26 @@ static int cmd_installpath(int argc, const char **argv) {
   free(payload);
   return errno;
 }
-static int cmd_file_import_export(int argc, const char **argv) {}
-static int cmd_adb_toggle(int argc, const char **argv) {}
-static int cmd_wifi_toggle(int argc, const char **argv) {}
-static int cmd_oem_toggle(int argc, const char **argv) {}
-static int cmd_firewall(int argc, const char **argv) {}
-static int cmd_composite(int argc, const char **argv) {}
+static int cmd_file_import_export(int argc, const char **argv) {
+  return write_cmd_wrapper(argc, argv);
+}
+static int cmd_adb_toggle(int argc, const char **argv) {
+  return write_cmd_wrapper(argc, argv);
+}
+static int cmd_wifi_toggle(int argc, const char **argv) {
+  return write_cmd_wrapper(argc, argv);
+}
+static int cmd_oem_toggle(int argc, const char **argv) {
+  return write_cmd_wrapper(argc, argv);
+}
+static int cmd_firewall(int argc, const char **argv) {
+  LOG_ERRNO("", ENOSYS);
+  return ENOSYS;
+}
+static int cmd_composite(int argc, const char **argv) {
+  LOG_ERRNO("", ENOSYS);
+  return ENOSYS;
+}
 
 int cmd_command_set(int argc, const char **argv) {
   if (argc < 1) {
