@@ -227,6 +227,9 @@ static int cmd_wifi_toggle(int argc, const char **argv) {
 static int cmd_oem_toggle(int argc, const char **argv) {
   return write_cmd_wrapper(argc, argv);
 }
+static int cmd_firewall_flush(int argc, const char **argv) {
+  return write_cmd_wrapper(argc, argv);
+}
 static int cmd_firewall(int argc, const char **argv) {
   LOG_ERRNO("", ENOSYS);
   return ENOSYS;
@@ -260,8 +263,9 @@ int cmd_command_set(int argc, const char **argv) {
   } else if (!strcmp(cmd, CODE_CMD_OEM_LOCK) ||
              !strcmp(cmd, CODE_CMD_OEM_UNLOCK)) {
     return cmd_oem_toggle(argc, argv);
-  } else if (!strcmp(cmd, CODE_CMD_FW_FLUSH) ||
-             !strcmp(cmd, CODE_CMD_FW_ALLOW) ||
+  } else if (!strcmp(cmd, CODE_CMD_FW_FLUSH)) {
+    return cmd_firewall_flush(argc, argv);
+  } else if (!strcmp(cmd, CODE_CMD_FW_ALLOW) ||
              !strcmp(cmd, CODE_CMD_FW_DENY) ||
              !strcmp(cmd, CODE_CMD_FW_TEMP_ADD)) {
     return cmd_firewall(argc, argv);
