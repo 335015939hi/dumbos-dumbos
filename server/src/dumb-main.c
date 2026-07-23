@@ -167,7 +167,9 @@ static int cmd_help(const char *argv0, const char *cmd) {
         "'" CODE_CMD_INSTALL_PATH
         "' <path> <sha256sum> -- installed a apk file by local path (on "
         "recieving device), verifying it using the provided sha256  checksum. "
-        "this can be useful to avoid large downloads\n"
+        "this can be useful to avoid large downloads. "
+        "Warning:we do a basic length check for the sha256, but otherwise it "
+        "is YOUR responsibility to make sure it is a valid sha256 checksum.\n"
         "'" CODE_CMD_FILE_EXPORT "' (no argument) -- mounts an external drive "
         "and copies internal files out\n"
         "'" CODE_CMD_FILE_IMPORT "' (no argument) -- mounts an external drive "

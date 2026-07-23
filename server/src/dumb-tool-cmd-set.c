@@ -163,10 +163,41 @@ static int cmd_installthis(int argc, const char **argv) {
   fclose(data_file);
   free(buf);
   free(payload);
-  LOG("%zu bytes written", written_total);
+  LOG("%zu bytes written to %s", written_total, path);
   return 0;
 }
-static int cmd_installpath(int argc, const char **argv) {}
+static int cmd_installpath(int argc, const char **argv) {
+  if (argc != 3) {
+    LOG_ERR("'%s' takes 2 arguments", CODE_CMD_INSTALL_PATH);
+    return EINVAL;
+  }
+  if (strlen(argv[2]) != 64) {
+    LOG_ERR("invalid length detected for sha256");
+    return EINVAL;
+  }
+  const char *apk_path = argv[1];
+  int apk_path_size = strlen(apk_path) + 1;
+  const char *sha256 = argv[2];
+  int sha256_size = strlen(sha256) + 1;
+  struct DUMB_PAYLOAD *payload;
+  size_t size;
+  if (NULL == (payload = load_or_print_error(&size))) {
+    return errno;
+  }
+  size = sizeof(*payload) + apk_path_size + sha256_size;
+  void *temp_buf = realloc(payload, size);
+  if (temp_buf == NULL) {
+    LOG_ERRNO("failed allocating memory", errno);
+    free(payload);
+    return errno;
+  }
+  payload = temp_buf;
+  strcpy(payload->payload, apk_path);
+  strcpy(payload->payload + apk_path_size, sha256);
+  write_to_disk(payload, size);
+  free(payload);
+  return errno;
+}
 static int cmd_file_import_export(int argc, const char **argv) {}
 static int cmd_adb_toggle(int argc, const char **argv) {}
 static int cmd_wifi_toggle(int argc, const char **argv) {}
