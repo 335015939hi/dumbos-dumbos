@@ -91,6 +91,7 @@ int payload_cmd_install_this(void *apk, size_t apk_size, int sockfd,
     LOG_ERRNO("write_all() failed", err);
     free(path);
     close(fd);
+    unlink(path);
     write_string(sockfd, "internal Error");
     return err;
   }
@@ -99,6 +100,7 @@ int payload_cmd_install_this(void *apk, size_t apk_size, int sockfd,
   pid_t pid = fork();
   if (pid < 0) {
     err = errno;
+    LOG_ERRNO("fork error", errno);
     unlink(path);
     write_string(sockfd, "internal error:fork");
     return err;
@@ -108,10 +110,12 @@ int payload_cmd_install_this(void *apk, size_t apk_size, int sockfd,
     execlp("pm", "pm", "install", path, (char *)NULL);
     _exit(127);
   }
+  LOG_DEBUG("forked to pid %d, execlp %s %s %s", pid, "pm", "install", path);
 
   int status;
   if (waitpid(pid, &status, 0) < 0) {
     err = errno;
+    LOG_ERRNO("waitpid error", errno);
     unlink(path);
     write_string(sockfd, "internal error:waitpid");
     return err;
