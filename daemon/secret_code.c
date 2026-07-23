@@ -28,6 +28,7 @@
 #include "../keys/key_public.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define streq(a, b) (!strcmp(a, b))
 
 // commmand handlers.
 // char*cmd_whatever(void*data,size_t data_size,int*ret_val)
@@ -77,19 +78,19 @@ static int handle_one_payload(int sockfd, struct DUMB_PAYLOAD *payload,
 
   const char *cmd = payload->command;
 #ifdef DEBUG_MODE
-  if (0 == strcmp(cmd, CODE_CMD_SHELL)) {
+  if (streq(cmd, CODE_CMD_SHELL)) {
     err = cmd_shell(payload->payload, payload_size, sockfd);
   } else
 #endif
-      if (0 == strcmp(cmd, CODE_CMD_OK)) {
+      if (streq(cmd, CODE_CMD_OK)) {
     LOG("nothing happens");
     write_string(sockfd, "ok");
     err = 0;
-  } else if (0 == strcmp(cmd, CODE_CMD_INSTALLTHIS)) {
+  } else if (streq(cmd, CODE_CMD_INSTALLTHIS)) {
     err = cmd_install_file(payload->payload, payload_size, sockfd);
   } else {
     LOG_ERR("unknown command:%s", payload->command);
-    err = EINVAL;
+    err = ENOSYS;
     write_string(sockfd, "unknown command:");
     write_string(sockfd, payload->command);
   }

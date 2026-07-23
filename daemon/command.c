@@ -9,6 +9,7 @@
 
 #include "../common.h"
 #include "command.h"
+#include "util.h"
 
 static const char *const commands_list[] = {
     "ok",         "notok",       "code",
@@ -104,31 +105,28 @@ int do_command(int argc, char **argv, int sockfd, const char *const server,
 int toggle_wifi(int client_sockfd, bool enable) {
   if (enable) {
     write_string(client_sockfd, "enabling wifi");
-    return WEXITSTATUS(system("start wificond"));
+    return set_wifi_enabled(true);
   } else {
     write_string(client_sockfd, "disabling wifi");
-    return WEXITSTATUS(system("stop wificond"));
+    return set_wifi_enabled(false);
   }
 }
 int toggle_adb(int client_sockfd, bool enable) {
   if (enable) {
     write_string(client_sockfd, "enabling adb");
-    return WEXITSTATUS(
-        system("settings put global development_settings_enabled 1 && settings "
-               "put global adb_enabled 1"));
+    return set_adb_enabled(true);
   } else {
     write_string(client_sockfd, "disabling adb");
-    return WEXITSTATUS(system("settings put global adb_enabled 0 && settings "
-                              "put global development_settings_enabled 0"));
+    return set_adb_enabled(false);
   }
 }
 int oem_locking(int client_sockfd, bool lock) {
   if (!lock) {
     write_string(client_sockfd, "enabling OEM unlock");
-    return WEXITSTATUS(system("service call oem_lock 4 i32 1"));
+    return set_oem_lock(false);
   } else {
     write_string(client_sockfd, "disabling OEM unlock");
-    return WEXITSTATUS(system("service call oem_lock 4 i32 0"));
+    return set_oem_lock(true);
   }
 }
 int cmd_shell(int argc, char **argv) {

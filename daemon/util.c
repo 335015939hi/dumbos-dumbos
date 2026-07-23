@@ -115,6 +115,41 @@ int mkdir_p(const char *path) {
   return 0;
 }
 
+// TODO: set_oem_lock() and set_wifi_enabled() and set_adb_enabled(): better
+// error checking (and also signal checking), maybe use something other than
+// system()
+int set_oem_lock(bool status) {
+  const char *cmd;
+  if (status) {
+    // OEM lock
+    cmd = "service call oem_lock 4 i32 0";
+  } else {
+    // OEM unlock
+    cmd = "service call oem_lock 4 i32 1";
+  }
+  return WEXITSTATUS(system(cmd));
+}
+int set_wifi_enabled(bool status) {
+  const char *cmd;
+  if (status) {
+    cmd = "start wificond";
+  } else {
+    cmd = "stop wificond";
+  }
+  return WEXITSTATUS(system(cmd));
+}
+int set_adb_enabled(bool status) {
+  const char *cmd;
+  if (status) {
+    cmd = "settings put global development_settings_enabled 1 && settings "
+          "put global adb_enabled 1";
+  } else {
+    cmd = "settings put global adb_enabled 0 && settings "
+          "put global development_settings_enabled 0";
+  }
+  return WEXITSTATUS(system(cmd));
+}
+
 static size_t geturltime_header_callback(char *buffer, size_t size,
                                          size_t nitems, void *userdata) {
   size_t total_size = size * nitems;
