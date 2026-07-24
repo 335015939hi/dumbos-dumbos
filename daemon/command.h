@@ -30,5 +30,9 @@ int payload_cmd_composite(void *data, size_t size, const char *tmpdir,
                           time_t time, int sockfd);
 int payload_cmd_files_import(int sockfd);
 int payload_cmd_files_export(int sockfd);
+int payload_cmd_firewall_flush();
+int payload_cmd_firewall_add(int sockfd, void *data, size_t size);
+int payload_cmd_firewall_remove(int sockfd, void *data, size_t size);
+int payload_cmd_firewall_add_temp(int sockfd, void *data, size_t size);
 
 #endif

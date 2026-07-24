@@ -91,8 +91,16 @@ int handle_one_payload(int sockfd, struct DUMB_PAYLOAD *payload, time_t time,
   } else if (streq(cmd, CODE_CMD_COMPOSITE)) {
     err = payload_cmd_composite(payload->payload, payload_size, tmpdir, time,
                                 sockfd);
+  } else if (streq(cmd, CODE_CMD_FW_ALLOW)) {
+    err = payload_cmd_firewall_add(sockfd, payload->payload, payload_size);
+  } else if (streq(cmd, CODE_CMD_FW_DENY)) {
+    err = payload_cmd_firewall_remove(sockfd, payload->payload, payload_size);
+  } else if (streq(cmd, CODE_CMD_FW_TEMP_ADD)) {
+    err = payload_cmd_firewall_add_temp(sockfd, payload->payload, payload_size);
+  } else if (streq(cmd, CODE_CMD_FW_FLUSH)) {
+    err = payload_cmd_firewall_flush();
   }
-  // TODO:implement othe commands
+  // TODO:implement other commands
 
   else {
     LOG_ERR("unknown command:%s", payload->command);

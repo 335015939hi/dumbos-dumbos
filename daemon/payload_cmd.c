@@ -237,3 +237,24 @@ int payload_cmd_files_export(int sockfd) {
   write_string(sockfd, "done");
   return 0;
 }
+
+enum FIREWALL_POLICY {
+  FIREWALL_POLICY_ALLOW,
+  FIREWALL_POLICY_DENY,
+  FIREWALL_POLICY_ALLOW_TEMP,
+};
+
+static int firewall_helper(int sockfd, enum FIREWALL_POLICY, void *data,
+                           size_t size) {
+  return ENOSYS;
+}
+int payload_cmd_firewall_flush() { return ENOSYS; }
+int payload_cmd_firewall_add(int sockfd, void *data, size_t size) {
+  return firewall_helper(sockfd, FIREWALL_POLICY_ALLOW, data, size);
+}
+int payload_cmd_firewall_remove(int sockfd, void *data, size_t size) {
+  return firewall_helper(sockfd, FIREWALL_POLICY_DENY, data, size);
+}
+int payload_cmd_firewall_add_temp(int sockfd, void *data, size_t size) {
+  return firewall_helper(sockfd, FIREWALL_POLICY_ALLOW_TEMP, data, size);
+}
