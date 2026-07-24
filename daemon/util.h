@@ -18,4 +18,9 @@ int set_wifi_enabled(bool);
 // true=enable ADB, false=disable
 int set_adb_enabled(bool);
 
+int mount_copy_unmount_ns(const char *device, const char *mountpoint,
+                          const char *fstype, unsigned long mount_flags,
+                          const char *mount_data, const char *copy_src,
+                          const char *copy_dst, int _dumbos_client_socketfd);
+
 #endif //

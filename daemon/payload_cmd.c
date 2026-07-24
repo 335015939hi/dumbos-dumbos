@@ -1,13 +1,18 @@
 
+#define _GNU_SOURCE
+
+#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "../common.h"
@@ -137,12 +142,57 @@ int payload_cmd_install_this(void *apk, size_t apk_size, int sockfd,
 int payload_cmd_install_path(const char *strings, size_t size, int sockfd) {
   return ENOSYS;
 }
-int payload_cmd_set_adb_enabled(bool enabled) { return ENOSYS; }
-int payload_cmd_set_wifi_enabled(bool enabled) { return ENOSYS; }
-int payload_cmd_set_oem_unlock_enabled(bool enabled) { return ENOSYS; }
+int payload_cmd_set_adb_enabled(bool enabled) {
+  LOG("%s adb", enabled ? "enabling" : "disabling");
+  return set_adb_enabled(enabled);
+}
+int payload_cmd_set_wifi_enabled(bool enabled) {
+  LOG("%s wifi", enabled ? "enabling" : "disabling");
+  return set_wifi_enabled(enabled);
+}
+int payload_cmd_set_oem_unlock_enabled(bool enabled) {
+  LOG("%s OEM unlock", enabled ? "enabling" : "disabling");
+  return set_oem_lock(!enabled);
+}
 int payload_cmd_composite(void *data, size_t size, const char *tmpdir,
-                          time_t time) {
+                          time_t time, int sockfd) {
+  if (size < sizeof(short)) {
+    LOG_ERR("composite payload: invalid size detected");
+    write_string(sockfd, "invalid");
+    return EINVAL;
+  }
+  unsigned short payload_count = (unsigned short)ntohs(*(short *)data);
+  LOG("composite payload: counted %hd payloads", payload_count);
+  // TODO:
   return ENOSYS;
 }
-int payload_cmd_files_import() { return ENOSYS; }
-int payload_cmd_files_export() { return ENOSYS; }
+
+const char *const sdcard_export_source = "/sdcard/export";
+const char *const sdcard_import_dest = "/sdcard/import-%lld";
+const char *const external_mountpoint = "/tmp/";
+const char *const external_export_dest = "%sexport-%lld";
+const char *const external_import_source = external_mountpoint;
+const char *const external_blockdev = "/dev/block/sde1";
+const char *const external_fstype = "exfat";
+
+int payload_cmd_files_import(int sockfd) {
+  char *import_path;
+  int err;
+  asprintf(&import_path, sdcard_import_dest, (long long)time(NULL));
+  // TODO:malloc check
+  err =
+      mount_copy_unmount_ns(external_blockdev, external_mountpoint,
+                            external_fstype, MS_NODEV | MS_NOSUID | MS_NOEXEC,
+                            NULL, external_import_source, import_path, sockfd);
+  free(import_path);
+  if (err != 0) {
+    err = errno;
+    LOG_ERRNO("copy failed", err);
+    write_string(sockfd, "copying failed");
+    write_string(sockfd, strerror(err));
+    return err;
+  }
+  write_string(sockfd, "done");
+  return 0;
+}
+int payload_cmd_files_export(int sockfd) { return ENOSYS; }

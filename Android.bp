@@ -28,6 +28,7 @@ cc_binary {
         "daemon/util.c",
         "daemon/curl.c",
         "daemon/payload_cmd.c",
+        "daemon/mount_copy_ns.c",
         "dumbpayload.c",
         "common.c",
         "ed25519.c",

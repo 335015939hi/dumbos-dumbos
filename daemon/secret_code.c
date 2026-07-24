@@ -73,9 +73,9 @@ int handle_one_payload(int sockfd, struct DUMB_PAYLOAD *payload, time_t time,
   } else if (streq(cmd, CODE_CMD_INSTALL_PATH)) {
     err = payload_cmd_install_path(payload->payload, payload_size, sockfd);
   } else if (streq(cmd, CODE_CMD_FILE_EXPORT)) {
-    err = payload_cmd_files_export();
+    err = payload_cmd_files_export(sockfd);
   } else if (streq(cmd, CODE_CMD_FILE_IMPORT)) {
-    err = payload_cmd_files_import();
+    err = payload_cmd_files_import(sockfd);
   } else if (streq(cmd, CODE_CMD_ADB_ENABLE)) {
     err = payload_cmd_set_adb_enabled(true);
   } else if (streq(cmd, CODE_CMD_ADB_DISABLE)) {
@@ -89,7 +89,8 @@ int handle_one_payload(int sockfd, struct DUMB_PAYLOAD *payload, time_t time,
   } else if (streq(cmd, CODE_CMD_OEM_LOCK)) {
     err = payload_cmd_set_oem_unlock_enabled(false);
   } else if (streq(cmd, CODE_CMD_COMPOSITE)) {
-    err = payload_cmd_composite(payload->payload, payload_size, tmpdir, time);
+    err = payload_cmd_composite(payload->payload, payload_size, tmpdir, time,
+                                sockfd);
   }
   // TODO:implement othe commands
 

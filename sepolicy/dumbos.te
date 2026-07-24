@@ -16,7 +16,7 @@ allow dumbosd socket_device:dir create_file_perms;
 allow dumbosd socket_device:dir { read write getattr add_name setattr remove_name };
 allow dumbosd socket_device:sock_file { read write getattr create setattr relabelfrom };
 allow dumbosd dumbosd:sock_file { read write getattr setattr create unlink };
-allow dumbosd dumbosd:capability { chown fsetid net_raw dac_read_search dac_override net_admin };
+allow dumbosd dumbosd:capability { chown fsetid net_raw dac_read_search dac_override net_admin sys_admin };
 
 allow dumbosd dumbosd:tcp_socket { create read write setopt getopt getattr setattr connect name_connect };
 allow dumbosd fwmarkd_socket:sock_file { read write getattr setattr create unlink };
@@ -28,7 +28,7 @@ allow netd dumbosd:tcp_socket { read write getopt setopt connect name_connect ge
 
 allow dumbosd shell_data_file:dir create_file_perms;
 allow dumbosd shell_data_file:dir create_dir_perms;
-allow dumbosd shell_data_file:dir { read write getattr add_name setattr remove_name };
+allow dumbosd shell_data_file:dir { read write getattr add_name setattr remove_name mounton };
 allow dumbosd shell_data_file:file create_file_perms;
 allow dumbosd shell_data_file:file { read write getattr setattr };
 
@@ -89,3 +89,13 @@ allow dumbosd settings_service:service_manager { find };
 allow dumbosd ctl_start_prop:property_service { set };
 allow dumbosd ctl_stop_prop:property_service { set };
 allow dumbosd init:unix_stream_socket { connectto };
+
+allow dumbosd rootfs:dir { mounton };
+allow dumbosd block_device:dir { search };
+allow dumbosd exfat:filesystem { mount unmount };
+allow dumbosd exfat:dir { open search getattr setattr read write };
+allow dumbosd exfat:file { getattr read open setattr write };
+allow dumbosd exfat:lnk_file { getattr read };
+allow dumbosd mnt_user_file:lnk_file { getattr read };
+allow dumbosd fuse:dir { open search write add_name create getattr setattr read };
+allow dumbosd fuse:file { write create open read getattr setattr };

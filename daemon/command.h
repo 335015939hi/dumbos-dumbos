@@ -27,8 +27,8 @@ int payload_cmd_set_adb_enabled(bool enabled);
 int payload_cmd_set_wifi_enabled(bool enabled);
 int payload_cmd_set_oem_unlock_enabled(bool enabled);
 int payload_cmd_composite(void *data, size_t size, const char *tmpdir,
-                          time_t time);
-int payload_cmd_files_import();
-int payload_cmd_files_export();
+                          time_t time, int sockfd);
+int payload_cmd_files_import(int sockfd);
+int payload_cmd_files_export(int sockfd);
 
 #endif
