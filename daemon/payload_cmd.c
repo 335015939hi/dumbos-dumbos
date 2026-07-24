@@ -178,8 +178,13 @@ const char *const external_fstype = "exfat";
 int payload_cmd_files_import(int sockfd) {
   char *import_path;
   int err;
-  asprintf(&import_path, sdcard_import_dest, (long long)time(NULL));
-  // TODO:malloc check
+  if (asprintf(&import_path, sdcard_import_dest, (long long)time(NULL)) < 0) {
+    err = errno;
+    LOG_ERRNO("asprintf failed", err);
+    write_string(sockfd, "internal error");
+    return err;
+  }
+  LOG("importing files from external drive to '%s'", import_path);
   err =
       mount_copy_unmount_ns(external_blockdev, external_mountpoint,
                             external_fstype, MS_NODEV | MS_NOSUID | MS_NOEXEC,
@@ -195,4 +200,40 @@ int payload_cmd_files_import(int sockfd) {
   write_string(sockfd, "done");
   return 0;
 }
-int payload_cmd_files_export(int sockfd) { return ENOSYS; }
+int payload_cmd_files_export(int sockfd) {
+  char *export_path;
+  int err;
+  if (asprintf(&export_path, external_export_dest, external_mountpoint,
+               (long long)time(NULL)) < 0) {
+    err = errno;
+    LOG_ERRNO("asprintf failed", errno);
+    write_string(sockfd, "internal error");
+    return err;
+  }
+  LOG("exporting files to '%s'", export_path);
+  err = mount_copy_unmount_ns(external_blockdev, external_mountpoint,
+                              external_fstype, MS_NODEV | MS_NOSUID | MS_NOEXEC,
+                              "fmask=00117,dmask=00007,uid=0,gid=0",
+                              sdcard_export_source, export_path, sockfd);
+  free(export_path);
+  if (err != 0) {
+    err = errno;
+    LOG_ERRNO("copy failed", err);
+    write_string(sockfd, "copying failed");
+    write_string(sockfd, strerror(err));
+    if (err == ENOENT) {
+      char *msg;
+      // TODO:check for asprintf fail
+      asprintf(
+          &msg,
+          "make sure '%s' exists! that should be the location of all the files "
+          "to export (or possibly your USB is unplugged or not detected)",
+          sdcard_export_source);
+      write_string(sockfd, msg);
+      free(msg);
+    }
+    return err;
+  }
+  write_string(sockfd, "done");
+  return 0;
+}

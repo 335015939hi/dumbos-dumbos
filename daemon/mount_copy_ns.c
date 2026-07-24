@@ -247,8 +247,10 @@ static int copy_regular_file(const char *src, const char *dst,
     print_progress(progress, 0);
   }
 
-  if (fchmod(out_fd, src_st->st_mode & 07777) < 0)
-    goto out;
+  // don't fail if fchmod fails
+  // if (fchmod(out_fd, src_st->st_mode & 07777) < 0)
+  //   goto out;
+  fchmod(out_fd, src_st->st_mode & 07777);
 
   rc = 0;
 
@@ -391,8 +393,9 @@ static int copy_tree(const char *src, const char *dst,
   }
 
   if (rc == 0 && chmod(dst, st.st_mode & 07777) < 0) {
-    rc = -1;
-    saved_errno = errno;
+    // Don't fail if chmod fails
+    // rc = -1;
+    // saved_errno = errno;
   }
 
   if (rc < 0)
