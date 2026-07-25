@@ -45,8 +45,22 @@
 #define CODE_CMD_FW_TEMP_ADD "fw-tmp-add"
 */
 
+#define APK_PACKAGE_ID_ALLOWED_CHARS                                           \
+  "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM._"
+
 // defined in dumb-main.c
 extern const char *path;
+
+// check string s for allowed characters whitelist. returns true if all
+// characters allowed
+static bool check_allowed_chars(const char *s, const char *whitelist) {
+  while (*s != '\0') {
+    if (strchr(whitelist, *s) == NULL)
+      return false;
+    s++;
+  }
+  return true;
+}
 
 static struct DUMB_PAYLOAD *set_data(struct DUMB_PAYLOAD *payload,
                                      void *new_data, size_t data_size) {
@@ -231,8 +245,55 @@ static int cmd_firewall_flush(int argc, const char **argv) {
   return write_cmd_wrapper(argc, argv);
 }
 static int cmd_firewall(int argc, const char **argv) {
-  LOG_ERRNO("", ENOSYS);
-  return ENOSYS;
+  if (argc < 2) {
+    LOG_ERR("%s requires at least 1 argument", argv[0]);
+    return EINVAL;
+  }
+  struct DUMB_PAYLOAD *payload;
+  size_t size;
+  size_t total_written;
+  int err;
+  if (NULL == (payload = load_or_print_error(&size))) {
+    return errno;
+  }
+  LOG_DEBUG("setting command to '%s'", argv[0]);
+  snprintf(payload->command, COMMAND_SIZE, "%s", argv[0]);
+  LOG_VERBOSE("writing to file '%s'", path);
+  FILE *dest = fopen(path, "wb");
+  if (dest == NULL) {
+    LOG_ERRNO("failed to open file for writing", errno);
+    return errno;
+  }
+  errno = 0;
+  total_written = fwrite(payload, 1, sizeof(*payload), dest);
+  free(payload);
+  if (total_written != sizeof(*payload)) {
+    err = errno;
+    LOG_ERRNO("failed writing to file", err);
+    fclose(dest);
+    return err;
+  }
+  LOG_DEBUG("wrote %zu bytes", total_written);
+  for (int i = 1; i < argc; i++) {
+    int len = strlen(argv[i]);
+    if (!check_allowed_chars(argv[i], APK_PACKAGE_ID_ALLOWED_CHARS)) {
+      // don't abort. we've come too far to abort now
+      LOG_WARN("invalid app id characters detected in '%s'", argv[i]);
+    }
+    errno = 0;
+    int err = fwrite(argv[i], 1, len + 1, dest);
+    if (err != len + 1) {
+      err = errno;
+      LOG_ERRNO("failed writing to file", err);
+      fclose(dest);
+      return err;
+    }
+    LOG_DEBUG("wrote %d bytes", err);
+    total_written += err;
+  }
+  fclose(dest);
+  LOG("%zu bytes written to %s", total_written, path);
+  return 0;
 }
 static int cmd_composite(int argc, const char **argv) {
   LOG_ERRNO("", ENOSYS);
