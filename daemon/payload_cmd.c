@@ -329,7 +329,44 @@ static int firewall_helper(int sockfd, enum FIREWALL_POLICY policy, char *data,
     return 0;
   }
 }
-int payload_cmd_firewall_flush() { return ENOSYS; }
+// see firewall/
+#define FIREWALL_CONFFILE "/data/local/tmp/dumb/dumbos-firewall.conf"
+#define FIREWALL_RELOAD_SCRIPT "/system/bin/dumbos-firewall.sh"
+int payload_cmd_firewall_flush() {
+  LOG_VERBOSE("unlinking %s", FIREWALL_CONFFILE);
+  if (unlink(FIREWALL_CONFFILE) < 0 && errno != ENOENT) {
+    LOG_ERRNO("failed to unlink", errno);
+    return errno;
+  }
+  pid_t pid = fork();
+  if (pid < 0) {
+    LOG_ERRNO("failed to fork", errno);
+    return errno;
+  }
+  if (pid == 0) {
+    errno = 0;
+    execve(FIREWALL_RELOAD_SCRIPT, (char *[]){FIREWALL_RELOAD_SCRIPT, NULL},
+           NULL);
+    // we should never reach here
+    LOG_ERRNO("failed to execve", errno);
+    return errno;
+  } else {
+    int status;
+    if (waitpid(pid, &status, 0) < 0) {
+      LOG_ERRNO("failed to waitpid", errno);
+      return errno;
+    }
+    if (WIFEXITED(status)) {
+      status = WEXITSTATUS(status);
+      LOG("%s exited with %d:%s", FIREWALL_RELOAD_SCRIPT, status,
+          strerror(status));
+      return status;
+    } else {
+      LOG_ERR("%s exited abnormally", FIREWALL_RELOAD_SCRIPT);
+      return ECHILD;
+    }
+  }
+}
 int payload_cmd_firewall_add(int sockfd, void *data, size_t size) {
   return firewall_helper(sockfd, FIREWALL_POLICY_ALLOW, data, size);
 }
