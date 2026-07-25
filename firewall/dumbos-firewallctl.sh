@@ -6,16 +6,18 @@ CONFFILE=/data/local/tmp/dumb/dumbos-firewall.conf
 
 POLICY_ALLOW=allow
 POLICY_DENY=deny
+POLICY_ALLOW_TEMP=allow-temp
 
 RETURN_CODE=0
 TMPFILE=
 
 display_help() {
   echo "Usage: $0 <policy> <appId> [appId2 ...]"
-  echo "<policy> is either $POLICY_ALLOW or $POLICY_DENY"
+  echo "<policy> is either $POLICY_ALLOW or $POLICY_DENY or $POLICY_ALLOW_TEMP"
   echo "<appId> is the package ID of each targeted app"
   echo "$POLICY_ALLOW adds the target app to the firewall whitelist"
   echo "$POLICY_DENY removes the target app from the firewall whitelist"
+  echo "$POLICY_ALLOW_TEMP allows the target app until the next time firewall is reloaded (either through another $0 command or reboot)"
   echo "WARNING: Internet access is controlled by UID. Apps sharing a UID (looking at you, system apps, but some other apps as well) will therefore share the same firewall access."
 }
 
@@ -39,7 +41,7 @@ fi
 POLICY=$1
 
 if [ "$POLICY" != "$POLICY_ALLOW" ] &&
-  [ "$POLICY" != "$POLICY_DENY" ]; then
+  [ "$POLICY" != "$POLICY_DENY" ] && [ "$POLICY" != "$POLICY_ALLOW_TEMP" ]; then
   echo "Invalid policy: '$POLICY'" >&2
   display_help
   exit 1
@@ -67,8 +69,7 @@ TMPFILE=$(mktemp "$CONFDIR/.dumbos-firewall.conf.XXXXXX") ||
   die "Failed to create temporary file"
 
 add_package() {
-  package=$1
-
+  package="$1"
   if [ -e "$CONFFILE" ]; then
     grep -Fqx -- "$package" "$CONFFILE"
     status=$?
@@ -95,8 +96,18 @@ add_package() {
   return 0
 }
 
+add_package_temp() {
+  package="$1"
+  pdata="$(pm list packages --user 0 -U | grep -F -m 1 "package:$package ")" || return $?
+  uid="${pdata##* uid:}"
+  IPTABLES="/system/bin/iptables-wrapper-1.0 /system/bin/ip6tables-wrapper-1.0"
+  for ipt in $IPTABLES; do
+    "$ipt" -w -I oem_out -m owner --uid-owner "$uid" -j RETURN || return $?
+  done
+}
+
 remove_package() {
-  package=$1
+  package="$1"
 
   if [ ! -f "$CONFFILE" ]; then
     echo "Warning: package '$package' does not exist" >&2
@@ -147,12 +158,20 @@ for app in "$@"; do
 
   if [ "$POLICY" = "$POLICY_ALLOW" ]; then
     add_package "$app" || RETURN_CODE=1
-  else
+  elif [ "$POLICY" = "$POLICY_DENY" ]; then
     remove_package "$app" || RETURN_CODE=1
+  else
+    add_package_temp "$app" || {
+      RETURN_CODE=1
+      echo "Warning: failed processing '$app'"
+    }
   fi
 done
 
-dumbos-firewall.sh
+#don't reload firewall if alllowing temporary
+if [ "$POLICY" != "$POLICY_ALLOW_TEMP" ]; then
+  dumbos-firewall.sh
+fi
 
 cleanup
 exit "$RETURN_CODE"
