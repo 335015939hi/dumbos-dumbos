@@ -244,9 +244,90 @@ enum FIREWALL_POLICY {
   FIREWALL_POLICY_ALLOW_TEMP,
 };
 
-static int firewall_helper(int sockfd, enum FIREWALL_POLICY, void *data,
+static int firewall_helper(int sockfd, enum FIREWALL_POLICY policy, char *data,
                            size_t size) {
-  return ENOSYS;
+  LOG_DEBUG("firewall_helper()");
+  if (size == 0) {
+    LOG_VERBOSE("firewall_helper(): empty data");
+    return 0;
+  }
+  if (*data == '\0' || size <= 1) {
+    LOG_ERR("firewall_helper(): malformed data");
+    return EINVAL;
+  }
+  char *data_end = data + size;
+  int str_num = 0;
+  char **str_list = NULL;
+  // safety:force last byte to be NULL
+  *data_end = '\0';
+  while (data < data_end) {
+    str_num++;
+    // why +3: we're going to pass this directly to execve, so leave 2 spaces
+    // for argv[0] and argv[1], and 1 space at the end for NULL string
+    str_list = reallocarray(str_list, str_num + 3, sizeof(char *));
+    // skip 2 spaces for argv[0] and argv[1]
+    str_list[str_num + 1] = data;
+    LOG_DEBUG("found app id '%s'", data);
+    data += strlen(data) + 1;
+  }
+  str_list[0] = "/system/bin/dumbos-firewallctl.sh";
+  if (policy == FIREWALL_POLICY_ALLOW) {
+    str_list[1] = "allow";
+  } else if (policy == FIREWALL_POLICY_DENY) {
+    str_list[1] = "deny";
+  } else {
+    str_list[1] = "allow-temp";
+  }
+  str_list[str_num] = NULL;
+
+  int err;
+  pid_t pid = fork();
+  if (pid < 0) {
+    err = errno;
+    free(str_list);
+    LOG_ERRNO("firewall_helper(): failed to fork", err);
+    write_string(sockfd, "internal error");
+    return err;
+  }
+
+  if (pid == 0) {
+    LOG_DEBUG("firewall_helper() child");
+    LOG_DEBUG("execve %s", str_list[0]);
+    execve(str_list[0], str_list, NULL);
+    // if execve succeeded wo would not reach here
+    err = errno;
+    free(str_list);
+    LOG_ERRNO("execve fail", err);
+    write_string(sockfd, "internal error");
+    return err;
+  } else {
+    free(str_list);
+    LOG_DEBUG("firewall_helper():forked. chiled pid=%d", pid);
+    int status;
+    err = waitpid(pid, &status, 0);
+    if (err < 0) {
+      err = errno;
+      LOG_ERRNO("waitpid failed", err);
+      write_string(sockfd, "internal error");
+      return err;
+    }
+    if (WIFEXITED(status)) {
+      status = WEXITSTATUS(status);
+      if (status == 0) {
+        LOG("done");
+        return 0;
+      } else {
+        LOG_ERRNO("child failed", status);
+        write_string(sockfd, "internal error");
+        return status;
+      }
+    } else {
+      LOG_ERR("child exited abnormally");
+      write_string(sockfd, "internal error");
+      return ECHILD;
+    }
+    return 0;
+  }
 }
 int payload_cmd_firewall_flush() { return ENOSYS; }
 int payload_cmd_firewall_add(int sockfd, void *data, size_t size) {
