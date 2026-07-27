@@ -566,7 +566,7 @@ int main(int argc, char **argv) {
       }
     } else if (strcmp(CMD_COMMAND_SET, argv[2]) == 0) {
       if (argc >= 4) {
-        return cmd_command_set(argc - 3, &argv[3]);
+        return cmd_command_set(argc - 3, (const char **)(&argv[3]));
       }
     } else if (strcmp(CMD_GET_COMMAND, argv[2]) == 0) {
       if (argc == 3) {
