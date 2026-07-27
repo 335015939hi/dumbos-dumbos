@@ -25,6 +25,7 @@ add_executable(dumb-code
   src/dumbpayload.c
   src/common.c
   src/ed25519.c
+  src/requestid.c
 )
 
 target_link_libraries(${PROJECT_NAME}

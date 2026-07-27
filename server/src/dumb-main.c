@@ -7,12 +7,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 
 #include "common.h"
 #include "dumb.h"
 #include "ed25519.h"
+#include "requestid.h"
 
 #define CMD_NEW "new"
 #define CMD_EXPIRE "expire"
@@ -24,9 +26,13 @@
 #define CMD_COMMAND_SET_RAW "set-cmd-raw"
 #define CMD_GET_COMMAND "get-cmd"
 #define CMD_COMMAND_SET "set-cmd"
+#define CMD_NEW_USER "new-user"
 
 #define PUBKEY_HEADER "key_public.h"
 #define PRIVKEY_HEADER "key_private.h"
+
+#define USER_BLOB_SUFFIX "blob"
+#define SERVER_USER_PUBKEY_FILE "pubkey"
 
 const char *path;
 
@@ -84,23 +90,25 @@ static int new_payload() {
   return 0;
 }
 static void display_help(const char *argv0) {
-  printf("Usage:%s <file> <cmd> [args]\n"
-         "Commands:\n" CMD_HELP
-         " [cmd] prints generic help, or more details on a specific command. "
-         "<file> is ignored\n" CMD_NEW " creates a new payload\n" CMD_KEY
-         " generates new keypair to files " PUBKEY_HEADER " and " PRIVKEY_HEADER
-         ". <file> ignored. \n" CMD_EXPIRE
-         " <epoch> sets new expiry date. YOU are responsible for making sure "
-         "<epoch> is a valid epoch time\n" CMD_VERIFY
-         " <pubkeyhex> verifies payload using <pubkeyhex>\n" CMD_COMMAND_SET_RAW
-         " <command> sets the command, withou being friendly. not "
-         "recommended\n" CMD_COMMAND_SET
-         " <command> [command-specific] sets the command, with auto formatting "
-         "data\n" CMD_GET_COMMAND " prints command\n" CMD_DATA_SET
-         " <file> dumps contents of file as the data\n" CMD_DUMP_DATA
-         " dumps data to stdout. you may want to pipe into file\n",
+  printf(
+      "Usage:%s <file> <cmd> [args]\n"
+      "Commands:\n" CMD_HELP
+      " [cmd] prints generic help, or more details on a specific command. "
+      "<file> is ignored\n" CMD_NEW " creates a new payload\n" CMD_KEY
+      " generates new keypair to files " PUBKEY_HEADER " and " PRIVKEY_HEADER
+      ". <file> ignored. \n" CMD_EXPIRE
+      " <epoch> sets new expiry date. YOU are responsible for making sure "
+      "<epoch> is a valid epoch time\n" CMD_VERIFY
+      " <pubkeyhex> verifies payload using <pubkeyhex>\n" CMD_COMMAND_SET_RAW
+      " <command> sets the command, withou being friendly. not "
+      "recommended\n" CMD_COMMAND_SET
+      " <command> [command-specific] sets the command, with auto formatting "
+      "data\n" CMD_GET_COMMAND " prints command\n" CMD_DATA_SET
+      " <file> dumps contents of file as the data\n" CMD_DUMP_DATA
+      " dumps data to stdout. you may want to pipe into file\n" CMD_NEW_USER
+      " creates a new user, where <file> is both username and file written.\n",
 
-         argv0);
+      argv0);
 }
 static int cmd_help(const char *argv0, const char *cmd) {
   const char *help_text;
@@ -204,6 +212,16 @@ static int cmd_help(const char *argv0, const char *cmd) {
   } else if (!strcmp(cmd, CMD_DATA_SET)) {
     help_text = "not yet written\n";
 
+  } else if (!strcmp(cmd, CMD_NEW_USER)) {
+    help_text =
+        "Usage:%s <username> " CMD_NEW_USER "\n"
+        "generates a keypair and creates directory <username>, and write "
+        "public key (for server) to <username>/" SERVER_USER_PUBKEY_FILE
+        ", and creates a blob for device at <username>." USER_BLOB_SUFFIX
+        ". push <username>." USER_BLOB_SUFFIX
+        " to the (userdebug or eng build) device with 'adb root;adb push "
+        "<username>.dumb /mnt/vendor/persist/dumbos_user;adb shell chmod 600 "
+        "/mnt/vendor/persist/dumbos_user' and then flash the user build";
   } else {
     help_text = "No help available for this option\n";
   }
@@ -441,6 +459,78 @@ static int cmd_set_data(const char *data_path) {
   return 0;
 }
 
+static int cmd_new_user() {
+  struct DUMBOS_USER_DATA *new_user;
+  int err;
+  char privkey[ED25519_PRIVATE_KEY_HEX_SIZE];
+  char pubkey[ED25519_PUBLIC_KEY_HEX_SIZE];
+  if (0 > ed25519_generate_keypair_hex(pubkey, privkey)) {
+    LOG_ERRNO("failed to generate keypair", errno);
+    return errno;
+  }
+  new_user = dumbos_alloc_new_user(path, privkey);
+  if (new_user == NULL) {
+    LOG_ERRNO("failed to generate new user blob", errno);
+    return errno;
+  }
+  if (0 > mkdir(path, 00700)) {
+    LOG_ERRNO("mkdir failed", errno);
+    free(new_user);
+    return errno;
+  }
+
+  char *server_pubkey_path;
+  char *user_blob_path;
+
+  if (0 >
+      asprintf(&server_pubkey_path, "%s/%s", path, SERVER_USER_PUBKEY_FILE)) {
+    LOG_ERRNO("asprintf failed", errno);
+    free(new_user);
+    return errno;
+  }
+  FILE *server_pubkey_file = fopen(server_pubkey_path, "wb");
+  free(server_pubkey_path);
+  if (NULL == server_pubkey_file) {
+    LOG_ERRNO("failed to open file for writing", errno);
+    free(new_user);
+    return 0;
+  }
+  if (ED25519_PUBLIC_KEY_HEX_SIZE - 1 !=
+      fwrite(pubkey, 1, ED25519_PUBLIC_KEY_HEX_SIZE - 1, server_pubkey_file)) {
+    err = errno;
+    LOG_ERRNO("failed writing to file", err);
+    free(new_user);
+    fclose(server_pubkey_file);
+    return err;
+  }
+  fclose(server_pubkey_file);
+
+  if (0 > asprintf(&user_blob_path, "%s.%s", path, USER_BLOB_SUFFIX)) {
+    LOG_ERRNO("asprintf failed", errno);
+    free(new_user);
+    return errno;
+  }
+  FILE *user_blob_file = fopen(user_blob_path, "wb");
+  free(user_blob_path);
+  if (NULL == user_blob_file) {
+    LOG_ERRNO("failed to open file for writing", errno);
+    free(new_user);
+    return errno;
+  }
+  errno = 0;
+  if (sizeof(*new_user) !=
+      fwrite(new_user, 1, sizeof(*new_user), user_blob_file)) {
+    err = errno;
+    LOG_ERRNO("failed writing to file", err);
+    fclose(user_blob_file);
+    free(new_user);
+    return err;
+  }
+  free(new_user);
+  fclose(user_blob_file);
+  return 0;
+}
+
 int main(int argc, char **argv) {
   for (int i = 0; i < argc; i++) {
     LOG_DEBUG("argv[%d]='%s'", i, argv[i]);
@@ -489,6 +579,10 @@ int main(int argc, char **argv) {
     } else if (strcmp(CMD_DATA_SET, argv[2]) == 0) {
       if (argc == 4) {
         return cmd_set_data(argv[3]);
+      }
+    } else if (strcmp(CMD_NEW_USER, argv[2]) == 0) {
+      if (argc == 3) {
+        return cmd_new_user();
       }
     }
   }

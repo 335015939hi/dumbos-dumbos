@@ -11,4 +11,5 @@ service dumbos-firewall /system/bin/dumbos-firewall-init.sh
 
 on property:sys.boot_completed=1
   mkdir /data/local/tmp/dumb 0700 root root
+  chmod 0600 /mnt/vendor/persist/dumbos_user
   copy /mnt/vendor/persist/dumbos_user /dev/dumbos-userdata

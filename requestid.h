@@ -25,6 +25,7 @@ int request_id_verify(const char *user, const char *request_id,
                       const char *signature, const char *pub_key_hex);
 
 struct DUMBOS_USER_DATA *dumbos_alloc_get_user(void);
-int write_user(const char *user, const char *priv_key_hex);
+struct DUMBOS_USER_DATA *dumbos_alloc_new_user(const char *user,
+                                               const char *priv_key_hex);
 
 #endif

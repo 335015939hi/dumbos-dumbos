@@ -1,4 +1,6 @@
 
+#define _GNU_SOURCE
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,6 +65,7 @@ struct DUMBOS_USER_DATA *dumbos_alloc_get_user(void) {
   if (user_data == NULL) {
     if (errno == ENOENT) {
       LOG("dumbos_alloc_get_user: no user set. using default");
+      memcpy(ret->magic, DUMBOS_USER_DATA_MAGIC, DUMBOS_USER_DATA_MAGIC_SIZE);
       snprintf(ret->username, DUMBOS_USERNAME_MAXLEN, "%s",
                DUMBOS_DEFAULT_USER);
       snprintf(ret->priv_key_hex, ED25519_PRIVATE_KEY_HEX_SIZE, "%s", "TODO");
@@ -90,4 +93,30 @@ struct DUMBOS_USER_DATA *dumbos_alloc_get_user(void) {
   ret->null_byte = '\0';
   ret->priv_key_hex[ED25519_PRIVATE_KEY_HEX_SIZE - 1] = '\0';
   return ret;
+}
+
+struct DUMBOS_USER_DATA *dumbos_alloc_new_user(const char *user,
+                                               const char *priv_key_hex) {
+  LOG_DEBUG("dumbos_alloc_new_user()");
+  if (strlen(user) > DUMBOS_USERNAME_MAXLEN) {
+    LOG_ERR("username too long");
+    errno = EINVAL;
+    return NULL;
+  }
+  if (strlen(priv_key_hex) != ED25519_PRIVATE_KEY_HEX_SIZE - 1) {
+    LOG_ERR("invalid private key length detected");
+    errno = EINVAL;
+    return NULL;
+  }
+  struct DUMBOS_USER_DATA *new_user = malloc(sizeof *new_user);
+  if (new_user == NULL) {
+    LOG_ERRNO("failed to allocate memory", errno);
+    return NULL;
+  }
+  snprintf(new_user->username, DUMBOS_USERNAME_MAXLEN, "%s", user);
+  snprintf(new_user->priv_key_hex, ED25519_PRIVATE_KEY_HEX_SIZE, "%s",
+           priv_key_hex);
+  memcpy(new_user->magic, DUMBOS_USER_DATA_MAGIC, DUMBOS_USER_DATA_MAGIC_SIZE);
+  LOG_DEBUG("dumbos_alloc_new_user(): new user '%s'", user);
+  return new_user;
 }
