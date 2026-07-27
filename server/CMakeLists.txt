@@ -17,6 +17,7 @@ add_executable(${PROJECT_NAME}
     src/common.c
     src/dumbpayload.c
     src/ed25519.c
+    src/requestid.c
 )
 
 add_executable(dumb-code

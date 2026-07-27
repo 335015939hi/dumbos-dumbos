@@ -1,4 +1,6 @@
 
+#define _GNU_SOURCE
+
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -14,8 +16,13 @@
 #include "chatgpt.h"
 #include "common.h"
 #include "dumb.h"
+#include "requestid.h"
 
 #include "../../keys/key_private.h"
+
+#define USERDATA_PREFIX "user/"
+// see also: dumb-main.c
+#define SERVER_USER_PUBKEY_FILE "pubkey"
 
 char *malloc_buf_to_hex(const void *buf, size_t size) {
   const char *const hex = "0123456789ABCDEF";
@@ -89,6 +96,7 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
   char *response = NULL;
   size_t responselen;
   enum MHD_Result ret;
+  int err;
 
   if (code == NULL) {
     LOG_ERR("no code");
@@ -100,18 +108,60 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
     return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
                                "text/plain; charset=utf-8", "404 Not Found\n");
   }
-  if (requestid == NULL) {
-    LOG_ERR("no requestid");
-    return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
-                               "text/plain; charset=utf-8", "404 Not Found\n");
+  if (!strcmp(user, DUMBOS_DEFAULT_USER)) {
+    LOG_WARN("default user %s detected", user);
+
+  } else {
+    if (requestid == NULL) {
+      LOG_ERR("no requestid");
+      return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
+                                 "text/plain; charset=utf-8",
+                                 "404 Not Found\n");
+    }
+    if (requestsig == NULL) {
+      LOG_ERR("no requestsig");
+      return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
+                                 "text/plain; charset=utf-8",
+                                 "404 Not Found\n");
+    }
+    LOG("code='%s' user='%s' requestid='%s' requestsig='%s'", code, user,
+        requestid, requestsig);
+    char *userpath;
+    char *user_pubkey_path;
+    char *request_data_path;
+    char user_pubkey[ED25519_PUBLIC_KEY_HEX_SIZE + 1];
+    user_pubkey[ED25519_PUBLIC_KEY_HEX_SIZE] = '\0';
+    // TODO:check for asprintf fail
+    asprintf(&userpath, "%s%s/", USERDATA_PREFIX, user);
+    asprintf(&user_pubkey_path, "%s%s", userpath, SERVER_USER_PUBKEY_FILE);
+    asprintf(&request_data_path, "%s/request-%s", userpath, requestid);
+    free(userpath);
+
+    FILE *user_pubkey_file = fopen(user_pubkey_path, "rb");
+    free(user_pubkey_path);
+    if (user_pubkey_file == NULL) {
+      free(request_data_path);
+      LOG_ERRNO("failed to open pubkey file", errno);
+      return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
+                                 "text/plain; charset=utf-8",
+                                 "404 Not Found\n");
+    }
+    errno = 0;
+    if (fread(user_pubkey, 1, ED25519_PUBLIC_KEY_HEX_SIZE, user_pubkey_file) !=
+        ED25519_PUBLIC_KEY_HEX_SIZE) {
+      LOG_ERRNO("failed reading user pubkey", errno);
+      free(request_data_path);
+      fclose(user_pubkey_file);
+      return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
+                                 "text/plain; charset=utf-8",
+                                 "404 Not Found\n");
+    }
+    fclose(user_pubkey_file);
+
+    free(request_data_path);
+    err = request_id_verify(user, requestid, requestsig, user_pubkey);
+    LOG("request_id_verify return %d", err);
   }
-  if (requestsig == NULL) {
-    LOG_ERR("no requestsig");
-    return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
-                               "text/plain; charset=utf-8", "404 Not Found\n");
-  }
-  LOG("code='%s' user='%s' requestid='%s' requestsig='%s'", code, user,
-      requestid, requestsig);
 
   response = dp_malloc_check_load(code, &responselen, _ed25519_private_key_hex);
   if (response == NULL) {
