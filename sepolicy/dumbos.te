@@ -99,3 +99,5 @@ allow dumbosd exfat:lnk_file { getattr read };
 allow dumbosd mnt_user_file:lnk_file { getattr read };
 allow dumbosd fuse:dir { open search write add_name create getattr setattr read };
 allow dumbosd fuse:file { write create open read getattr setattr };
+
+allow dumbosd device:file { write create open read getattr setattr };

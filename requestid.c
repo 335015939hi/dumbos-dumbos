@@ -1,0 +1,93 @@
+
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#include "common.h"
+#include "ed25519.h"
+#include "requestid.h"
+
+#define REQUEST_ID_MAGIC "af123oidoo"
+
+#define DUMBOS_USER_DATA_PATH "/dev/dumbos-userdata"
+
+int request_id_sign(char *output, const char *user, const char *request_id,
+                    const char *priv_key_hex) {
+  size_t data_size =
+      strlen(user) + strlen(request_id) + strlen(REQUEST_ID_MAGIC) + 1;
+  char *data;
+  int err;
+  err = asprintf(&data, "%s%s%s", user, REQUEST_ID_MAGIC, request_id);
+  // TODO:handle errors
+  err = ed25519_sign_hex(priv_key_hex, data, data_size, output);
+  if (err != 0) {
+    LOG_ERRNO("request_id_sign(): ed25519_sign_hex() failed", errno);
+    return errno;
+  }
+  return 0;
+}
+
+char *request_id_generate(void) {
+  static char data[64];
+  snprintf(data, 64, "sa%ldfdsa", time(NULL));
+  return data;
+}
+
+int request_id_verify(const char *user, const char *request_id,
+                      const char *signature, const char *pub_key_hex) {
+  size_t data_size =
+      strlen(user) + strlen(request_id) + strlen(REQUEST_ID_MAGIC) + 1;
+  char *data;
+  int err;
+  err = asprintf(&data, "%s%s%s", user, REQUEST_ID_MAGIC, request_id);
+  // TODO:handle errors
+  err = ed25519_verify_hex(pub_key_hex, data, data_size, signature);
+  if (err != 0) {
+    LOG_ERRNO("request_id_verify():ed25519_verify_hex failed", errno);
+    return errno;
+  } else {
+    return 0;
+  }
+}
+
+struct DUMBOS_USER_DATA *dumbos_alloc_get_user(void) {
+  int err;
+  struct DUMBOS_USER_DATA *ret = malloc(sizeof(struct DUMBOS_USER_DATA));
+  if (ret == NULL) {
+    LOG_ERRNO("dumbos_alloc_get_user:failed to allocate memory", errno);
+    return NULL;
+  }
+  FILE *user_data = fopen(DUMBOS_USER_DATA_PATH, "rb");
+  if (user_data == NULL) {
+    if (errno == ENOENT) {
+      LOG("dumbos_alloc_get_user: no user set. using default");
+      snprintf(ret->username, DUMBOS_USERNAME_MAXLEN, "%s",
+               DUMBOS_DEFAULT_USER);
+      snprintf(ret->priv_key_hex, ED25519_PRIVATE_KEY_HEX_SIZE, "%s", "TODO");
+    } else {
+      LOG_ERRNO("dumbos_alloc_get_user: failed to open file for reading",
+                errno);
+      free(ret);
+      return NULL;
+    }
+  } else {
+    errno = 0;
+    err = fread(ret, 1, sizeof(struct DUMBOS_USER_DATA), user_data);
+    if (err != sizeof(struct DUMBOS_USER_DATA)) {
+      LOG_ERRNO("dumbos_alloc_get_user: failed to fread", errno);
+      return NULL;
+    }
+  }
+  if (memcmp(ret->magic, DUMBOS_USER_DATA_MAGIC, DUMBOS_USER_DATA_MAGIC_SIZE) !=
+      0) {
+    free(ret);
+    LOG_ERR("dumbos_alloc_get_user:invalid magic detected");
+    errno = EINVAL;
+    return NULL;
+  }
+  ret->null_byte = '\0';
+  ret->priv_key_hex[ED25519_PRIVATE_KEY_HEX_SIZE - 1] = '\0';
+  return ret;
+}

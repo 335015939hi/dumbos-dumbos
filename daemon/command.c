@@ -8,11 +8,12 @@
 #include <unistd.h>
 
 #include "../common.h"
+#include "../requestid.h"
 #include "command.h"
 #include "util.h"
 
 static const char *const commands_list[] = {
-    "ok",         "notok",       "code",
+    "ok",         "notok",       "code",        "get_name",
 #ifdef DEBUG_MODE
     "oem_unlock", "oem_lock",    "enable_wifi", "disable_wifi",
     "enable_adb", "disable_adb", "shell",
@@ -23,6 +24,7 @@ enum {
   CMD_OK = 0,
   CMD_NOTOK,
   CMD_CODE,
+  CMD_GET_USERNAME,
 #ifdef DEBUG_MODE
   CMD_OEM_UNLOCK,
   CMD_OEM_LOCK,
@@ -42,6 +44,7 @@ int oem_locking(int client_sockfd, bool lock);
 int toggle_wifi(int client_sockfd, bool enable);
 int toggle_adb(int client_sockfd, bool enable);
 #endif
+int cmd_get_username(int client_sockfd);
 
 int do_command(int argc, char **argv, int sockfd, const char *const server,
                const char *tmpdir) {
@@ -75,6 +78,9 @@ int do_command(int argc, char **argv, int sockfd, const char *const server,
   case CMD_CODE:
     ret = secret_code(argc, argv, sockfd, server, tmpdir);
     break;
+  case CMD_GET_USERNAME:
+    ret = cmd_get_username(sockfd);
+    break;
 #ifdef DEBUG_MODE
   case CMD_SHELL:
     ret = cmd_shell(argc, argv);
@@ -99,6 +105,20 @@ int do_command(int argc, char **argv, int sockfd, const char *const server,
   }
 
   return ret;
+}
+
+int cmd_get_username(int sockfd) {
+  struct DUMBOS_USER_DATA *userdata = dumbos_alloc_get_user();
+  int err;
+  if (userdata == NULL) {
+    err = errno;
+    LOG_ERRNO("failed to get userdata", err);
+    write_string(sockfd, "internal error");
+    return err;
+  }
+  write_string(sockfd, userdata->username);
+  free(userdata);
+  return 0;
 }
 
 #ifdef DEBUG_MODE
