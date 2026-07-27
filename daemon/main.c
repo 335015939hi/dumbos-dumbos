@@ -19,9 +19,7 @@
 // full path of the default socket
 #define DEFAULT_SOCKET_PATH "/dev/socket/dumbosd.socket"
 // default server
-#define DEFAULT_SERVER "http://192.168.12.1:8081/dumb"
-// default port
-#define DEFAULT_PORT "3850"
+#define DEFAULT_SERVER "https://91-226-221-47.sslip.io:4738/dumb"
 // default socket permissions
 #define DEFAULT_SOCKET_MODE "666"
 // default socket ownership
