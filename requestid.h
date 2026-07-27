@@ -18,7 +18,7 @@ struct DUMBOS_USER_DATA {
 // output is a buffer of ED25519_SIGNATURE_HEX_SIZE
 int request_id_sign(char *output, const char *user, const char *request_id,
                     const char *priv_key_hex);
-// this function not thread safe!!!
+// this function not thread safe!!! on the other side, no need to free()
 char *request_id_generate(void);
 
 int request_id_verify(const char *user, const char *request_id,

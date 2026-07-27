@@ -79,14 +79,39 @@ void *malloc_hex_to_buf(const char *hex) {
 enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
   const char *code =
       MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "code");
+  const char *user =
+      MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "user");
+  const char *requestid = MHD_lookup_connection_value(
+      connection, MHD_GET_ARGUMENT_KIND, "requestid");
+  const char *requestsig = MHD_lookup_connection_value(
+      connection, MHD_GET_ARGUMENT_KIND, "requestsig");
+
   char *response = NULL;
   size_t responselen;
   enum MHD_Result ret;
 
   if (code == NULL) {
+    LOG_ERR("no code");
     return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
                                "text/plain; charset=utf-8", "404 Not Found\n");
   }
+  if (user == NULL) {
+    LOG_ERR("no user");
+    return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
+                               "text/plain; charset=utf-8", "404 Not Found\n");
+  }
+  if (requestid == NULL) {
+    LOG_ERR("no requestid");
+    return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
+                               "text/plain; charset=utf-8", "404 Not Found\n");
+  }
+  if (requestsig == NULL) {
+    LOG_ERR("no requestsig");
+    return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
+                               "text/plain; charset=utf-8", "404 Not Found\n");
+  }
+  LOG("code='%s' user='%s' requestid='%s' requestsig='%s'", code, user,
+      requestid, requestsig);
 
   response = dp_malloc_check_load(code, &responselen, _ed25519_private_key_hex);
   if (response == NULL) {
