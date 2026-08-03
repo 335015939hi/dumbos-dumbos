@@ -167,7 +167,7 @@ int payload_cmd_composite(void *data, size_t size, const char *tmpdir,
   return ENOSYS;
 }
 
-const char *const sdcard_export_source = "/sdcard/export";
+const char *const sdcard_export_source = "/sdcard/";
 const char *const sdcard_import_dest = "/sdcard/import-%lld";
 const char *const external_mountpoint = "/tmp/";
 const char *const external_export_dest = "%sexport-%lld";
