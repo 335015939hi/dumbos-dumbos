@@ -13,10 +13,18 @@
 #include "util.h"
 
 static const char *const commands_list[] = {
-    "ok",         "notok",       "code",        "get_name",
+    "ok",
+    "notok",
+    "code",
+    "get_name",
+    "oem_lock"
 #ifdef DEBUG_MODE
-    "oem_unlock", "oem_lock",    "enable_wifi", "disable_wifi",
-    "enable_adb", "disable_adb", "shell",
+    "oem_unlock",
+    "enable_wifi",
+    "disable_wifi",
+    "enable_adb",
+    "disable_adb",
+    "shell",
 #endif
 };
 // the enum and commands_list must match!
@@ -25,9 +33,9 @@ enum {
   CMD_NOTOK,
   CMD_CODE,
   CMD_GET_USERNAME,
+  CMD_OEM_LOCK,
 #ifdef DEBUG_MODE
   CMD_OEM_UNLOCK,
-  CMD_OEM_LOCK,
   CMD_ENABLE_WIFI,
   CMD_DISABLE_WIFI,
   CMD_ENABLE_ADB,
@@ -38,9 +46,9 @@ enum {
   CMDLIST_SIZE
 } commands;
 
+int oem_locking(int client_sockfd, bool lock);
 #ifdef DEBUG_MODE
 int cmd_shell(int argc, char **argv);
-int oem_locking(int client_sockfd, bool lock);
 int toggle_wifi(int client_sockfd, bool enable);
 int toggle_adb(int client_sockfd, bool enable);
 #endif
@@ -81,11 +89,13 @@ int do_command(int argc, char **argv, int sockfd, const char *const server,
   case CMD_GET_USERNAME:
     ret = cmd_get_username(sockfd);
     break;
+  case CMD_OEM_LOCK:
+    ret = oem_locking(sockfd, command == CMD_OEM_LOCK);
+    break;
 #ifdef DEBUG_MODE
   case CMD_SHELL:
     ret = cmd_shell(argc, argv);
     break;
-  case CMD_OEM_LOCK:
   case CMD_OEM_UNLOCK:
     ret = oem_locking(sockfd, command == CMD_OEM_LOCK);
     break;
@@ -140,15 +150,6 @@ int toggle_adb(int client_sockfd, bool enable) {
     return set_adb_enabled(false);
   }
 }
-int oem_locking(int client_sockfd, bool lock) {
-  if (!lock) {
-    write_string(client_sockfd, "enabling OEM unlock");
-    return set_oem_lock(false);
-  } else {
-    write_string(client_sockfd, "disabling OEM unlock");
-    return set_oem_lock(true);
-  }
-}
 int cmd_shell(int argc, char **argv) {
   pid_t child_p;
   int status;
@@ -174,3 +175,12 @@ int cmd_shell(int argc, char **argv) {
   return WEXITSTATUS(status);
 }
 #endif
+int oem_locking(int client_sockfd, bool lock) {
+  if (!lock) {
+    write_string(client_sockfd, "enabling OEM unlock");
+    return set_oem_lock(false);
+  } else {
+    write_string(client_sockfd, "disabling OEM unlock");
+    return set_oem_lock(true);
+  }
+}

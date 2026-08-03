@@ -17,7 +17,7 @@
 
 // whether to compile with unsafe debug features
 // comment this out if you're not debugging
-#define DEBUG_MODE 1
+// #define DEBUG_MODE 1
 
 // max string length, including NULL terminator
 // strings over this length will throw error somewhere

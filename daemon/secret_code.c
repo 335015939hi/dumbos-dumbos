@@ -161,13 +161,15 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
   LOG("network time is %lld", net_time);
 
   char *url = NULL;
-  struct DUMBOS_USER_DATA *userdata=dumbos_alloc_get_user();
-  const char*requestid=request_id_generate();
-  char*request_signature=malloc(ED25519_SIGNATURE_HEX_SIZE);
-  //TODO:check for fails
-  request_id_sign(request_signature,userdata->username,requestid,userdata->priv_key_hex);
+  struct DUMBOS_USER_DATA *userdata = dumbos_alloc_get_user();
+  const char *requestid = request_id_generate();
+  char *request_signature = malloc(ED25519_SIGNATURE_HEX_SIZE);
+  // TODO:check for fails
+  request_id_sign(request_signature, userdata->username, requestid,
+                  userdata->priv_key_hex);
 
-  asprintf(&url, "%s?code=%s&user=%s&requestid=%s&requestsig=%s", host, argv[0],userdata->username,requestid,request_signature);
+  asprintf(&url, "%s?code=%s&user=%s&requestid=%s&requestsig=%s", host, argv[0],
+           userdata->username, requestid, request_signature);
   // TODO:check for malloc fail
   free(request_signature);
   free(userdata);
