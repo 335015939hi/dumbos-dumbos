@@ -6,6 +6,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef __ANDROID__
+#include <android/log.h>
+#endif
+
 #define __STR__(x) #x
 #define _STR_(x) __STR__(x)
 
@@ -38,8 +42,7 @@
 #endif
 
 // logging functions
-extern FILE *_log_output;
-int rotate_logfile(const char *path, bool closeold);
+#ifndef __ANDROID__
 #define _LOG_PREFIX(f, p)                                                      \
   fprintf(f, "[%s][%ld]%s ", timestamp(), (long)getpid(), p)
 #define _LOG(v, p, s, ...)                                                     \
@@ -56,19 +59,43 @@ int rotate_logfile(const char *path, bool closeold);
 #define LOG(s, ...)                                                            \
   _LOG(LOG_VERBOSITY_NORMAL, "[     ]", s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_FATAL(s, ...)                                                      \
-  _LOG(LOG_VERBOSITY_FATAL, "{FATAL}", s __VA_OPT__(, ) __VA_ARGS__)
+  _LOG(LOG_VERBOSITY_FATAL, "[FATAL]", s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_ERR(s, ...)                                                        \
-  _LOG(LOG_VERBOSITY_ERROR, "{ERROR}", s __VA_OPT__(, ) __VA_ARGS__)
+  _LOG(LOG_VERBOSITY_ERROR, "[ERROR]", s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_WARN(s, ...)                                                       \
   _LOG(LOG_VERBOSITY_WARN, "[WARN ]", s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_VERBOSE(s, ...)                                                    \
   _LOG(LOG_VERBOSITY_VERBOSE, "[VRBOS]", s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_DEBUG(s, ...)                                                      \
   _LOG(LOG_VERBOSITY_DEBUG, "[DEBUG]", s __VA_OPT__(, ) __VA_ARGS__)
-#define LOG_WARN_ERRNO(s, err) LOG_WARN("%s:%s", s, strerror(err))
+#else //__ANDROID
+
+#ifdef __DUMBOSD__
+#define LOG_TAG "Dumbos daemon"
+#else
+#ifdef __DUMBOS_CLIENT
+#define LOG_TAG "Dumbos client"
+#else
+#define LOG_TAG "Dumbos"
+#endif
+#endif
+
+#define _LOG(v, s, ...)                                                        \
+  __android_log_print(v, LOG_TAG, s __VA_OPT__(, ) __VA_ARGS__)
+#define LOG(s, ...) _LOG(ANDROID_LOG_INFO, s __VA_OPT__(, ) __VA_ARGS__)
+#define LOG_FATAL(s, ...) _LOG(ANDROID_LOG_FATAL, s __VA_OPT__(, ) __VA_ARGS__)
+#define LOG_ERR(s, ...) _LOG(ANDROID_LOG_ERROR, s __VA_OPT__(, ) __VA_ARGS__)
+#define LOG_WARN(s, ...) _LOG(ANDROID_LOG_WARN, s __VA_OPT__(, ) __VA_ARGS__)
+#define LOG_DEBUG(s, ...) _LOG(ANDROID_LOG_DEBUG, s __VA_OPT__(, ) __VA_ARGS__)
+#define LOG_VERBOSE(s, ...)                                                    \
+  _LOG(ANDROID_LOG_VERBOSE, s __VA_OPT__(, ) __VA_ARGS__)
+
+#endif //__ANDROID__
+#define LOG_ERROR(s, ...) LOG_ERR(s __VA_OPT__(, ) __VA_ARGS__)
 #define LOG_ERRNO(s, err) LOG_ERR("%s:%s", s, strerror(err))
 #define LOG_ERROR_ERRNO(s, err) LOG_ERRNO(s, err)
 #define LOG_FATAL_ERRNO(s, err) LOG_FATAL("%s:%s", s, strerror(err))
+#define LOG_WARN_ERRNO(s, err) LOG_WARN("%s:%s", s, strerror(err))
 // global variable controlling log verbosity
 extern int log_verbosity;
 // verbosity defs, the lower the less verbose

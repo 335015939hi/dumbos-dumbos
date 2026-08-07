@@ -7,9 +7,14 @@ cc_binary {
         "common.c",
     ],
 
+    shared_libs: [
+        "liblog",
+    ],
+
     cflags: [
         "-Wall",
         "-Werror",
+        "-D__DUMBOS_CLIENT__"
     ],
 
 }
@@ -45,6 +50,7 @@ cc_binary {
     cflags: [
         "-Wall",
         "-Werror",
+        "-D__DUMBOSD__",
     ],
 
     init_rc:[

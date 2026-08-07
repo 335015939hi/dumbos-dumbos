@@ -167,7 +167,7 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
   err = request_id_sign(request_signature, userdata->username, requestid,
                         userdata->priv_key_hex);
   if (err != 0) {
-    LOG_ERR("request_id_sign() failed", err);
+    LOG_ERRNO("request_id_sign() failed", err);
     free(request_signature);
     free(userdata);
     return err;
@@ -179,7 +179,7 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
   free(userdata);
   if (err < 0) {
     err = errno;
-    LOG_ERR("asprintf() failed", err);
+    LOG_ERRNO("asprintf() failed", err);
     return err;
   }
   free(request_signature);
