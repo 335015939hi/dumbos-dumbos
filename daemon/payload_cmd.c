@@ -300,7 +300,7 @@ static int firewall_helper(int sockfd, enum FIREWALL_POLICY policy, char *data,
     LOG_DEBUG("firewall_helper() child");
     LOG_DEBUG("execve %s", str_list[0]);
     execve(str_list[0], str_list, NULL);
-    // if execve succeeded wo would not reach here
+    // if execve succeeded we would not reach here
     err = errno;
     free(str_list);
     LOG_ERRNO("execve fail", err);
