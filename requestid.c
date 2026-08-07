@@ -22,7 +22,11 @@ int request_id_sign(char *output, const char *user, const char *request_id,
   char *data;
   int err;
   err = asprintf(&data, "%s%s%s", user, REQUEST_ID_MAGIC, request_id);
-  // TODO:handle errors
+  if (err < 0) {
+    err = errno;
+    LOG_ERRNO("asprintf failed", errno);
+    return err;
+  }
   err = ed25519_sign_hex(priv_key_hex, data, data_size, output);
   if (err != 0) {
     LOG_ERRNO("request_id_sign(): ed25519_sign_hex() failed", errno);
@@ -44,7 +48,11 @@ int request_id_verify(const char *user, const char *request_id,
   char *data;
   int err;
   err = asprintf(&data, "%s%s%s", user, REQUEST_ID_MAGIC, request_id);
-  // TODO:handle errors
+  if (err < 0) {
+    err = errno;
+    LOG_ERRNO("asprintf failed", errno);
+    return err;
+  }
   err = ed25519_verify_hex(pub_key_hex, data, data_size, signature);
   if (err != 0) {
     LOG_ERRNO("request_id_verify():ed25519_verify_hex failed", errno);

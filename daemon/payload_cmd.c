@@ -223,12 +223,18 @@ int payload_cmd_files_export(int sockfd) {
     write_string(sockfd, strerror(err));
     if (err == ENOENT) {
       char *msg;
-      // TODO:check for asprintf fail
-      asprintf(
-          &msg,
-          "make sure '%s' exists! that should be the location of all the files "
-          "to export (or possibly your USB is unplugged or not detected)",
-          sdcard_export_source);
+      if (0 >
+          asprintf(
+              &msg,
+              "make sure '%s' exists! that should be the location of all the "
+              "files "
+              "to export (or possibly your USB is unplugged or not detected)",
+              sdcard_export_source)) {
+        err = errno;
+        write_string(sockfd, "internal error");
+        LOG_ERRNO("asprintf fail", err);
+        return err;
+      }
       write_string(sockfd, msg);
       free(msg);
     }

@@ -12,8 +12,6 @@
 #include "../common.h"
 #include "daemon.h"
 
-// TODO: kill kids
-
 #define DEFAULT_SOCKET_CONTEXT "u:object_r:dumbosd_socket:s0"
 #define DEFAULT_TMPDIR "/data/local/tmp/dumb/"
 // full path of the default socket
@@ -220,7 +218,6 @@ static const char *const short_opts = "hvl:s:H:m:o:Z:t:"
 
 void display_help(FILE *file, const char *const argv0) {
   const char *const help_text =
-      // TODO
       "Usage:%s [options] [--] <command> [command args]\n"
 #ifdef DEBUG_MODE
       "debug mode options:\n"
