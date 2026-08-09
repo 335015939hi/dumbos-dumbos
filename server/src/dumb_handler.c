@@ -110,6 +110,7 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
   }
   if (!strcmp(user, DUMBOS_DEFAULT_USER)) {
     LOG_WARN("default user %s detected", user);
+    // always allow default user.
 
   } else {
     if (requestid == NULL) {
@@ -126,12 +127,18 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
     }
     LOG("code='%s' user='%s' requestid='%s' requestsig='%s'", code, user,
         requestid, requestsig);
+    if (!check_allowed_chars(user, DUMBOOS_USER_ALLOWED_CHARS)) {
+      LOG_ERR("invalid characters detected in user '%s'".user);
+      return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
+                                 "text/plain; charset=utf-8",
+                                 "404 Not Found\n");
+    }
     char *userpath;
     char *user_pubkey_path;
     char *request_data_path;
     char user_pubkey[ED25519_PUBLIC_KEY_HEX_SIZE];
     user_pubkey[ED25519_PUBLIC_KEY_HEX_SIZE - 1] = '\0';
-    // TODO:check for asprintf fail
+    // FIXME: check for asprintf fail
     asprintf(&userpath, "%s%s/", USERDATA_PREFIX, user);
     asprintf(&user_pubkey_path, "%s%s", userpath, SERVER_USER_PUBKEY_FILE);
     asprintf(&request_data_path, "%s/request-%s", userpath, requestid);
@@ -161,6 +168,7 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
     free(request_data_path);
     err = request_id_verify(user, requestid, requestsig, user_pubkey);
     LOG("request_id_verify return %d", err);
+    // TODO:enforce request id. (new feature, needs testing)
   }
 
   response = dp_malloc_check_load(code, &responselen, _ed25519_private_key_hex);

@@ -162,8 +162,17 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
 
   char *url = NULL;
   struct DUMBOS_USER_DATA *userdata = dumbos_alloc_get_user();
+  if (userdata == NULL) {
+    LOG_ERRNO("dumbos_alloc_get_user() failed", errno);
+    return errno;
+  }
   const char *requestid = request_id_generate();
   char *request_signature = malloc(ED25519_SIGNATURE_HEX_SIZE);
+  if (request_signature == NULL) {
+    free(userdata);
+    LOG_ERRNO("failed to malloc for request_signature", errno);
+    return errno;
+  }
   err = request_id_sign(request_signature, userdata->username, requestid,
                         userdata->priv_key_hex);
   if (err != 0) {
@@ -182,8 +191,6 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
     LOG_ERRNO("asprintf() failed", err);
     return err;
   }
-  free(request_signature);
-  free(userdata);
 
   LOG("Downloading from %s", url);
   write_string(sockfd, "downloading...");

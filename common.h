@@ -72,7 +72,7 @@
 // logging for android. we will use android's __android_log_print to print to
 // logcat
 //__DUMBOS_CLIENT or __DUMBOSD__ should be defined at compile-time as part of
-//Android.bp, so automatically defined by the build system
+// Android.bp, so automatically defined by the build system
 #ifdef __DUMBOSD__
 #define LOG_TAG "Dumbos daemon"
 #else
@@ -172,4 +172,7 @@ int parse_long_long(const char *str, signed long long *ret);
     }                                                                          \
   } while (0)
 
+// check string <s> against character whitelist <whitelist>. returns true if all
+// characters in <s> are in <whitelist>, false otherwise
+bool check_allowed_chars(const char *s, const char *whitelist);
 #endif

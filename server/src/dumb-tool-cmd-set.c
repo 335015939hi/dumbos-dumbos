@@ -51,17 +51,6 @@
 // defined in dumb-main.c
 extern const char *path;
 
-// check string s for allowed characters whitelist. returns true if all
-// characters allowed
-static bool check_allowed_chars(const char *s, const char *whitelist) {
-  while (*s != '\0') {
-    if (strchr(whitelist, *s) == NULL)
-      return false;
-    s++;
-  }
-  return true;
-}
-
 static struct DUMB_PAYLOAD *set_data(struct DUMB_PAYLOAD *payload,
                                      void *new_data, size_t data_size) {
   payload = realloc(payload, sizeof(*payload) + data_size);

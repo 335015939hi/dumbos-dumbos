@@ -53,10 +53,10 @@ int payload_cmd_shell(void *script, size_t script_size, int sockfd) {
 #endif // DEBUG_MODE
 int payload_cmd_install_this(void *apk, size_t apk_size, int sockfd,
                              const char *tmpdir) {
-  LOG_DEBUG("cmd_install_file()");
+  LOG_DEBUG("cmd_install_this()");
   int err;
   int fd;
-  LOG_DEBUG("cmd_install_file() apk_size=%ld", apk_size);
+  LOG_DEBUG("cmd_install_this() apk_size=%ld", apk_size);
   char *path = malloc(PATH_MAX);
   if (path == NULL) {
     err = errno;
@@ -261,7 +261,7 @@ static int firewall_helper(int sockfd, enum FIREWALL_POLICY policy, char *data,
     LOG_ERR("firewall_helper(): malformed data");
     return EINVAL;
   }
-  char *data_end = data + size;
+  char *data_end = data + size - 1;
   int str_num = 0;
   char **str_list = NULL;
   // safety:force last byte to be NULL
@@ -270,7 +270,13 @@ static int firewall_helper(int sockfd, enum FIREWALL_POLICY policy, char *data,
     str_num++;
     // why +3: we're going to pass this directly to execve, so leave 2 spaces
     // for argv[0] and argv[1], and 1 space at the end for NULL string
-    str_list = reallocarray(str_list, str_num + 3, sizeof(char *));
+    char **new_str_list = reallocarray(str_list, str_num + 3, sizeof(char *));
+    if (NULL == new_str_list) {
+      free(str_list);
+      LOG_ERRNO("failed to reallocarray", errno);
+      return errno;
+    }
+    str_list = new_str_list;
     // skip 2 spaces for argv[0] and argv[1]
     str_list[str_num + 1] = data;
     LOG_DEBUG("found app id '%s'", data);

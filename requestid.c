@@ -28,6 +28,7 @@ int request_id_sign(char *output, const char *user, const char *request_id,
     return err;
   }
   err = ed25519_sign_hex(priv_key_hex, data, data_size, output);
+  free(data);
   if (err != 0) {
     LOG_ERRNO("request_id_sign(): ed25519_sign_hex() failed", errno);
     return errno;
@@ -54,6 +55,7 @@ int request_id_verify(const char *user, const char *request_id,
     return err;
   }
   err = ed25519_verify_hex(pub_key_hex, data, data_size, signature);
+  free(data);
   if (err != 0) {
     LOG_ERRNO("request_id_verify():ed25519_verify_hex failed", errno);
     return errno;
@@ -87,7 +89,19 @@ struct DUMBOS_USER_DATA *dumbos_alloc_get_user(void) {
     errno = 0;
     err = fread(ret, 1, sizeof(struct DUMBOS_USER_DATA), user_data);
     if (err != sizeof(struct DUMBOS_USER_DATA)) {
-      LOG_ERRNO("dumbos_alloc_get_user: failed to fread", errno);
+      err = errno;
+      if (ferror(user_data)) {
+        LOG_ERR("dumbos_alloc_get_user: ferror");
+        err = EIO;
+      }
+      if (feof(user_data)) {
+        LOG_ERR("dumbos_alloc_get_user: feof");
+        err = EIO;
+      }
+      LOG_ERRNO("dumbos_alloc_get_user: failed to fread", err);
+      fclose(user_data);
+      free(ret);
+      errno = err;
       return NULL;
     }
   }
@@ -106,7 +120,7 @@ struct DUMBOS_USER_DATA *dumbos_alloc_get_user(void) {
 struct DUMBOS_USER_DATA *dumbos_alloc_new_user(const char *user,
                                                const char *priv_key_hex) {
   LOG_DEBUG("dumbos_alloc_new_user()");
-  if (strlen(user) > DUMBOS_USERNAME_MAXLEN) {
+  if (strlen(user) > DUMBOS_USERNAME_MAXLEN - 1) {
     LOG_ERR("username too long");
     errno = EINVAL;
     return NULL;

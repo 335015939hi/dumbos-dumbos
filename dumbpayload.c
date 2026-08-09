@@ -181,6 +181,13 @@ void *dp_malloc_load(const char *path, size_t *ret_size) {
     close(fd);
     return NULL;
   }
+  // TODO: set a max payload size
+  if (size > SIZE_MAX - 1) {
+    errno = EOVERFLOW;
+    LOG_ERR("file too big");
+    close(fd);
+    return NULL;
+  }
 
   payload = malloc(size + 1);
   if (payload == NULL) {
@@ -286,8 +293,12 @@ void *dp_malloc_check_load(const char *const code, size_t *ret_size,
       LOG_ERR("failed to write to fd=%d:%s", codefd, strerror(errno));
     }
   }
-
   close(codefd);
+  if (err < 0) {
+    free(payload);
+    return NULL;
+  }
+
   *ret_size = size;
 
   // do not write signed payload to disk
