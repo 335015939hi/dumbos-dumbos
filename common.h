@@ -1,6 +1,10 @@
 #ifndef _DUMBOS_COMMON_H
 #define _DUMBOS_COMMON_H
 
+/*
+ * defines some common functions and constants and macros
+ */
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -23,12 +27,6 @@
 // comment this out if you're not debugging
 // #define DEBUG_MODE 1
 
-// max string length, including NULL terminator
-// strings over this length will throw error somewhere
-#define MAX_STRING 4096
-// max number of args
-#define MAX_ARGS 256
-
 #ifdef DEBUG_MODE
 #define VERSION_STRING _VERSION_STRING "-debug"
 #define VERSION_MAJOR (-_VERSION_MAJOR)
@@ -43,6 +41,8 @@
 
 // logging functions
 #ifndef __ANDROID__
+// for non-android:we print to _log_output, or stderr by default
+// also include timestamp and PID
 #define _LOG_PREFIX(f, p)                                                      \
   fprintf(f, "[%s][%ld]%s ", timestamp(), (long)getpid(), p)
 #define _LOG(v, p, s, ...)                                                     \
@@ -69,7 +69,10 @@
 #define LOG_DEBUG(s, ...)                                                      \
   _LOG(LOG_VERBOSITY_DEBUG, "[DEBUG]", s __VA_OPT__(, ) __VA_ARGS__)
 #else //__ANDROID
-
+// logging for android. we will use android's __android_log_print to print to
+// logcat
+//__DUMBOS_CLIENT or __DUMBOSD__ should be defined at compile-time as part of
+//Android.bp, so automatically defined by the build system
 #ifdef __DUMBOSD__
 #define LOG_TAG "Dumbos daemon"
 #else
@@ -91,14 +94,20 @@
   _LOG(ANDROID_LOG_VERBOSE, s __VA_OPT__(, ) __VA_ARGS__)
 
 #endif //__ANDROID__
+
+// alias for LOG_ERR
 #define LOG_ERROR(s, ...) LOG_ERR(s __VA_OPT__(, ) __VA_ARGS__)
+// prints message and converts a POSIX errno to error message
 #define LOG_ERRNO(s, err) LOG_ERR("%s:%s", s, strerror(err))
 #define LOG_ERROR_ERRNO(s, err) LOG_ERRNO(s, err)
 #define LOG_FATAL_ERRNO(s, err) LOG_FATAL("%s:%s", s, strerror(err))
 #define LOG_WARN_ERRNO(s, err) LOG_WARN("%s:%s", s, strerror(err))
 // global variable controlling log verbosity
+// no effect for android
 extern int log_verbosity;
 // verbosity defs, the lower the less verbose
+// no effect for android.
+// FIXME: swap verbose and debug, to be the same as android
 #define LOG_VERBOSITY_NONE 0
 #define LOG_VERBOSITY_FATAL 7
 #define LOG_VERBOSITY_ERROR 124
@@ -115,12 +124,10 @@ extern int log_verbosity;
 #define LOG_VERBOSE_NAME "verbose"
 #define LOG_DEBUG_NAME "debug"
 #define LOG_MAX_NAME "max"
-// sets log verbosity. accepts one of LOG_*_NAME (case insensative), returns 0
+// sets log verbosity. no effect for android.
+// accepts one of LOG_*_NAME (case insensative), returns 0
 // on success
 int set_log_verbosity(const char *const lvl);
-
-// allowed characters for the secret code
-#define SECRET_CODE_ALLOWED_CHARS "qwertyuiopasdfghjklzxcvbnm0123456789-_"
 
 // takes a string and tries to parse it as unsigned base 10 integer short.
 // returns -1 on fail, setting errno

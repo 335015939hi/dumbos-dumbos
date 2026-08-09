@@ -15,6 +15,8 @@
 #include "dumb.h"
 #include "ed25519.h"
 
+// checks code for illegal characters
+// FIXME: i wrote a better one somewhere, use that instead
 static bool check_code_allowed_chars(const char *const code) {
   unsigned int len = strlen(code);
   if (len > CODE_MAXLEN) {
@@ -39,20 +41,26 @@ int dp_sign(struct DUMB_PAYLOAD *payload, size_t size,
             const char *private_key_hex) {
   char signature[ED25519_SIGNATURE_HEX_SIZE];
   int err;
+  // make sure private_key_hex is the right size
   if (strlen(private_key_hex) != ED25519_PRIVATE_KEY_HEX_SIZE - 1) {
     errno = EINVAL;
     return -1;
   }
+  // basic check to make sure payload is valid (or at least valid size)
   if (size < sizeof(struct DUMB_PAYLOAD)) {
     errno = EINVAL;
     return -1;
   }
+  // zero out the signature. signing and verifying should all zero out the
+  // signature field, for consistancy
   memset(payload->signature, '\0', ED25519_SIGNATURE_HEX_SIZE);
 
+  // where the magic happens
   err = ed25519_sign_hex(private_key_hex, payload, size, signature);
   if (err < 0) {
     return err;
   }
+  // copy the signature to payload
   memcpy(payload->signature, signature, ED25519_SIGNATURE_HEX_SIZE);
   return 0;
 }
@@ -64,12 +72,17 @@ int dp_verify(struct DUMB_PAYLOAD *payload, size_t size,
     errno = EINVAL;
     return -1;
   }
+  // basic check to make sure payload is valid (or at least valid size)
   if (size < sizeof(struct DUMB_PAYLOAD)) {
     errno = EINVAL;
     return -1;
   }
+  // copy the signature to a temporary buffer, and zero out signature field in
+  // payload. signing and verifying should all zero out the signature field, for
+  // consistancy
   memcpy(signature, payload->signature, ED25519_SIGNATURE_HEX_SIZE);
   memset(payload->signature, '\0', ED25519_SIGNATURE_HEX_SIZE);
+  // magic
   return ed25519_verify_hex(pubkey_hex, payload, size, signature);
 }
 
@@ -83,6 +96,7 @@ time_t dp_get_expire(const struct DUMB_PAYLOAD *payload) {
   int err;
   char buf[EXPIRE_SIZE + 1];
   memcpy(buf, payload->expire, EXPIRE_SIZE);
+  // just in case its not NULL-terminated
   buf[EXPIRE_SIZE + 1 - 1] = '\0';
   err = parse_long_long(buf, &expire);
   if (err < 0) {
@@ -93,16 +107,25 @@ time_t dp_get_expire(const struct DUMB_PAYLOAD *payload) {
 
 time_t dp_get_expire_or_set(struct DUMB_PAYLOAD *payload) {
   time_t expire = dp_get_expire(payload);
+  // check if expire field is an invalid integer. if invalid, check for the ':'
+  // prefix, or fallback to default behaviour. if valid, expire will hold the
+  // expire date in epoch seconds
   if (expire == (time_t)-1) {
+    // check for the magic ':' that indicates custom expire-after-use time
     if (payload->expire[0] == ':') {
+      // shift the expire field left 1 byte, and check again
       memmove(payload->expire, payload->expire + 1, EXPIRE_SIZE - 1);
       expire = dp_get_expire(payload);
       if (expire == (time_t)-1) {
+        // still invalid. we assume default behaviour
         expire = time(NULL) + DEFAULT_EXPIRE_TIME;
       } else {
+        // expire is the custom expire-after-user time, we add current time to
+        // it
         expire += time(NULL);
       }
     } else {
+      // default behaviour
       expire = time(NULL) + DEFAULT_EXPIRE_TIME;
     }
     dp_set_expire(payload, expire);
@@ -112,6 +135,7 @@ time_t dp_get_expire_or_set(struct DUMB_PAYLOAD *payload) {
 
 bool dp_is_expired(struct DUMB_PAYLOAD *payload) {
   time_t expire = dp_get_expire_or_set(payload);
+  // check for infinite expire time
   if (expire == 0)
     return false;
   return expire <= time(NULL);
@@ -119,6 +143,7 @@ bool dp_is_expired(struct DUMB_PAYLOAD *payload) {
 
 bool dp_is_expired_compare(struct DUMB_PAYLOAD *payload, time_t cur_time) {
   time_t expire = dp_get_expire_or_set(payload);
+  // check for infinite expire
   if (expire == 0)
     return false;
   return expire <= cur_time;
@@ -130,19 +155,20 @@ void *dp_malloc_load(const char *path, size_t *ret_size) {
   struct DUMB_PAYLOAD *payload;
   int err;
   struct stat stat;
+  LOG_DEBUG("dp_malloc_load() started");
 
-  LOG("486098 using path '%s'", path);
+  LOG("using path '%s'", path);
 
   fd = open(path, O_RDONLY);
   if (fd < 0) {
-    LOG_ERRNO("104485 failed to open", errno);
+    LOG_ERRNO("failed to open", errno);
     return NULL;
   }
-  LOG("104986 opened file '%s',fd=%d", path, fd);
+  LOG("opened file '%s',fd=%d", path, fd);
 
   err = fstat(fd, &stat);
   if (err < 0) {
-    LOG_ERRNO("122983 failed to fstat", errno);
+    LOG_ERRNO("failed to fstat", errno);
     close(fd);
     return NULL;
   }
@@ -150,7 +176,7 @@ void *dp_malloc_load(const char *path, size_t *ret_size) {
   size = stat.st_size;
   LOG("file size is %ld", size);
   if (size < sizeof(struct DUMB_PAYLOAD)) {
-    LOG_ERR("375337 file too small");
+    LOG_ERR("file too small");
     errno = EINVAL;
     close(fd);
     return NULL;
@@ -158,14 +184,14 @@ void *dp_malloc_load(const char *path, size_t *ret_size) {
 
   payload = malloc(size + 1);
   if (payload == NULL) {
-    LOG_ERRNO("263338 failed to malloc", errno);
+    LOG_ERRNO("failed to malloc", errno);
     close(fd);
     return NULL;
   }
 
   err = read_all(fd, payload, size);
   if (err < 0) {
-    LOG_ERRNO("139357 failed to read_all()", errno);
+    LOG_ERRNO("failed to read_all()", errno);
     maybe_free(payload);
     close(fd);
     return NULL;
@@ -184,6 +210,7 @@ void *dp_malloc_check_load(const char *const code, size_t *ret_size,
   size_t size;
   int codefd;
   struct DUMB_PAYLOAD *payload;
+  LOG_DEBUG("dp_malloc_check_load() started");
 
   if (!check_code_allowed_chars(code)) {
     LOG_ERR("invalid characters detected in '%s'", code);
@@ -196,11 +223,11 @@ void *dp_malloc_check_load(const char *const code, size_t *ret_size,
 
   err = snprintf(path, PATH_MAX, "%s%s", CODE_FILE_PATH, code);
   if (err >= PATH_MAX) {
-    LOG_ERR("274895 path too long");
+    LOG_ERR("path too long");
     maybe_free(path);
     return NULL;
   }
-  LOG("475829 using path '%s'", path);
+  LOG("using path '%s'", path);
 
   codefd = open(path, O_RDWR);
   if (codefd < 0) {
@@ -213,7 +240,7 @@ void *dp_malloc_check_load(const char *const code, size_t *ret_size,
 
   err = fstat(codefd, &stat);
   if (err < 0) {
-    LOG_ERRNO("123987 failed to fstat", errno);
+    LOG_ERRNO("failed to fstat", errno);
     close(codefd);
     return NULL;
   }
@@ -221,7 +248,7 @@ void *dp_malloc_check_load(const char *const code, size_t *ret_size,
   size = stat.st_size;
   LOG("file size is %ld", size);
   if (size < sizeof(struct DUMB_PAYLOAD)) {
-    LOG_ERR("375927 file too small");
+    LOG_ERR("file too small");
     errno = EINVAL;
     close(codefd);
     return NULL;
@@ -229,14 +256,14 @@ void *dp_malloc_check_load(const char *const code, size_t *ret_size,
 
   payload = malloc(size + 1);
   if (payload == NULL) {
-    LOG_ERRNO("262638 failed to malloc", errno);
+    LOG_ERRNO("failed to malloc", errno);
     close(codefd);
     return NULL;
   }
 
   err = read_all(codefd, payload, size);
   if (err < 0) {
-    LOG_ERRNO("129387 failed to read_all()", errno);
+    LOG_ERRNO("failed to read_all()", errno);
     maybe_free(payload);
     close(codefd);
     return NULL;
@@ -252,11 +279,11 @@ void *dp_malloc_check_load(const char *const code, size_t *ret_size,
   // not yet signed. do not write signed payload to disk.
   err = lseek(codefd, 0, SEEK_SET);
   if (err < 0) {
-    LOG_ERR("134923 failed to lseek on fd=%d:%s", codefd, strerror(errno));
+    LOG_ERR("failed to lseek on fd=%d:%s", codefd, strerror(errno));
   } else {
     err = write_all(codefd, payload, size);
     if (err < 0) {
-      LOG_ERR("294875 failed to write to fd=%d:%s", codefd, strerror(errno));
+      LOG_ERR("failed to write to fd=%d:%s", codefd, strerror(errno));
     }
   }
 

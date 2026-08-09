@@ -16,6 +16,10 @@
 
 #include "common.h"
 
+// max string length, including NULL terminator
+// strings over this length will throw error somewhere
+#define MAX_STRING 4096
+
 #ifdef DEBUG_MODE
 int log_verbosity = LOG_VERBOSITY_MAX;
 #else

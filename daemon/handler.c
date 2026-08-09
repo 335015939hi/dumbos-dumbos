@@ -10,6 +10,9 @@
 #include "command.h"
 #include "handler.h"
 
+// max number of arguments we will accept from the client
+#define MAX_ARGS 256
+
 int handler(const int client_fd, const char *const server, const char *tmpdir) {
   char *client_v_str;
   unsigned short client_v_major;
