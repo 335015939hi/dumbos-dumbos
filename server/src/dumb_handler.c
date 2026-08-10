@@ -128,7 +128,7 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
     LOG("code='%s' user='%s' requestid='%s' requestsig='%s'", code, user,
         requestid, requestsig);
     if (!check_allowed_chars(user, DUMBOOS_USER_ALLOWED_CHARS)) {
-      LOG_ERR("invalid characters detected in user '%s'".user);
+      LOG_ERR("invalid characters detected in user '%s'", user);
       return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
                                  "text/plain; charset=utf-8",
                                  "404 Not Found\n");

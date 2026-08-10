@@ -105,6 +105,7 @@ struct DUMBOS_USER_DATA *dumbos_alloc_get_user(void) {
       return NULL;
     }
   }
+  fclose(user_data);
   if (memcmp(ret->magic, DUMBOS_USER_DATA_MAGIC, DUMBOS_USER_DATA_MAGIC_SIZE) !=
       0) {
     free(ret);
