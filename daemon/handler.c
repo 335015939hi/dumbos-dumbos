@@ -116,6 +116,11 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
     argv[i] = arg;
   }
 
+#ifdef DEBUG_MODE
+  write_string(client_fd, "You are in debug mode. id you are not debugging or "
+                          "developing the phone, please report this");
+#endif
+
   if (!haserror) {
     ret = do_command(argc, argv, client_fd, server, tmpdir);
     LOG_DEBUG("do_command exited with %d", ret);
