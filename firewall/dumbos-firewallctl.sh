@@ -77,7 +77,7 @@ add_package() {
     case $status in
     0)
       echo "Warning: package '$package' already exists" >&2
-      return 1
+      return 0
       ;;
     1)
       ;;
@@ -111,7 +111,7 @@ remove_package() {
 
   if [ ! -f "$CONFFILE" ]; then
     echo "Warning: package '$package' does not exist" >&2
-    return 1
+    return 0
   fi
 
   grep -Fqx -- "$package" "$CONFFILE"
@@ -122,7 +122,7 @@ remove_package() {
     ;;
   1)
     echo "Warning: package '$package' does not exist" >&2
-    return 1
+    return 0
     ;;
   *)
     echo "Error: failed to search '$CONFFILE'" >&2
@@ -139,10 +139,12 @@ remove_package() {
     return 1
   fi
 
-  if ! cat -- "$TMPFILE" >"$CONFFILE"; then
+  if ! cp "$TMPFILE" "-$CONFFILE" && mv "-$CONFFILE" "$CONFFILE"; then
+    rm "-$$CONFFILE"
     echo "Error: failed to update '$CONFFILE'" >&2
     return 1
   fi
+  rm "-$CONFFILE"
 
   return 0
 }
