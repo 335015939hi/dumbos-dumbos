@@ -269,7 +269,7 @@ static int firewall_helper(int sockfd, enum FIREWALL_POLICY policy, char *data,
   while (data < data_end) {
     str_num++;
     // why +3: we're going to pass this directly to execve, so leave 2 spaces
-    // for argv[0] and argv[1], and 1 space at the end for NULL string
+    // for argv[0] and argv[1], and 1 space at the end for NULL string pointer
     char **new_str_list = reallocarray(str_list, str_num + 3, sizeof(char *));
     if (NULL == new_str_list) {
       free(str_list);
@@ -290,7 +290,7 @@ static int firewall_helper(int sockfd, enum FIREWALL_POLICY policy, char *data,
   } else {
     str_list[1] = "allow-temp";
   }
-  str_list[str_num] = NULL;
+  str_list[str_num + 2] = NULL;
 
   int err;
   pid_t pid = fork();
@@ -305,6 +305,9 @@ static int firewall_helper(int sockfd, enum FIREWALL_POLICY policy, char *data,
   if (pid == 0) {
     LOG_DEBUG("firewall_helper() child");
     LOG_DEBUG("execve %s", str_list[0]);
+    for (int i = 0; str_list[i] != NULL; i++) {
+      LOG_DEBUG("argv[%d]='%s'", i, str_list[i]);
+    }
     execve(str_list[0], str_list, NULL);
     // if execve succeeded we would not reach here
     err = errno;
