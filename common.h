@@ -25,7 +25,7 @@
 
 // whether to compile with unsafe debug features
 // comment this out if you're not debugging
-// #define DEBUG_MODE 1
+#define DEBUG_MODE 1
 
 #ifdef DEBUG_MODE
 #define VERSION_STRING _VERSION_STRING "-debug"
