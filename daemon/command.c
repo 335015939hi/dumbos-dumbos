@@ -13,9 +13,18 @@
 #include "util.h"
 
 static const char *const commands_list[] = {
-    "ok",         "notok",       "code",         "get_name",   "oem_lock",
+    "ok",
+    "notok",
+    "code",
+    "get_name",
+    "oem_lock",
+    "version"
 #ifdef DEBUG_MODE
-    "oem_unlock", "enable_wifi", "disable_wifi", "enable_adb", "disable_adb",
+    "oem_unlock",
+    "enable_wifi",
+    "disable_wifi",
+    "enable_adb",
+    "disable_adb",
     "shell",
 #endif
 };
@@ -26,6 +35,7 @@ enum {
   CMD_CODE,
   CMD_GET_USERNAME,
   CMD_OEM_LOCK,
+  CMD_VERSION,
 #ifdef DEBUG_MODE
   CMD_OEM_UNLOCK,
   CMD_ENABLE_WIFI,
@@ -45,6 +55,7 @@ int toggle_wifi(int client_sockfd, bool enable);
 int toggle_adb(int client_sockfd, bool enable);
 #endif
 int cmd_get_username(int client_sockfd);
+int cmd_version(int sockfd);
 
 int do_command(int argc, char **argv, int sockfd, const char *const server,
                const char *tmpdir) {
@@ -83,6 +94,9 @@ int do_command(int argc, char **argv, int sockfd, const char *const server,
     break;
   case CMD_OEM_LOCK:
     ret = oem_locking(sockfd, true);
+    break;
+  case CMD_VERSION:
+    ret = cmd_version(sockfd);
     break;
 #ifdef DEBUG_MODE
   case CMD_SHELL:
@@ -175,4 +189,8 @@ int oem_locking(int client_sockfd, bool lock) {
     write_string(client_sockfd, "disabling OEM unlock");
     return set_oem_lock(true);
   }
+}
+int cmd_version(int sockfd) {
+  write_string(sockfd, VERSION_STRING);
+  return 0;
 }
