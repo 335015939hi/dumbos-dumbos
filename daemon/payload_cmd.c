@@ -163,32 +163,36 @@ int payload_cmd_composite(void *data, size_t size, const char *tmpdir,
   }
   uint16_t payload_count = ntohs(*(uint16_t *)data);
   LOG("composite payload: counted %hd payloads", payload_count);
-  size_t offset=sizeof(uint16_t);
-  for(int i=0;i<payload_count;i++){
-    LOG_DEBUG("processing payload %d",i);
+  size_t offset = sizeof(uint16_t);
+  for (int i = 0; i < payload_count; i++) {
+    LOG_DEBUG("processing payload %d", i);
     uint32_t payload_size;
-    if(offset+sizeof(uint32_t)>size){
+    if (offset + sizeof(uint32_t) > size) {
       LOG_ERR("composite payload: invalid size detected");
       write_string(sockfd, "invalid");
       return EINVAL;
     }
-    payload_size=ntohl(*(uint32_t*)(((char*)data)+offset));
-    offset+=sizeof(uint32_t);
-    LOG_DEBUG("detected payload size %lu",(unsigned long)payload_size);
-    if(offset+payload_size>size){
+    payload_size = ntohl(*(uint32_t *)(((char *)data) + offset));
+    offset += sizeof(uint32_t);
+    LOG_DEBUG("detected payload size %lu", (unsigned long)payload_size);
+    if (offset + payload_size > size) {
       LOG_ERR("composite payload: invalid size detected");
       write_string(sockfd, "invalid");
       return EINVAL;
     }
-    LOG_DEBUG("handling payload %d",i);
-    int err=handle_one_payload(sockfd,(struct DUMB_PAYLOAD*)(((char*)data)+offset),time,payload_size,tmpdir);
-    LOG_DEBUG("handle_one_payload() exited with %d",err);
-    if(err!=0){
-      LOG_ERRNO("handle_one_payload() failed",err);
-      write_string(sockfd,"something went wrong");
+    LOG_DEBUG("handling payload %d", i);
+    LOG_VERBOSE("offset=%zu,first 8 bytes=%016llx", offset,
+                *((long long *)data) + offset);
+    int err = handle_one_payload(
+        sockfd, (struct DUMB_PAYLOAD *)(((char *)data) + offset), time,
+        payload_size - sizeof(struct DUMB_PAYLOAD), tmpdir);
+    LOG_DEBUG("handle_one_payload() exited with %d", err);
+    if (err != 0) {
+      LOG_ERRNO("handle_one_payload() failed", err);
+      write_string(sockfd, "something went wrong");
       return err;
     }
-    offset+=payload_size;
+    offset += payload_size;
   }
   return 0;
 }
