@@ -48,12 +48,10 @@
 #define _LOG(v, p, s, ...)                                                     \
   do {                                                                         \
     if (log_verbosity >= v) {                                                  \
-      if (_log_output == NULL)                                                 \
-        _log_output = stderr;                                                  \
-      _LOG_PREFIX(_log_output, p);                                             \
-      fprintf(_log_output, s __VA_OPT__(, ) __VA_ARGS__);                      \
-      fprintf(_log_output, "\n");                                              \
-      fflush(_log_output);                                                     \
+      _LOG_PREFIX(stderr, p);                                             \
+      fprintf(stderr, s __VA_OPT__(, ) __VA_ARGS__);                      \
+      fprintf(stderr, "\n");                                              \
+      fflush(stderr);                                                     \
     }                                                                          \
   } while (0)
 #define LOG(s, ...)                                                            \
