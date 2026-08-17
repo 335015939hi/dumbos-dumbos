@@ -27,6 +27,7 @@
 #define CMD_GET_COMMAND "get-cmd"
 #define CMD_COMMAND_SET "set-cmd"
 #define CMD_NEW_USER "new-user"
+#define CMD_SIGN "sign"
 
 #define PUBKEY_HEADER "key_public.h"
 #define PRIVKEY_HEADER "key_private.h"
@@ -90,25 +91,27 @@ static int new_payload() {
   return 0;
 }
 static void display_help(const char *argv0) {
-  printf(
-      "Usage:%s <file> <cmd> [args]\n"
-      "Commands:\n" CMD_HELP
-      " [cmd] prints generic help, or more details on a specific command. "
-      "<file> is ignored\n" CMD_NEW " creates a new payload\n" CMD_KEY
-      " generates new keypair to files " PUBKEY_HEADER " and " PRIVKEY_HEADER
-      ". <file> ignored. \n" CMD_EXPIRE
-      " <epoch> sets new expiry date. YOU are responsible for making sure "
-      "<epoch> is a valid epoch time\n" CMD_VERIFY
-      " <pubkeyhex> verifies payload using <pubkeyhex>\n" CMD_COMMAND_SET_RAW
-      " <command> sets the command, withou being friendly. not "
-      "recommended\n" CMD_COMMAND_SET
-      " <command> [command-specific] sets the command, with auto formatting "
-      "data\n" CMD_GET_COMMAND " prints command\n" CMD_DATA_SET
-      " <file> dumps contents of file as the data\n" CMD_DUMP_DATA
-      " dumps data to stdout. you may want to pipe into file\n" CMD_NEW_USER
-      " creates a new user, where <file> is both username and file written.\n",
+  printf("Usage:%s <file> <cmd> [args]\n"
+         "Commands:\n" CMD_HELP
+         " [cmd] prints generic help, or more details on a specific command. "
+         "<file> is ignored\n" CMD_NEW " creates a new payload\n" CMD_KEY
+         " generates new keypair to files " PUBKEY_HEADER " and " PRIVKEY_HEADER
+         ". <file> ignored. \n" CMD_EXPIRE
+         " <epoch> sets new expiry date. YOU are responsible for making sure "
+         "<epoch> is a valid epoch time\n" CMD_VERIFY
+         " <pubkeyhex> verifies payload using <pubkeyhex>\n" CMD_COMMAND_SET_RAW
+         " <command> sets the command, withou being friendly. not "
+         "recommended\n" CMD_COMMAND_SET
+         " <command> [command-specific] sets the command, with auto formatting "
+         "data\n" CMD_GET_COMMAND " prints command\n" CMD_DATA_SET
+         " <file> dumps contents of file as the data\n" CMD_DUMP_DATA
+         " dumps data to stdout. you may want to pipe into file\n" CMD_NEW_USER
+         " creates a new user, where <file> is both username and file "
+         "written.\n" CMD_SIGN
+         " <privkey> signs a payload, using hexadecimal private key <privkey>. "
+         "extract it from " PRIVKEY_HEADER ".\n",
 
-      argv0);
+         argv0);
 }
 static int cmd_help(const char *argv0, const char *cmd) {
   const char *help_text;
@@ -212,6 +215,8 @@ static int cmd_help(const char *argv0, const char *cmd) {
   } else if (!strcmp(cmd, CMD_DATA_SET)) {
     help_text = "not yet written\n";
 
+  } else if (!strcmp(cmd, CMD_SIGN)) {
+    help_text = "not yet written\n";
   } else if (!strcmp(cmd, CMD_NEW_USER)) {
     help_text =
         "Usage:%s <username> " CMD_NEW_USER "\n"
@@ -226,6 +231,38 @@ static int cmd_help(const char *argv0, const char *cmd) {
     help_text = "No help available for this option\n";
   }
   printf(help_text, argv0);
+  return 0;
+}
+
+static int cmd_sign(const char *priv_key_hex) {
+  int err;
+  size_t size;
+  struct DUMB_PAYLOAD *payload = dp_malloc_load(path, &size);
+  if (payload == NULL) {
+    LOG_ERRNO("failed to load payload file", errno);
+    return errno;
+  }
+  if (0 != dp_sign(payload, size, priv_key_hex)) {
+    LOG_ERRNO("failed signing payload", errno);
+    free(payload);
+    return errno;
+  }
+  int fd = open(path, O_WRONLY);
+  if (fd < 0) {
+    LOG_ERRNO("failed to open file for writing", errno);
+    maybe_free(payload);
+    return errno;
+  }
+  err = write_all(fd, payload, size);
+  if (err < 0) {
+    LOG_ERRNO("failed to write to file", errno);
+    close(fd);
+    maybe_free(payload);
+    return errno;
+  }
+  LOG("%zu bytes written", size);
+  close(fd);
+  maybe_free(payload);
   return 0;
 }
 
@@ -583,6 +620,10 @@ int main(int argc, char **argv) {
     } else if (strcmp(CMD_NEW_USER, argv[2]) == 0) {
       if (argc == 3) {
         return cmd_new_user();
+      }
+    } else if (strcmp(CMD_SIGN, argv[2]) == 0) {
+      if (argc == 4) {
+        return cmd_sign(argv[3]);
       }
     }
   }
