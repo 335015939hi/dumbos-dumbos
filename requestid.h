@@ -5,7 +5,7 @@
 
 #define DUMBOS_USERNAME_MAXLEN 127
 #define DUMBOS_DEFAULT_USER "hspiqpwoasfddhaksuuiwqueqwrds"
-#define DUMBOOS_USER_ALLOWED_CHARS                                             \
+#define DUMBOS_USER_ALLOWED_CHARS                                             \
   "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM-_1234567890"
 #define DUMBOS_USER_DATA_MAGIC "dp2js9chakqkqe1"
 #define DUMBOS_USER_DATA_MAGIC_SIZE 16
