@@ -1,7 +1,10 @@
 
+#include <arpa/inet.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,6 +53,67 @@
 
 // defined in dumb-main.c
 extern const char *path;
+
+// this function written by google's embedded AI
+static char *read_entire_file(const char *filename, size_t *out_length) {
+  // 1. Open the file in binary mode
+  FILE *file = fopen(filename, "rb");
+  if (file == NULL) {
+    // fopen sets errno automatically (e.g., ENOENT, EACCES)
+    return NULL;
+  }
+
+  // 2. Seek to the end of the file
+  if (fseek(file, 0, SEEK_END) != 0) {
+    // fseek sets errno automatically
+    fclose(file);
+    return NULL;
+  }
+
+  long size = ftell(file);
+  if (size < 0) {
+    // ftell sets errno automatically
+    fclose(file);
+    return NULL;
+  }
+
+  // 3. Rewind to the beginning
+  rewind(file);
+
+  // 4. Allocate memory (+1 for null terminator)
+  char *buffer = (char *)malloc(size + 1);
+  if (buffer == NULL) {
+    // malloc sets errno to ENOMEM automatically
+    fclose(file);
+    return NULL;
+  }
+
+  // 5. Read file into buffer
+  size_t bytes_read = fread(buffer, 1, size, file);
+  if (bytes_read < (size_t)size) {
+    if (ferror(file)) {
+      // fread does NOT guarantee setting errno on all platforms.
+      // If it's not set by the underlying stream, force an I/O error code.
+      if (errno == 0) {
+        errno = EIO;
+      }
+      free(buffer);
+      fclose(file);
+      return NULL;
+    }
+  }
+
+  // 6. Null-terminate the buffer safely
+  buffer[bytes_read] = '\0';
+
+  fclose(file);
+
+  if (out_length) {
+    *out_length = bytes_read;
+  }
+
+  return buffer;
+}
 
 static struct DUMB_PAYLOAD *set_data(struct DUMB_PAYLOAD *payload,
                                      void *new_data, size_t data_size) {
@@ -285,8 +349,105 @@ static int cmd_firewall(int argc, const char **argv) {
   return 0;
 }
 static int cmd_composite(int argc, const char **argv) {
-  LOG_ERRNO("", ENOSYS);
-  return ENOSYS;
+  LOG_DEBUG("cmd_composite() argc=%d", argc);
+  if (argc < 2) {
+    LOG_FATAL(
+        "cmd_composite(): not enough arguments (expected at least 1),got %d",
+        argc - 1);
+    return EINVAL;
+  }
+  uint16_t payload_count = htons(argc - 1);
+
+  int err;
+  struct DUMB_PAYLOAD *payload;
+  size_t size;
+  if (NULL == (payload = load_or_print_error(&size))) {
+    return errno;
+  }
+  // truncate. we don't need the data
+  size = sizeof(*payload);
+  // realloc is not needed. only realloc if we are running out of memory, which
+  // is highly unlikely on modern devices
+
+  LOG_DEBUG("setting command to '%s'", argv[0]);
+  snprintf(payload->command, COMMAND_SIZE, "%s", argv[0]);
+
+  LOG_DEBUG("writing to %s", path);
+  FILE *destfile = fopen(path, "wb");
+  if (destfile == NULL) {
+    LOG_FATAL_ERRNO("failed to open file for writing", errno);
+    free(payload);
+    return errno;
+  }
+
+  size_t total_written = 0;
+  err = fwrite(payload, 1, size, destfile);
+  if (err != size) {
+    err = errno;
+    LOG_ERRNO("failed writing to file", err);
+    fclose(destfile);
+    free(payload);
+    return err;
+  }
+  LOG_DEBUG("wrote %zu bytes", err);
+  total_written += err;
+  free(payload);
+
+  if (sizeof(payload_count) !=
+      fwrite(&payload_count, 1, sizeof(payload_count), destfile)) {
+    err = errno;
+    LOG_FATAL_ERRNO("failed writing to file", err);
+    fclose(destfile);
+    return err;
+  }
+  total_written += sizeof(payload_count);
+
+  for (int i = 1; i < argc; i++) {
+    void *next_payload;
+    size_t next_payload_size;
+    LOG_DEBUG("reading '%s'", argv[i]);
+    if (NULL ==
+        (next_payload = read_entire_file(argv[i], &next_payload_size))) {
+      err = errno;
+      LOG_FATAL_ERRNO("error reading file", err);
+      fclose(destfile);
+      LOG_WARN("'%s' has been left in a partial state. do not use.", path);
+      return err;
+    }
+    LOG_DEBUG("read %zu bytes", next_payload_size);
+    if (next_payload_size > (size_t)LONG_MAX) {
+      LOG_FATAL("file too large");
+      fclose(destfile);
+      free(next_payload);
+      LOG_WARN("'%s' has been left in a partial state. do not use.", path);
+      return EOVERFLOW;
+    }
+    uint32_t next_payload_long_size = htonl((uint32_t)next_payload_size);
+    if (sizeof(next_payload_long_size) != fwrite(&next_payload_long_size, 1,
+                                                 sizeof(next_payload_long_size),
+                                                 destfile)) {
+      err = errno;
+      LOG_FATAL_ERRNO("failed writing to file", err);
+      fclose(destfile);
+      free(next_payload);
+      LOG_WARN("'%s' has been left in a partial state. do not use.", path);
+      return err;
+    }
+    total_written += sizeof(next_payload_long_size);
+    if (next_payload_size !=
+        fwrite(next_payload, 1, next_payload_size, destfile)) {
+      err = errno;
+      LOG_FATAL_ERRNO("failed writing to file", err);
+      fclose(destfile);
+      free(next_payload);
+      LOG_WARN("'%s' has been left in a partial state. do not use.", path);
+      return err;
+    }
+    free(next_payload);
+    total_written += next_payload_size;
+  }
+  fclose(destfile);
+  LOG("%zu bytes written", total_written);
 }
 
 int cmd_command_set(int argc, const char **argv) {
