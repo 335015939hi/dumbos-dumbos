@@ -139,12 +139,10 @@ remove_package() {
     return 1
   fi
 
-  if ! cp "$TMPFILE" "-$CONFFILE" && mv "-$CONFFILE" "$CONFFILE"; then
-    rm "-$$CONFFILE"
+  if ! mv "$TMPFILE" "$CONFFILE"; then
     echo "Error: failed to update '$CONFFILE'" >&2
     return 1
   fi
-  rm "-$CONFFILE"
 
   return 0
 }

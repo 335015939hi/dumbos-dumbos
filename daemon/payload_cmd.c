@@ -161,7 +161,9 @@ int payload_cmd_composite(void *data, size_t size, const char *tmpdir,
     write_string(sockfd, "invalid");
     return EINVAL;
   }
-  uint16_t payload_count = ntohs(*(uint16_t *)data);
+  uint16_t data_temp;
+  memcpy(&data_temp, data, sizeof(data_temp));
+  uint16_t payload_count = ntohs(data_temp);
   LOG("composite payload: counted %hd payloads", payload_count);
   size_t offset = sizeof(uint16_t);
   for (int i = 0; i < payload_count; i++) {
@@ -172,7 +174,9 @@ int payload_cmd_composite(void *data, size_t size, const char *tmpdir,
       write_string(sockfd, "invalid");
       return EINVAL;
     }
-    payload_size = ntohl(*(uint32_t *)(((char *)data) + offset));
+    uint32_t data_temp_2;
+    memcpy(&data_temp_2, ((char *)data) + offset, sizeof(data_temp_2));
+    payload_size = ntohl(data_temp_2);
     offset += sizeof(uint32_t);
     LOG_DEBUG("detected payload size %lu", (unsigned long)payload_size);
     if (offset + payload_size > size) {
@@ -181,8 +185,11 @@ int payload_cmd_composite(void *data, size_t size, const char *tmpdir,
       return EINVAL;
     }
     LOG_DEBUG("handling payload %d", i);
-    LOG_VERBOSE("offset=%zu,first 8 bytes=%016llx", offset,
-                *((long long *)data) + offset);
+    if (payload_size < sizeof(struct DUMB_PAYLOAD)) {
+      LOG_ERR("composite payload %d: size %u too small", i, payload_size);
+      write_string(sockfd, "invalid");
+      return EINVAL;
+    }
     int err = handle_one_payload(
         sockfd, (struct DUMB_PAYLOAD *)(((char *)data) + offset), time,
         payload_size - sizeof(struct DUMB_PAYLOAD), tmpdir);

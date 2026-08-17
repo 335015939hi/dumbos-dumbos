@@ -6,7 +6,7 @@
 CONFFILE=/data/local/tmp/dumb/dumbos-firewall.conf
 DEFAULT_CONFFILE=/system/etc/dumbos-firewall.conf
 
-IPTABLES="iptables-wrapper-1.0 ip6tables-wrapper-1.0"
+IPTABLES="/system/bin/iptables-wrapper-1.0 /system/bin/ip6tables-wrapper-1.0"
 CHAIN="oem_out"
 
 #hardcoded list of allowed uids, e.g. root (uid 0)

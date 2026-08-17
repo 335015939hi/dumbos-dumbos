@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/random.h>
 #include <time.h>
 
 #include "common.h"
@@ -14,6 +15,9 @@
 #define REQUEST_ID_MAGIC "af123oidoo"
 
 #define DUMBOS_USER_DATA_PATH "/dev/dumbos-userdata"
+
+#define REQUEST_ID_LEN 64
+const char *request_id_chars = REQUESTID_ALLOWED_CHARS;
 
 int request_id_sign(char *output, const char *user, const char *request_id,
                     const char *priv_key_hex) {
@@ -37,9 +41,14 @@ int request_id_sign(char *output, const char *user, const char *request_id,
 }
 
 char *request_id_generate(void) {
-  static char data[64];
-  snprintf(data, 64, "sa%ldfdsa", time(NULL));
-  return data;
+  static char requestid[REQUEST_ID_LEN + 1];
+  if (getrandom(requestid, REQUEST_ID_LEN, 0) != REQUEST_ID_LEN) {
+    return NULL;
+  }
+  for (int i = 0; i < REQUEST_ID_LEN; i++) {
+    requestid[i] = request_id_chars[requestid[i] % strlen(request_id_chars)];
+  }
+  return requestid;
 }
 
 int request_id_verify(const char *user, const char *request_id,

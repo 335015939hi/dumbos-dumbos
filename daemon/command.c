@@ -82,14 +82,14 @@ int do_command(int argc, char **argv, int sockfd, const char *const server,
     ret = cmd_get_username(sockfd);
     break;
   case CMD_OEM_LOCK:
-    ret = oem_locking(sockfd, command == CMD_OEM_LOCK);
+    ret = oem_locking(sockfd, true);
     break;
 #ifdef DEBUG_MODE
   case CMD_SHELL:
     ret = cmd_shell(argc, argv);
     break;
   case CMD_OEM_UNLOCK:
-    ret = oem_locking(sockfd, command == CMD_OEM_LOCK);
+    ret = oem_locking(sockfd, false);
     break;
   case CMD_ENABLE_ADB:
   case CMD_DISABLE_ADB:

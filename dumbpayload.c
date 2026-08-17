@@ -4,9 +4,9 @@
 #include <limits.h>
 #include <linux/limits.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -89,7 +89,7 @@ int dp_verify(struct DUMB_PAYLOAD *payload, size_t size,
 
 void dp_set_expire(struct DUMB_PAYLOAD *payload, time_t expire) {
   memset(payload->expire, '\0', EXPIRE_SIZE);
-  snprintf(payload->expire, EXPIRE_SIZE, "%ld", expire);
+  snprintf(payload->expire, EXPIRE_SIZE, "%lld", (long long)expire);
 }
 
 time_t dp_get_expire(const struct DUMB_PAYLOAD *payload) {
