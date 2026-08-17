@@ -24,6 +24,8 @@
 // see also: dumb-main.c
 #define SERVER_USER_PUBKEY_FILE "pubkey"
 
+// TODO: better http rreturn codes for different errors
+
 char *malloc_buf_to_hex(const void *buf, size_t size) {
   const char *const hex = "0123456789ABCDEF";
   char *output;
@@ -167,8 +169,14 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
 
     free(request_data_path);
     err = request_id_verify(user, requestid, requestsig, user_pubkey);
-    LOG("request_id_verify return %d", err);
-    // TODO:enforce request id. (new feature, needs testing)
+    LOG_DEBUG("request_id_verify return %d", err);
+    if (err != 0) {
+      LOG_ERRNO("request_id_verify failed", err);
+      LOG_ERR("Invalid request id");
+      return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
+                                 "text/plain; charset=utf-8",
+                                 "404 Not Found\n");
+    }
   }
 
   response = dp_malloc_check_load(code, &responselen, _ed25519_private_key_hex);
