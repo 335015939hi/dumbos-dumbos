@@ -544,6 +544,30 @@ enum MHD_Result handle_request(void *cls, struct MHD_Connection *connection,
   if (strcmp(method, MHD_HTTP_METHOD_GET) == 0) {
     return handle_get(connection, url);
   } else if (strcmp(method, MHD_HTTP_METHOD_POST) == 0) {
+    /*
+     * libmicrohttpd may deliver POST data in chunks.
+     *
+     * If upload_data_size is nonzero:
+     * - consume the data
+     * - set *upload_data_size to 0
+     * - return MHD_YES
+     *
+     * Then libmicrohttpd calls us again. When upload_data_size becomes 0,
+     * the full request body has been received.
+     */
+    if (*upload_data_size != 0) {
+      append_upload_data(state, upload_data, *upload_data_size);
+
+      /*
+       * Critical: tell libmicrohttpd we consumed this chunk.
+       * If you forget this, the library may call you again with the same
+       * data. Small omissions, large suffering.
+       */
+      *upload_data_size = 0;
+
+      return MHD_YES;
+    }
+
     return handle_post(connection, url, state);
   }
 
