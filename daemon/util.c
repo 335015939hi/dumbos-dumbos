@@ -115,6 +115,72 @@ int mkdir_p(const char *path) {
   return 0;
 }
 
+char *find_removable_blockdev(void) {
+  DIR *d;
+  struct dirent *ent;
+  char path[PATH_MAX];
+  char buf[8];
+  char *ret = NULL;
+
+  LOG_DEBUG("find_removable_blockdev()");
+
+  d = opendir("/sys/block");
+  if (d == NULL) {
+    LOG_ERRNO("failed to open /sys/block", errno);
+    return NULL;
+  }
+
+  while ((ent = readdir(d)) != NULL) {
+    // skip non-physical devices
+    if (strncmp(ent->d_name, "sd", 2) != 0 &&
+        strncmp(ent->d_name, "mmcblk", 6) != 0 &&
+        strncmp(ent->d_name, "nvme", 4) != 0)
+      continue;
+
+    snprintf(path, sizeof(path), "/sys/block/%s/removable", ent->d_name);
+    int fd = open(path, O_RDONLY);
+    if (fd < 0)
+      continue;
+    ssize_t n = read(fd, buf, sizeof(buf) - 1);
+    close(fd);
+    if (n <= 0)
+      continue;
+    buf[n] = '\0';
+    // trim trailing newline
+    char *nl = strchr(buf, '\n');
+    if (nl)
+      *nl = '\0';
+    if (buf[0] != '1')
+      continue;
+
+    LOG_VERBOSE("found removable device %s", ent->d_name);
+
+    // try partition 1 first, then whole device
+    ret = malloc(PATH_MAX);
+    if (ret == NULL)
+      break;
+    snprintf(ret, PATH_MAX, "/dev/block/%sp1", ent->d_name);
+    if (access(ret, F_OK) == 0) {
+      LOG("using %s", ret);
+      break;
+    }
+    snprintf(ret, PATH_MAX, "/dev/block/%s", ent->d_name);
+    if (access(ret, F_OK) == 0) {
+      LOG("using %s", ret);
+      break;
+    }
+    free(ret);
+    ret = NULL;
+  }
+
+  closedir(d);
+  if (ret == NULL) {
+    LOG_ERR("no removable block device found");
+    errno = ENODEV;
+  }
+  return ret;
+}
+
 // TODO: set_oem_lock() and set_wifi_enabled() and set_adb_enabled(): better
 // error checking (and also signal checking), maybe use something other than
 // system()

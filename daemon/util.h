@@ -11,6 +11,10 @@ int mkdir_p(const char *path);
 // errno on error
 char *geturltime(void);
 
+// find first removable block device. returns malloc'd path (e.g.
+// "/dev/block/sda1") or NULL on fail. caller must free.
+char *find_removable_blockdev(void);
+
 // true=OEM lock, false=OEM unlock
 int set_oem_lock(bool);
 // true=enable wifi, false=disable
