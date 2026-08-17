@@ -16,13 +16,10 @@
 #include "chatgpt.h"
 #include "common.h"
 #include "dumb.h"
+#include "dumbserver.h"
 #include "requestid.h"
 
 #include "../../keys/key_private.h"
-
-#define USERDATA_PREFIX "user/"
-// see also: dumb-main.c
-#define SERVER_USER_PUBKEY_FILE "pubkey"
 
 // TODO: better http rreturn codes for different errors
 

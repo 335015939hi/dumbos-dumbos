@@ -18,6 +18,7 @@ add_executable(${PROJECT_NAME}
     src/dumbpayload.c
     src/ed25519.c
     src/requestid.c
+    src/dumb_log.c
 )
 
 add_executable(dumb-code

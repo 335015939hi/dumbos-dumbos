@@ -16,6 +16,8 @@
 #include "ed25519.h"
 #include "requestid.h"
 
+#include "dumbserver.h"
+
 #define CMD_NEW "new"
 #define CMD_EXPIRE "expire"
 #define CMD_KEY "mkkey"
@@ -33,7 +35,6 @@
 #define PRIVKEY_HEADER "key_private.h"
 
 #define USER_BLOB_SUFFIX "blob"
-#define SERVER_USER_PUBKEY_FILE "pubkey"
 
 const char *path;
 

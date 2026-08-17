@@ -468,7 +468,9 @@ enum MHD_Result handle_post(struct MHD_Connection *connection, const char *url,
                                "413 Request body too large\n");
   }
 
-  if (strcmp(url, "/echo") == 0) {
+  if (strcmp(url, "/logupload") == 0) {
+    return dumb_log_upload_handler(connection, state);
+  } else if (strcmp(url, "/echo") == 0) {
     /*
      * Echo the request body back to the client.
      *
@@ -541,6 +543,8 @@ enum MHD_Result handle_request(void *cls, struct MHD_Connection *connection,
 
   if (strcmp(method, MHD_HTTP_METHOD_GET) == 0) {
     return handle_get(connection, url);
+  } else if (strcmp(method, MHD_HTTP_METHOD_POST) == 0) {
+    return handle_post(connection, url, state);
   }
 
   return queue_method_not_allowed(connection);

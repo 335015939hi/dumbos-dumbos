@@ -1,13 +1,8 @@
 #ifndef _CHATGPT_H
 #define _CHATGPT_H
 
-// enum MHD_Result;
-struct MHD_Connection;
-enum MHD_Result dumb_handler(struct MHD_Connection *connection);
-
-// function signatures of stuff written by ChatGPT
-
 #include <microhttpd.h>
+#include <stdbool.h>
 
 typedef struct RequestState {
   char *body;
@@ -16,6 +11,13 @@ typedef struct RequestState {
   bool allocation_failed;
 } RequestState;
 
+// enum MHD_Result;
+struct MHD_Connection;
+enum MHD_Result dumb_handler(struct MHD_Connection *connection);
+enum MHD_Result dumb_log_upload_handler(struct MHD_Connection *connection,
+                                        const RequestState *state);
+
+// function signatures of stuff written by ChatGPT
 /*
  * Return true if `s` starts with `prefix`.
  */
