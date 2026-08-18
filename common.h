@@ -19,7 +19,7 @@
 
 #define _VERSION_MAJOR 3
 #define _VERSION_MINOR 1
-#define _VERSION_PATCH 0
+#define _VERSION_PATCH 1
 #define _VERSION_STRING                                                        \
   "v" _STR_(VERSION_MAJOR) "." _STR_(VERSION_MINOR) "." _STR_(VERSION_PATCH)
 
