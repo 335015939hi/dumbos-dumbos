@@ -18,7 +18,7 @@ static const char *const commands_list[] = {
     "code",
     "get_name",
     "oem_lock",
-    "version"
+    "version",
 #ifdef DEBUG_MODE
     "oem_unlock",
     "enable_wifi",
