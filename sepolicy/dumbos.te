@@ -96,6 +96,10 @@ allow dumbosd init:unix_stream_socket { connectto };
 
 allow dumbosd rootfs:dir { mounton };
 allow dumbosd block_device:dir { search };
+allow dumbosd sysfs:dir { read open getattr search };
+allow dumbosd sysfs:file { open read getattr };
+allow dumbosd sysfs_type:dir search;
+allow dumbosd sysfs_type:file { open read getattr };
 allow dumbosd exfat:filesystem { mount unmount };
 allow dumbosd exfat:dir { open search getattr setattr read write add_name create };
 allow dumbosd exfat:file { getattr read open setattr write create };

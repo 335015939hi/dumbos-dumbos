@@ -211,6 +211,30 @@ const char *const external_export_dest = "%sexport-%lld";
 const char *const external_import_source = external_mountpoint;
 const char *const external_fstype = "exfat";
 
+static int try_mount_copy(const char *devname, const char *mountpoint,
+                          const char *fstype, unsigned long flags,
+                          const char *mount_data, const char *copy_src,
+                          const char *copy_dst, int sockfd) {
+  char path[PATH_MAX];
+  int err;
+  snprintf(path, sizeof(path), "/dev/block/%s1", devname);
+  LOG("trying %s", path);
+  err = mount_copy_unmount_ns(path, mountpoint, fstype, flags, mount_data,
+                              copy_src, copy_dst, sockfd);
+  if (err == 0)
+    return 0;
+  snprintf(path, sizeof(path), "/dev/block/%sp1", devname);
+  LOG("trying %s", path);
+  err = mount_copy_unmount_ns(path, mountpoint, fstype, flags, mount_data,
+                              copy_src, copy_dst, sockfd);
+  if (err == 0)
+    return 0;
+  snprintf(path, sizeof(path), "/dev/block/%s", devname);
+  LOG("trying %s", path);
+  return mount_copy_unmount_ns(path, mountpoint, fstype, flags, mount_data,
+                               copy_src, copy_dst, sockfd);
+}
+
 int payload_cmd_files_import(int sockfd) {
   char *import_path;
   int err;
@@ -221,17 +245,17 @@ int payload_cmd_files_import(int sockfd) {
     return err;
   }
   LOG("importing files from external drive to '%s'", import_path);
-  char *blockdev = find_removable_blockdev();
-  if (blockdev == NULL) {
+  char *devname = find_removable_blockdev();
+  if (devname == NULL) {
     err = errno;
     write_string(sockfd, "no removable drive found");
     free(import_path);
     return err;
   }
-  err = mount_copy_unmount_ns(blockdev, external_mountpoint, external_fstype,
-                              MS_NODEV | MS_NOSUID | MS_NOEXEC, NULL,
-                              external_import_source, import_path, sockfd);
-  free(blockdev);
+  err = try_mount_copy(devname, external_mountpoint, external_fstype,
+                       MS_NODEV | MS_NOSUID | MS_NOEXEC, NULL,
+                       external_import_source, import_path, sockfd);
+  free(devname);
   free(import_path);
   if (err != 0) {
     err = errno;
@@ -254,18 +278,18 @@ int payload_cmd_files_export(int sockfd) {
     return err;
   }
   LOG("exporting files to '%s'", export_path);
-  char *blockdev = find_removable_blockdev();
-  if (blockdev == NULL) {
+  char *devname = find_removable_blockdev();
+  if (devname == NULL) {
     err = errno;
     write_string(sockfd, "no removable drive found");
     free(export_path);
     return err;
   }
-  err = mount_copy_unmount_ns(blockdev, external_mountpoint, external_fstype,
-                              MS_NODEV | MS_NOSUID | MS_NOEXEC,
-                              "fmask=00117,dmask=00007,uid=0,gid=0",
-                              sdcard_export_source, export_path, sockfd);
-  free(blockdev);
+  err = try_mount_copy(devname, external_mountpoint, external_fstype,
+                       MS_NODEV | MS_NOSUID | MS_NOEXEC,
+                       "fmask=00117,dmask=00007,uid=0,gid=0",
+                       sdcard_export_source, export_path, sockfd);
+  free(devname);
   free(export_path);
   if (err != 0) {
     err = errno;

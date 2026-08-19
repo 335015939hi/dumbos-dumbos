@@ -155,22 +155,8 @@ char *find_removable_blockdev(void) {
 
     LOG_VERBOSE("found removable device %s", ent->d_name);
 
-    // try partition 1 first, then whole device
-    ret = malloc(PATH_MAX);
-    if (ret == NULL)
-      break;
-    snprintf(ret, PATH_MAX, "/dev/block/%sp1", ent->d_name);
-    if (access(ret, F_OK) == 0) {
-      LOG("using %s", ret);
-      break;
-    }
-    snprintf(ret, PATH_MAX, "/dev/block/%s", ent->d_name);
-    if (access(ret, F_OK) == 0) {
-      LOG("using %s", ret);
-      break;
-    }
-    free(ret);
-    ret = NULL;
+    ret = strdup(ent->d_name);
+    break;
   }
 
   closedir(d);

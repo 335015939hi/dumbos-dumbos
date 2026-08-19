@@ -13,19 +13,11 @@
 #include "util.h"
 
 static const char *const commands_list[] = {
-    "ok",
-    "notok",
-    "code",
-    "get_name",
-    "oem_lock",
-    "version",
+    "ok",         "notok",       "code",
+    "get_name",   "oem_lock",    "version",
 #ifdef DEBUG_MODE
-    "oem_unlock",
-    "enable_wifi",
-    "disable_wifi",
-    "enable_adb",
-    "disable_adb",
-    "shell",
+    "oem_unlock", "enable_wifi", "disable_wifi",
+    "enable_adb", "disable_adb", "shell",
 #endif
 };
 // the enum and commands_list must match!
