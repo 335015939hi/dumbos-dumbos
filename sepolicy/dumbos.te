@@ -33,6 +33,7 @@ allow dumbosd shell_data_file:file create_file_perms;
 allow dumbosd shell_data_file:file { read write getattr setattr };
 
 allow dumbosd system_file:file { execute_no_trans };
+allow dumbosd shell_exec:file { read open getattr execute execute_no_trans };
 allow dumbosd package_service:service_manager { find };
 allow dumbosd servicemanager:binder { transfer call };
 allow dumbosd system_server:binder { transfer call };
@@ -66,6 +67,8 @@ allow dumbosd media_rw_data_file:dir { read write getattr add_name setattr remov
 allow dumbosd system_data_root_file:file create_file_perms;
 allow dumbosd system_data_root_file:file { read open map write getattr setattr };
 allow dumbosd system_data_root_file:dir { read write getattr add_name setattr remove_name open search };
+allow dumbosd system_data_file:file { read open create map write getattr setattr };
+allow dumbosd system_data_file:dir { read write getattr add_name setattr remove_name open search };
 allow dumbosd system_file:file { read open map write getattr setattr lock };
 
 allow dumbosd netutils_wrapper_exec:file { read open map write getattr setattr execute execute_no_trans };
@@ -86,6 +89,7 @@ allow dumbosd dnsproxyd_socket:sock_file { read write };
 allow dumbosd property_socket:sock_file { write };
 allow dumbosd oem_lock_service:service_manager { find };
 allow dumbosd settings_service:service_manager { find };
+allow dumbosd lock_settings_service:service_manager { find };
 allow dumbosd ctl_start_prop:property_service { set };
 allow dumbosd ctl_stop_prop:property_service { set };
 allow dumbosd init:unix_stream_socket { connectto };

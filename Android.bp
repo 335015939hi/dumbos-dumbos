@@ -74,6 +74,11 @@ sh_binary {
     src:"firewall/dumbos-firewallctl.sh"
 }
 
+sh_binary {
+    name:"setpin.sh",
+    src:"setpin.sh"
+  }
+
 prebuilt_etc {
     name: "dumbos-firewall.conf",
     src: "firewall/dumbos-firewall.conf",
