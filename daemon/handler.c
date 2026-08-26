@@ -106,10 +106,10 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
     arg = malloc_read_string(client_fd);
     if (arg == NULL) {
       ret = errno;
-      LOG_ERRNO("alloc argv[] fail", err);
+      LOG_ERRNO("alloc argv[] fail", ret);
       write_string(client_fd, "internal error");
       write_string(client_fd, "");
-      write_ushort(client_fd, err);
+      write_ushort(client_fd, ret);
       haserror = true;
       break;
     }

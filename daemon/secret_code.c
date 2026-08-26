@@ -167,6 +167,11 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
     return errno;
   }
   const char *requestid = request_id_generate();
+  if (requestid == NULL) {
+    free(userdata);
+    LOG_ERRNO("failed to generate requestid", errno);
+    return errno;
+  }
   char *request_signature = malloc(ED25519_SIGNATURE_HEX_SIZE);
   if (request_signature == NULL) {
     free(userdata);

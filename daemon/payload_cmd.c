@@ -370,11 +370,8 @@ static int firewall_helper(int sockfd, enum FIREWALL_POLICY policy, char *data,
   int err;
   pid_t pid = fork();
   if (pid < 0) {
-    err = errno;
     free(str_list);
-    LOG_ERRNO("firewall_helper(): failed to fork", err);
-    write_string(sockfd, "internal error");
-    return err;
+    _exit(127);
   }
 
   if (pid == 0) {
@@ -430,8 +427,7 @@ int payload_cmd_firewall_flush() {
   }
   pid_t pid = fork();
   if (pid < 0) {
-    LOG_ERRNO("failed to fork", errno);
-    return errno;
+    _exit(127);
   }
   if (pid == 0) {
     errno = 0;

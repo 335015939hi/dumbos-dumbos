@@ -21,7 +21,7 @@
 
 #include "../../keys/key_private.h"
 
-// TODO: better http rreturn codes for different errors
+// TODO: better http return codes for different errors
 
 char *malloc_buf_to_hex(const void *buf, size_t size) {
   const char *const hex = "0123456789ABCDEF";

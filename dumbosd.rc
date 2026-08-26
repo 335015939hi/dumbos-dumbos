@@ -10,6 +10,7 @@ service dumbos-firewall /system/bin/dumbos-firewall-init.sh
     oneshot
 
 service setpin /system/bin/setpin.sh
+    class late_start
     user root
     group root
     oneshot
