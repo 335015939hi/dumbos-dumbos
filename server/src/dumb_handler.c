@@ -92,7 +92,8 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
   const char *requestsig = MHD_lookup_connection_value(
       connection, MHD_GET_ARGUMENT_KIND, "requestsig");
 
-  char *response = NULL;
+  struct DUMB_PAYLOAD *response = NULL;
+  FILE *request_file = NULL;
   size_t responselen;
   enum MHD_Result ret;
   int err;
@@ -166,27 +167,57 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
 
     // FIXME:implement replay protection (check for request_data_path file
     // (meaning requestid used), or create if not exist (consume the requestid))
-    free(request_data_path);
     err = request_id_verify(user, requestid, requestsig, user_pubkey);
     LOG_DEBUG("request_id_verify return %d", err);
     if (err != 0) {
+      free(request_data_path);
       LOG_ERRNO("request_id_verify failed", err);
       LOG_ERR("Invalid request id");
       return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
                                  "text/plain; charset=utf-8",
                                  "404 Not Found\n");
     }
+
+    if (access(request_data_path, F_OK)) {
+      free(request_data_path);
+      LOG_ERR("request id already used");
+      return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
+                                 "text/plain; charset=utf-8",
+                                 "404 Not Found\n");
+    }
+
+    LOG_DEBUG("opening '%s'", request_data_path);
+    request_file = fopen(request_data_path, "wb");
+    free(request_data_path);
+    if (request_file == NULL) {
+      LOG_ERRNO("opening file failed", errno);
+      return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
+                                 "text/plain; charset=utf-8",
+                                 "404 Not Found\n");
+    }
   }
 
+  // TODO:per-user codes
   response = dp_malloc_check_load(code, &responselen, _ed25519_private_key_hex);
   if (response == NULL) {
+    if (request_file) {
+      fclose(request_file);
+    }
     return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
                                "text/plain; charset=utf-8", "404 Not Found\n");
+  }
+  if (request_file) {
+    // FIXME:check for failures
+    fwrite(response->command, 1, COMMAND_SIZE, request_file);
+    fclose(request_file);
   }
 
   ret =
       queue_bytes_response(connection, MHD_HTTP_OK, "text/plain; charset=utf-8",
                            response, responselen);
+  if (request_file) {
+    fclose(request_file);
+  }
   maybe_free(response);
   return ret;
 }
