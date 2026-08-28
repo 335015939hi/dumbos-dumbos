@@ -214,6 +214,7 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
     fwrite(time_str, 1, strlen(time_str), request_file);
     fwrite("\n", 1, 1, request_file);
     fwrite(response->command, 1, COMMAND_SIZE, request_file);
+    fwrite("\n", 1, 1, request_file);
     fclose(request_file);
     request_file = NULL;
   }
