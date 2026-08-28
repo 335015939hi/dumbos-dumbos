@@ -203,6 +203,7 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
   if (response == NULL) {
     if (request_file) {
       fclose(request_file);
+      requeset_file = NULL;
     }
     return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
                                "text/plain; charset=utf-8", "404 Not Found\n");
@@ -211,6 +212,7 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
     // FIXME:check for failures
     fwrite(response->command, 1, COMMAND_SIZE, request_file);
     fclose(request_file);
+    request_file = NULL;
   }
 
   ret =
