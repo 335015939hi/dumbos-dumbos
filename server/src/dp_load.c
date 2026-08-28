@@ -65,7 +65,7 @@ void *dp_malloc_check_load(const char *const code, const char *username,
     if (codefd < 0) {
       maybe_free(path);
       maybe_free(userpath);
-      LOG_DEBUG("failed to open default path:%s", strerror(errno);
+      LOG_DEBUG("failed to open default path:%s", strerror(errno));
       LOG_ERR("could not find code");
       return NULL;
     }
