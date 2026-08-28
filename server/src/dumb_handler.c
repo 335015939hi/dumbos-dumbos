@@ -178,7 +178,8 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
                                  "404 Not Found\n");
     }
 
-    if (access(request_data_path, F_OK)) {
+    err = access(request_data_path, F_OK);
+    if (err == 0) {
       free(request_data_path);
       LOG_ERR("request id already used");
       return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
