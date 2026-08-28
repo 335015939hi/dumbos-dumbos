@@ -36,7 +36,8 @@ void *dp_malloc_check_load(const char *const code, const char *username,
   path = malloc(PATH_MAX);
   if (!path)
     return NULL;
-  err = snprintf(path, PATH_MAX, "%s%s", CODE_FILE_PATH, code);
+  err = snprintf(path, PATH_MAX, "%s%s%s", CODE_FILE_PATH, CODE_FILE_PREFIX,
+                 code);
   if (err >= PATH_MAX) {
     LOG_ERR("path too long");
     maybe_free(path);
@@ -47,8 +48,8 @@ void *dp_malloc_check_load(const char *const code, const char *username,
   userpath = malloc(PATH_MAX);
   if (!path)
     return NULL;
-  err =
-      snprintf(userpath, PATH_MAX, "%s%s/%s", USERDATA_PREFIX, username, code);
+  err = snprintf(userpath, PATH_MAX, "%s%s/%s%s", USERDATA_PREFIX, username,
+                 CODE_FILE_PREFIX, code);
   if (err >= PATH_MAX) {
     LOG_ERR("path too long");
     maybe_free(path);
