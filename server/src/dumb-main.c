@@ -3,6 +3,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +37,10 @@
 
 #define USER_BLOB_SUFFIX "blob"
 
-const char *path;
+// CODE_FILE_PREFIX + argv[1]
+char *path;
+// just argv[1]
+const char *raw_path;
 
 // defined in dumb-tool-cmd-set.c
 int cmd_command_set(int argc, const char **argv);
@@ -105,9 +109,11 @@ static void display_help(const char *argv0) {
          "recommended\n" CMD_COMMAND_SET
          " <command> [command-specific] sets the command, with auto formatting "
          "data\n" CMD_GET_COMMAND " prints command\n" CMD_DATA_SET
-         " <file> dumps contents of file as the data\n" CMD_DUMP_DATA
+         " <file> dumps contents of " CODE_FILE_PREFIX
+         "<file> as the data\n" CMD_DUMP_DATA
          " dumps data to stdout. you may want to pipe into file\n" CMD_NEW_USER
-         " creates a new user, where <file> is both username and file "
+         " creates a new user, where " CODE_FILE_PREFIX
+         "<file> is both username and file "
          "written.\n" CMD_SIGN
          " <privkey> signs a payload, using hexadecimal private key <privkey>. "
          "extract it from " PRIVKEY_HEADER ".\n",
@@ -117,9 +123,9 @@ static void display_help(const char *argv0) {
 static int cmd_help(const char *argv0, const char *cmd) {
   const char *help_text;
   if (!strcmp(cmd, CMD_NEW)) {
-    help_text =
-        "Usage: %s <file> " CMD_NEW "\n"
-        " this command creates a new payload and writes to filename <file>\n";
+    help_text = "Usage: %s <file> " CMD_NEW "\n"
+                " this command creates a new payload and writes to "
+                "filename " CODE_FILE_PREFIX "<file>\n";
   } else if (!strcmp(cmd, CMD_HELP)) {
     help_text =
         "Usage: %s (ignored) " CMD_HELP " [cmd]\n"
@@ -129,7 +135,7 @@ static int cmd_help(const char *argv0, const char *cmd) {
     help_text =
         "Usage: %s <file> " CMD_HELP " [epoch]\n"
         " this command gets (no 3rd argument) or sets the expiry date of the "
-        "payload file <file> "
+        "payload file " CODE_FILE_PREFIX "<file> "
         "to <epoch>. epoch is seconds since the Epoch, or Epoch Time "
         "(not to be confused with The Epoch Times)\n"
         " <epoch> should look something like '1784588405' for the date "
@@ -226,7 +232,8 @@ static int cmd_help(const char *argv0, const char *cmd) {
         ", and creates a blob for device at <username>." USER_BLOB_SUFFIX
         ". push <username>." USER_BLOB_SUFFIX
         " to the (userdebug or eng build) device with 'adb root;adb push "
-        "<username>.dumb /mnt/vendor/persist/dumbos_user;adb shell chmod 600 "
+        "<username>." USER_BLOB_SUFFIX
+        " /mnt/vendor/persist/dumbos_user;adb shell chmod 600 "
         "/mnt/vendor/persist/dumbos_user' and then flash the user build";
   } else {
     help_text = "No help available for this option\n";
@@ -506,12 +513,12 @@ static int cmd_new_user() {
     LOG_ERRNO("failed to generate keypair", errno);
     return errno;
   }
-  new_user = dumbos_alloc_new_user(path, privkey);
+  new_user = dumbos_alloc_new_user(raw_path, privkey);
   if (new_user == NULL) {
     LOG_ERRNO("failed to generate new user blob", errno);
     return errno;
   }
-  if (0 > mkdir(path, 00700)) {
+  if (0 > mkdir(raw_path, 00700)) {
     LOG_ERRNO("mkdir failed", errno);
     free(new_user);
     return errno;
@@ -520,8 +527,8 @@ static int cmd_new_user() {
   char *server_pubkey_path;
   char *user_blob_path;
 
-  if (0 >
-      asprintf(&server_pubkey_path, "%s/%s", path, SERVER_USER_PUBKEY_FILE)) {
+  if (0 > asprintf(&server_pubkey_path, "%s/%s", raw_path,
+                   SERVER_USER_PUBKEY_FILE)) {
     LOG_ERRNO("asprintf failed", errno);
     free(new_user);
     return errno;
@@ -543,7 +550,7 @@ static int cmd_new_user() {
   }
   fclose(server_pubkey_file);
 
-  if (0 > asprintf(&user_blob_path, "%s.%s", path, USER_BLOB_SUFFIX)) {
+  if (0 > asprintf(&user_blob_path, "%s.%s", raw_path, USER_BLOB_SUFFIX)) {
     LOG_ERRNO("asprintf failed", errno);
     free(new_user);
     return errno;
@@ -574,7 +581,11 @@ int main(int argc, char **argv) {
     LOG_DEBUG("argv[%d]='%s'", i, argv[i]);
   }
   if (argc >= 3) {
-    path = argv[1];
+    raw_path = argv[1];
+    // FIXME: check for failure
+    path = malloc(PATH_MAX);
+    snprintf(path, PATH_MAX - 1, "%s%s", CODE_FILE_PREFIX, argv[1]);
+    path[PATH_MAX - 1] = '\0';
     if (strcmp(CMD_NEW, argv[2]) == 0) {
       if (argc == 3) {
         return new_payload();
