@@ -57,15 +57,23 @@ void *dp_malloc_check_load(const char *const code, const char *username,
   }
   LOG("using per-user path '%s' (this will be checked first)", userpath);
   // TODO:
-  free(userpath);
 
-  codefd = open(path, O_RDWR);
+  codefd = open(userpath, O_RDWR);
   if (codefd < 0) {
-    maybe_free(path);
-    LOG_ERRNO("failed to open", errno);
-    return NULL;
+    LOG_DEBUG("failed to open user path:%s", strerror(errno));
+    codefd = open(path, O_RDWR);
+    if (codefd < 0) {
+      maybe_free(path);
+      maybe_free(userpath);
+      LOG_DEBUG("failed to open default path:%s", strerror(errno);
+      LOG_ERR("could not find code");
+      return NULL;
+    }
+    LOG("opened file '%s',fd=%d", path, codefd);
+  } else {
+    LOG("opened file '%s',fd=%d", userpath, codefd);
   }
-  LOG("opened file '%s',fd=%d", path, codefd);
+  maybe_free(userpath);
   maybe_free(path);
 
   err = fstat(codefd, &stat);
