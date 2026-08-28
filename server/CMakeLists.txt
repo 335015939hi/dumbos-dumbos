@@ -19,6 +19,7 @@ add_executable(${PROJECT_NAME}
     src/ed25519.c
     src/requestid.c
     src/dumb_log.c
+    src/dp_load.c
 )
 
 add_executable(dumb-code

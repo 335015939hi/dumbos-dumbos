@@ -121,7 +121,8 @@ bool dp_is_expired_compare(struct DUMB_PAYLOAD *payload, time_t cur_time);
 // automatically sign.
 // caller owns the returned buffer.
 // intended for server-side only
-void *dp_malloc_check_load(const char *const code, size_t *ret_size,
+// constructs path of the code file from the code itself and username (for per-user codes)
+void *dp_malloc_check_load(const char *const code, const char*username,size_t *ret_size,
                            const char *ed25519_private_key);
 // load payload by path. does no checks. return malloc'ed buffer
 // caller owns the returned buffer.
