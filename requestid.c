@@ -82,18 +82,9 @@ struct DUMBOS_USER_DATA *dumbos_alloc_get_user(void) {
   }
   FILE *user_data = fopen(DUMBOS_USER_DATA_PATH, "rb");
   if (user_data == NULL) {
-    if (errno == ENOENT) {
-      LOG("dumbos_alloc_get_user: no user set. using default");
-      memcpy(ret->magic, DUMBOS_USER_DATA_MAGIC, DUMBOS_USER_DATA_MAGIC_SIZE);
-      snprintf(ret->username, DUMBOS_USERNAME_MAXLEN, "%s",
-               DUMBOS_DEFAULT_USER);
-      snprintf(ret->priv_key_hex, ED25519_PRIVATE_KEY_HEX_SIZE, "%s", "TODO");
-    } else {
-      LOG_ERRNO("dumbos_alloc_get_user: failed to open file for reading",
-                errno);
-      free(ret);
-      return NULL;
-    }
+    LOG_ERRNO("dumbos_alloc_get_user: failed to open file for reading", errno);
+    free(ret);
+    return NULL;
   } else {
     errno = 0;
     err = fread(ret, 1, sizeof(struct DUMBOS_USER_DATA), user_data);

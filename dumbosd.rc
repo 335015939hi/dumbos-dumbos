@@ -21,3 +21,11 @@ on property:sys.boot_completed=1
   chmod 0600 /mnt/vendor/persist/dumbos_user
   copy /mnt/vendor/persist/dumbos_user /dev/dumbos-userdata
   start setpin
+
+# see also:daemon/command.c
+# mkdir: emulator compatibility
+on property:dumbos.newuser=1
+  chmod 0600 /dev/dumbos-userdata-new
+  mkdir /mnt/vendor/persist 0700 root root
+  copy /dev/dumbos-userdata-new /mnt/vendor/persist/dumbos_user
+  copy /dev/dumbos-userdata-new /dev/dumbos-userdata

@@ -45,27 +45,21 @@
 // also include timestamp and PID
 #define _LOG_PREFIX(f, p)                                                      \
   fprintf(f, "[%s][%ld]%s ", timestamp(), (long)getpid(), p)
-#define _LOG(v, p, ...)                                                     \
+#define _LOG(v, p, ...)                                                        \
   do {                                                                         \
     if (log_verbosity >= v) {                                                  \
       _LOG_PREFIX(stderr, p);                                                  \
-      fprintf(stderr  , ##__VA_ARGS__);                           \
+      fprintf(stderr, ##__VA_ARGS__);                                          \
       fprintf(stderr, "\n");                                                   \
       fflush(stderr);                                                          \
     }                                                                          \
   } while (0)
-#define LOG(...)                                                            \
-  _LOG(LOG_VERBOSITY_NORMAL, "[     ]" , ##__VA_ARGS__)
-#define LOG_FATAL(...)                                                      \
-  _LOG(LOG_VERBOSITY_FATAL, "[FATAL]" , ##__VA_ARGS__)
-#define LOG_ERR( ...)                                                        \
-  _LOG(LOG_VERBOSITY_ERROR, "[ERROR]" , ##__VA_ARGS__)
-#define LOG_WARN( ...)                                                       \
-  _LOG(LOG_VERBOSITY_WARN, "[WARN ]" , ##__VA_ARGS__)
-#define LOG_VERBOSE( ...)                                                    \
-  _LOG(LOG_VERBOSITY_VERBOSE, "[VRBOS]" , ##__VA_ARGS__)
-#define LOG_DEBUG( ...)                                                      \
-  _LOG(LOG_VERBOSITY_DEBUG, "[DEBUG]" , ##__VA_ARGS__)
+#define LOG(...) _LOG(LOG_VERBOSITY_NORMAL, "[     ]", ##__VA_ARGS__)
+#define LOG_FATAL(...) _LOG(LOG_VERBOSITY_FATAL, "[FATAL]", ##__VA_ARGS__)
+#define LOG_ERR(...) _LOG(LOG_VERBOSITY_ERROR, "[ERROR]", ##__VA_ARGS__)
+#define LOG_WARN(...) _LOG(LOG_VERBOSITY_WARN, "[WARN ]", ##__VA_ARGS__)
+#define LOG_VERBOSE(...) _LOG(LOG_VERBOSITY_VERBOSE, "[VRBOS]", ##__VA_ARGS__)
+#define LOG_DEBUG(...) _LOG(LOG_VERBOSITY_DEBUG, "[DEBUG]", ##__VA_ARGS__)
 #else //__ANDROID
 // logging for android. we will use android's __android_log_print to print to
 // logcat
@@ -81,20 +75,18 @@
 #endif
 #endif
 
-#define _LOG(v,...)                                                        \
-  __android_log_print(v, LOG_TAG , ##__VA_ARGS__)
-#define LOG(...) _LOG(ANDROID_LOG_INFO , ##__VA_ARGS__)
-#define LOG_FATAL(...) _LOG(ANDROID_LOG_FATAL , ##__VA_ARGS__)
-#define LOG_ERR(...) _LOG(ANDROID_LOG_ERROR , ##__VA_ARGS__)
-#define LOG_WARN(...) _LOG(ANDROID_LOG_WARN , ##__VA_ARGS__)
-#define LOG_DEBUG(...) _LOG(ANDROID_LOG_DEBUG , ##__VA_ARGS__)
-#define LOG_VERBOSE(...)                                                    \
-  _LOG(ANDROID_LOG_VERBOSE , ##__VA_ARGS__)
+#define _LOG(v, ...) __android_log_print(v, LOG_TAG, ##__VA_ARGS__)
+#define LOG(...) _LOG(ANDROID_LOG_INFO, ##__VA_ARGS__)
+#define LOG_FATAL(...) _LOG(ANDROID_LOG_FATAL, ##__VA_ARGS__)
+#define LOG_ERR(...) _LOG(ANDROID_LOG_ERROR, ##__VA_ARGS__)
+#define LOG_WARN(...) _LOG(ANDROID_LOG_WARN, ##__VA_ARGS__)
+#define LOG_DEBUG(...) _LOG(ANDROID_LOG_DEBUG, ##__VA_ARGS__)
+#define LOG_VERBOSE(...) _LOG(ANDROID_LOG_VERBOSE, ##__VA_ARGS__)
 
 #endif //__ANDROID__
 
 // alias for LOG_ERR
-#define LOG_ERROR(s, ...) LOG_ERR(s , ##__VA_ARGS__)
+#define LOG_ERROR(s, ...) LOG_ERR(s, ##__VA_ARGS__)
 // prints message and converts a POSIX errno to error message
 #define LOG_ERRNO(s, err) LOG_ERR("%s:%s", s, strerror(err))
 #define LOG_ERROR_ERRNO(s, err) LOG_ERRNO(s, err)
