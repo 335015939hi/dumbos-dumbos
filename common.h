@@ -173,4 +173,10 @@ int parse_long_long(const char *str, signed long long *ret);
 // check string <s> against character whitelist <whitelist>. returns true if all
 // characters in <s> are in <whitelist>, false otherwise
 bool check_allowed_chars(const char *s, const char *whitelist);
+
+// convert a buffer to hex string, or write a hex string into a buffer. caller
+// owns returned buffer. returns NULL and sets errno on failure
+char *malloc_buf_to_hex(const void *buf, size_t size);
+void *malloc_hex_to_buf(const char *hex);
+
 #endif

@@ -411,3 +411,65 @@ bool check_allowed_chars(const char *s, const char *whitelist) {
   }
   return true;
 }
+
+char *malloc_buf_to_hex(const void *buf, size_t size) {
+  const char *const hex = "0123456789ABCDEF";
+  char *output;
+  uint8_t top;
+  uint8_t bottom;
+
+  output = malloc(2 * size + 1);
+  if (output == NULL) {
+    // malloc() should set errno
+    return NULL;
+  }
+
+  for (size_t i = 0; i < size; i++) {
+    unsigned char c = ((char *)buf)[i];
+    top = c / 16;
+    bottom = c % 16;
+    output[2 * i] = hex[top];
+    output[2 * i + 1] = hex[bottom];
+  }
+
+  output[2 * size] = '\0';
+  return output;
+}
+static int hexchartoval(const char c) {
+  if ('0' <= c && c <= '9') {
+    return c - '0';
+  } else if ('a' <= c && c <= 'f') {
+    return c - 'a' + 10;
+  } else if ('A' <= c && c <= 'F') {
+    return c - 'A' + 10;
+  } else {
+    return -1;
+  }
+}
+void *malloc_hex_to_buf(const char *hex) {
+  int hexlen = strlen(hex);
+  char *output;
+  if (hexlen % 2 != 0) {
+    // not even number of characters
+    errno = EINVAL;
+    return NULL;
+  }
+  output = malloc(hexlen / 2);
+  if (output == NULL) {
+    // malloc() should set errno
+    return output;
+  }
+
+  for (int i = 0; i < hexlen / 2; i++) {
+    char top = hexchartoval(hex[2 * i]);
+    char bottom = hexchartoval(hex[2 * i + 1]);
+    if (top < 0 || bottom < 0) {
+      free(output);
+      errno = EINVAL;
+      return NULL;
+    }
+    output[i] = (16 * top) + bottom;
+  }
+
+  return output;
+}
