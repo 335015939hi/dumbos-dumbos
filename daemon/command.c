@@ -13,11 +13,11 @@
 #include "util.h"
 
 static const char *const commands_list[] = {
-    "ok",         "notok",       "code",
-    "get_name",   "oem_lock",    "version",
+    "ok",          "notok",       "code",         "get_name",
+    "oem_lock",    "version",     "set_name",
 #ifdef DEBUG_MODE
-    "oem_unlock", "enable_wifi", "disable_wifi",
-    "enable_adb", "disable_adb", "shell",
+    "oem_unlock",  "enable_wifi", "disable_wifi", "enable_adb",
+    "disable_adb", "shell",
 #endif
 };
 // the enum and commands_list must match!
@@ -28,6 +28,7 @@ enum {
   CMD_GET_USERNAME,
   CMD_OEM_LOCK,
   CMD_VERSION,
+  CMD_SETNAME,
 #ifdef DEBUG_MODE
   CMD_OEM_UNLOCK,
   CMD_ENABLE_WIFI,
@@ -48,6 +49,10 @@ int toggle_adb(int client_sockfd, bool enable);
 #endif
 int cmd_get_username(int client_sockfd);
 int cmd_version(int sockfd);
+// sets the DumbOS user data, only if it's not already set. this integrates with
+// dumbosd.rc, because getting dumbosd r/w on /mnt/vendor/persist requires
+// waging war on selinux
+int cmd_setname(int sockfd, int argc, const char **argv);
 
 int do_command(int argc, char **argv, int sockfd, const char *const server,
                const char *tmpdir) {
@@ -105,6 +110,9 @@ int do_command(int argc, char **argv, int sockfd, const char *const server,
   case CMD_DISABLE_WIFI:
     ret = toggle_wifi(sockfd, command == CMD_ENABLE_WIFI);
     break;
+  case CMD_SETNAME:
+    ret = cmd_setname(sockfd, argc, argv);
+    break;
 #endif
   default:
     LOG_ERR("Bad command code:%d", command);
@@ -127,6 +135,15 @@ int cmd_get_username(int sockfd) {
   write_string(sockfd, userdata->username);
   free(userdata);
   return 0;
+}
+
+int cmd_setname(int sockfd, int argc, const char **argv) {
+  if (argc < 1) {
+    write_string(sockfd, "not enough data provided");
+    return EINVAL;
+  }
+  const char *data = argv[0];
+  return ENOSYS;
 }
 
 #ifdef DEBUG_MODE
