@@ -16,6 +16,7 @@
 #include <unistd.h>
 
 #include "../common.h"
+#include "../exec_wrapper.h"
 #include "command.h"
 #include "util.h"
 
@@ -102,41 +103,23 @@ int payload_cmd_install_this(void *apk, size_t apk_size, int sockfd,
   }
   close(fd);
 
-  pid_t pid = fork();
-  if (pid < 0) {
-    err = errno;
-    LOG_ERRNO("fork error", errno);
-    unlink(path);
-    write_string(sockfd, "internal error:fork");
-    return err;
-  }
-
-  if (pid == 0) {
-    execlp("pm", "pm", "install", path, (char *)NULL);
-    _exit(127);
-  }
-  LOG_DEBUG("forked to pid %d, execlp %s %s %s", pid, "pm", "install", path);
-
-  int status;
-  if (waitpid(pid, &status, 0) < 0) {
-    err = errno;
-    LOG_ERRNO("waitpid error", errno);
-    unlink(path);
-    write_string(sockfd, "internal error:waitpid");
-    return err;
-  }
-
-  if (WIFEXITED(status)) {
-    LOG("exited with %d", WEXITSTATUS(status));
-    unlink(path);
-    err = WEXITSTATUS(status);
-    write_string(sockfd, "done. ");
-    return err;
-  }
-
-  write_string(sockfd, "pm did not exit normally");
+  LOG_DEBUG("execv_wrapper() /system/bin/pm install %s", path);
+  err = execv_wrapper("/system/bin/pm",
+                      (char *const[]){"/system/bin/pm", "install", path, NULL});
+  LOG_DEBUG("execv_wrapper() exited with %d", err);
   unlink(path);
-  return ECHILD;
+  if (err < 0) {
+    LOG_ERRNO("execv_wrapper() failed", errno);
+    write_string(sockfd, "internal error");
+    return errno;
+  } else if (err != 0) {
+    write_string(sockfd, "internal error");
+    LOG_ERRNO("command failed", err);
+    return err;
+  } else {
+    write_string(sockfd, "done");
+    return 0;
+  }
 }
 
 int payload_cmd_install_path(const char *strings, size_t size, int sockfd) {
@@ -368,51 +351,22 @@ static int firewall_helper(int sockfd, enum FIREWALL_POLICY policy, char *data,
   str_list[str_num + 2] = NULL;
 
   int err;
-  pid_t pid = fork();
-  if (pid < 0) {
-    free(str_list);
-    _exit(127);
-  }
 
-  if (pid == 0) {
-    LOG_DEBUG("firewall_helper() child");
-    LOG_DEBUG("execve %s", str_list[0]);
-    for (int i = 0; str_list[i] != NULL; i++) {
-      LOG_DEBUG("argv[%d]='%s'", i, str_list[i]);
-    }
-    execve(str_list[0], str_list, NULL);
-    // if execve succeeded we would not reach here
+  LOG_DEBUG("execv_wrapper(\"%s\",...)", str_list[0]);
+  err = execv_wrapper(str_list[0], str_list);
+  free(str_list);
+  LOG_DEBUG("execv_wrapper() exited with %d", err);
+  if (err < 0) {
     err = errno;
-    free(str_list);
-    LOG_ERRNO("execve fail", err);
+    LOG_ERRNO("execv_wrapper() failed", err);
+    write_string(sockfd, "internal error");
+    return err;
+  } else if (err > 0) {
+    LOG_ERRNO("command failed", err);
     write_string(sockfd, "internal error");
     return err;
   } else {
-    free(str_list);
-    LOG_DEBUG("firewall_helper():forked. chiled pid=%d", pid);
-    int status;
-    err = waitpid(pid, &status, 0);
-    if (err < 0) {
-      err = errno;
-      LOG_ERRNO("waitpid failed", err);
-      write_string(sockfd, "internal error");
-      return err;
-    }
-    if (WIFEXITED(status)) {
-      status = WEXITSTATUS(status);
-      if (status == 0) {
-        LOG("done");
-        return 0;
-      } else {
-        LOG_ERRNO("child failed", status);
-        write_string(sockfd, "internal error");
-        return status;
-      }
-    } else {
-      LOG_ERR("child exited abnormally");
-      write_string(sockfd, "internal error");
-      return ECHILD;
-    }
+    write_string(sockfd, "done");
     return 0;
   }
 }
@@ -425,32 +379,18 @@ int payload_cmd_firewall_flush() {
     LOG_ERRNO("failed to unlink", errno);
     return errno;
   }
-  pid_t pid = fork();
-  if (pid < 0) {
-    _exit(127);
-  }
-  if (pid == 0) {
-    errno = 0;
-    execve(FIREWALL_RELOAD_SCRIPT, (char *[]){FIREWALL_RELOAD_SCRIPT, NULL},
-           NULL);
-    // we should never reach here
-    LOG_ERRNO("failed to execve", errno);
+  LOG_DEBUG("execv_wrapper(%s)", FIREWALL_RELOAD_SCRIPT);
+  int err = execv_wrapper(FIREWALL_RELOAD_SCRIPT,
+                          (char *const[]){FIREWALL_RELOAD_SCRIPT, NULL});
+  LOG_DEBUG("execv_wrapper exited with %d", err);
+  if (err < 0) {
+    LOG_ERRNO("execv_wrapper() failed", errno);
     return errno;
+  } else if (err > 0) {
+    LOG_ERRNO("command failed", err);
+    return err;
   } else {
-    int status;
-    if (waitpid(pid, &status, 0) < 0) {
-      LOG_ERRNO("failed to waitpid", errno);
-      return errno;
-    }
-    if (WIFEXITED(status)) {
-      status = WEXITSTATUS(status);
-      LOG("%s exited with %d:%s", FIREWALL_RELOAD_SCRIPT, status,
-          strerror(status));
-      return status;
-    } else {
-      LOG_ERR("%s exited abnormally", FIREWALL_RELOAD_SCRIPT);
-      return ECHILD;
-    }
+    return 0;
   }
 }
 int payload_cmd_firewall_add(int sockfd, void *data, size_t size) {

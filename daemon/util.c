@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #include "../common.h"
+#include "../exec_wrapper.h"
 #include "util.h"
 
 int rm_r(const char *const path) {
@@ -172,34 +173,69 @@ char *find_removable_blockdev(void) {
 // system()
 int set_oem_lock(bool status) {
   const char *cmd;
+  int err;
   if (status) {
     // OEM lock
-    cmd = "service call oem_lock 4 i32 0";
+    err = execv_wrapper("/system/bin/service",
+                        (char *const[]){"/system/bin/service", "call",
+                                        "oem_lock", "4", "i32", "0", NULL});
   } else {
     // OEM unlock
-    cmd = "service call oem_lock 4 i32 1";
+    err = execv_wrapper("/system/bin/service",
+                        (char *const[]){"/system/bin/service", "call",
+                                        "oem_lock", "4", "i32", "1", NULL});
   }
-  return WEXITSTATUS(system(cmd));
+  if (err < 0) {
+    return errno;
+  } else {
+    return err;
+  }
 }
 int set_wifi_enabled(bool status) {
   const char *cmd;
+  int err;
   if (status) {
-    cmd = "start wificond";
+    err = execv_wrapper("/system/bin/start",
+                        (char *const[]){"/system/bin/start", "wificond", NULL});
   } else {
-    cmd = "stop wificond";
+    err = execv_wrapper("/system/bin/stop",
+                        (char *const[]){"/system/bin/stop", "wificond", NULL});
   }
-  return WEXITSTATUS(system(cmd));
+  if (err < 0) {
+    return errno;
+  } else {
+    return err;
+  }
 }
 int set_adb_enabled(bool status) {
   const char *cmd;
+  int err;
   if (status) {
-    cmd = "settings put global development_settings_enabled 1 && settings "
-          "put global adb_enabled 1";
+    err = execv_wrapper("/system/bin/settings",
+                        (char *const[]){"/system/bin/settings", "put", "global",
+                                        "development_settings_enabled", "1",
+                                        NULL});
+    if (err == 0) {
+      err = execv_wrapper("/system/bin/settings",
+                          (char *const[]){"/system/bin/settings", "put",
+                                          "global", "adb_enabled", "1", NULL});
+    }
   } else {
-    cmd = "settings put global adb_enabled 0 && settings "
-          "put global development_settings_enabled 0";
+    err = execv_wrapper("/system/bin/settings",
+                        (char *const[]){"/system/bin/settings", "put", "global",
+                                        "adb_enabled", "0", NULL});
+    if (err == 0) {
+      err = execv_wrapper(
+          "/system/bin/settings",
+          (char *const[]){"/system/bin/settings", "put", "global",
+                          "development_settings_enabled", "0", NULL});
+    }
   }
-  return WEXITSTATUS(system(cmd));
+  if (err < 0) {
+    return errno;
+  } else {
+    return err;
+  }
 }
 
 static size_t geturltime_header_callback(char *buffer, size_t size,

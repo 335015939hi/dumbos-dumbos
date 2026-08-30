@@ -38,6 +38,7 @@ cc_binary {
         "dumbpayload.c",
         "common.c",
         "ed25519.c",
+        "exec_wrapper.c",
     ],
     
     shared_libs: [
