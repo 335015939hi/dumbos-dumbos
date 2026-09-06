@@ -139,7 +139,6 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
     }
   }
 
-  // TODO:per-user codes
   response =
       dp_malloc_check_load(code, user, &responselen, _ed25519_private_key_hex);
   if (response == NULL) {

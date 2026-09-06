@@ -46,7 +46,7 @@ void *dp_malloc_check_load(const char *const code, const char *username,
   LOG("using path '%s'", path);
 
   userpath = malloc(PATH_MAX);
-  if (!path)
+  if (!userpath)
     return NULL;
   err = snprintf(userpath, PATH_MAX, "%s%s/%s%s", USERDATA_PREFIX, username,
                  CODE_FILE_PREFIX, code);
