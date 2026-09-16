@@ -32,6 +32,8 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
       connection, MHD_GET_ARGUMENT_KIND, "requestid");
   const char *requestsig = MHD_lookup_connection_value(
       connection, MHD_GET_ARGUMENT_KIND, "requestsig");
+  const char *requesttime =
+      MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "time");
 
   struct DUMB_PAYLOAD *response = NULL;
   FILE *request_file = NULL;
@@ -66,8 +68,14 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
                                  "text/plain; charset=utf-8",
                                  "404 Not Found\n");
     }
-    LOG("code='%s' user='%s' requestid='%s' requestsig='%s'", code, user,
-        requestid, requestsig);
+    if (requesttime == NULL) {
+      LOG_ERR("no requesttime");
+      return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
+                                 "text/plain; charset=utf-8",
+                                 "404 Not Found\n");
+    }
+    LOG("code='%s' user='%s' requestid='%s' requestsig='%s' requesttime='%s'",
+        code, user, requestid, requestsig, requesttime);
     if (!check_allowed_chars(user, DUMBOS_USER_ALLOWED_CHARS)) {
       LOG_ERR("invalid characters detected in user '%s'", user);
       return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
@@ -107,7 +115,8 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
     fclose(user_pubkey_file);
 
     // FIXME: request ID expire
-    err = request_id_verify(user, requestid, "TODO:", requestsig, user_pubkey);
+    err = request_id_verify(user, requestid, requesttime, requestsig,
+                            user_pubkey);
     LOG_DEBUG("request_id_verify return %d", err);
     if (err != 0) {
       free(request_data_path);
