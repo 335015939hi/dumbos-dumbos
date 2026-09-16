@@ -86,6 +86,12 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
                                  "text/plain; charset=utf-8",
                                  "404 Not Found\n");
     }
+    if (!check_allowed_chars(requestid, REQUESTID_ALLOWED_CHARS)) {
+      LOG_ERR("invalid request ID");
+      return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
+                                 "text/plain; charset=utf-8",
+                                 "404 Not Found\n");
+    }
     char *userpath;
     char *user_pubkey_path;
     char *request_data_path;
