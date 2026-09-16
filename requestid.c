@@ -24,6 +24,10 @@ int request_id_sign(char *output, const char *user, const char *request_id,
                     long long request_time, const char *priv_key_hex) {
   char *data;
   int err;
+  if (!check_allowed_chars(request_id, REQUESTID_ALLOWED_CHARS)) {
+    LOG_ERR("invalid characters detected in request id");
+    return EINVAL;
+  }
   ssize_t data_size = asprintf(&data, "%s%s%s%lld", user, REQUEST_ID_MAGIC,
                                request_id, request_time);
   if (data_size < 0) {
