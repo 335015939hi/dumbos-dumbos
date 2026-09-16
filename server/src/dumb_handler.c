@@ -52,11 +52,14 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
     return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
                                "text/plain; charset=utf-8", "404 Not Found\n");
   }
+#ifdef DEBUG_MODE
   if (!strcmp(user, DUMBOS_DEFAULT_USER)) {
     LOG_WARN("default user %s detected", user);
-    // always allow default user.
+    // always allow default user in debug mode.
 
-  } else {
+  } else
+#endif
+  {
     if (requestid == NULL) {
       LOG_ERR("no requestid");
       return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
