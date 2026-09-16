@@ -1,4 +1,5 @@
 
+#include <asm-generic/errno-base.h>
 #define _GNU_SOURCE
 
 #include <errno.h>
@@ -114,7 +115,6 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
     }
     fclose(user_pubkey_file);
 
-    // FIXME: request ID expire
     err = request_id_verify(user, requestid, requesttime, requestsig,
                             user_pubkey);
     LOG_DEBUG("request_id_verify return %d", err);
@@ -127,17 +127,22 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
                                  "404 Not Found\n");
     }
 
-    err = access(request_data_path, F_OK);
-    if (err == 0) {
+    int fd =
+        open(request_data_path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
+    if (fd < 0) {
       free(request_data_path);
-      LOG_ERR("request id already used");
+      if (errno == EEXIST) {
+        LOG_ERR("request id already used");
+      } else {
+        LOG_ERRNO("error opening file", errno);
+      }
       return queue_text_response(connection, MHD_HTTP_NOT_FOUND,
                                  "text/plain; charset=utf-8",
                                  "404 Not Found\n");
     }
 
     LOG_DEBUG("opening '%s'", request_data_path);
-    request_file = fopen(request_data_path, "wb");
+    request_file = fdopen(fd, "wb");
     free(request_data_path);
     if (request_file == NULL) {
       LOG_ERRNO("opening file failed", errno);
