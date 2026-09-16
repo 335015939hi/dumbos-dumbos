@@ -9,6 +9,7 @@
 #include <time.h>
 
 #include "common.h"
+#include "dumb.h"
 #include "ed25519.h"
 #include "requestid.h"
 
@@ -21,14 +22,13 @@ const char *request_id_chars = REQUESTID_ALLOWED_CHARS;
 
 int request_id_sign(char *output, const char *user, const char *request_id,
                     long long request_time, const char *priv_key_hex) {
-  size_t data_size =
-      strlen(user) + strlen(request_id) + strlen(REQUEST_ID_MAGIC) + 1;
   char *data;
   int err;
-  err = asprintf(&data, "%s%s%s", user, REQUEST_ID_MAGIC, request_id);
-  if (err < 0) {
+  ssize_t data_size = asprintf(&data, "%s%s%s%lld", user, REQUEST_ID_MAGIC,
+                               request_id, request_time);
+  if (data_size < 0) {
     err = errno;
-    LOG_ERRNO("asprintf failed", errno);
+    LOG_ERRNO("asprintf failed", err);
     return err;
   }
   err = ed25519_sign_hex(priv_key_hex, data, data_size, output);
@@ -54,12 +54,11 @@ char *request_id_generate(void) {
 int request_id_verify(const char *user, const char *request_id,
                       const char *request_time_str, const char *signature,
                       const char *pub_key_hex) {
-  size_t data_size =
-      strlen(user) + strlen(request_id) + strlen(REQUEST_ID_MAGIC) + 1;
   char *data;
   int err;
-  err = asprintf(&data, "%s%s%s", user, REQUEST_ID_MAGIC, request_id);
-  if (err < 0) {
+  ssize_t data_size = asprintf(&data, "%s%s%s%s", user, REQUEST_ID_MAGIC,
+                               request_id, request_time_str);
+  if (data_size < 0) {
     err = errno;
     LOG_ERRNO("asprintf failed", errno);
     return err;
@@ -69,9 +68,18 @@ int request_id_verify(const char *user, const char *request_id,
   if (err != 0) {
     LOG_ERRNO("request_id_verify():ed25519_verify_hex failed", errno);
     return errno;
-  } else {
-    return 0;
   }
+  long long request_time;
+  if (parse_long_long(request_time_str, &request_time) != 0) {
+    LOG_ERR("request time '%s': invalid string", request_time_str);
+    return EINVAL;
+  }
+  if (request_time + DEFAULT_EXPIRE_TIME < time(NULL)) {
+    LOG_ERR("request ID expired");
+    return EKEYEXPIRED;
+  }
+
+  return 0;
 }
 
 struct DUMBOS_USER_DATA *dumbos_alloc_get_user(void) {
