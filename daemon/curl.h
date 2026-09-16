@@ -1,6 +1,8 @@
 #ifndef _DUMB_CURL_H
 #define _DUMB_CURL_H
 
+#include <stddef.h>
+
 typedef struct custom_certificate {
   const void *ca_pem;
   size_t ca_pem_len;

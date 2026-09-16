@@ -1,6 +1,8 @@
 #ifndef _ED25519_H
 #define _ED25519_H
 
+#include <stddef.h>
+
 // chatgpt code
 
 #define ED25519_PUBLIC_KEY_SIZE 32

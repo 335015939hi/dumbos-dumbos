@@ -20,7 +20,7 @@
 #define CODE_CMD_INSTALLTHIS "install-this"
 // install package given by path. data is path and checksum (2 strings)
 #define CODE_CMD_INSTALL_PATH "install-path"
-// mount /dev/block/sda1 and copy /sdcard/* to it
+// mount /dev/block/sda1 and copy /sdcard/ * to it
 #define CODE_CMD_FILE_EXPORT "export-files"
 // mount /dev/block/sda1 and copy files from it to internal storage
 #define CODE_CMD_FILE_IMPORT "import-files"
@@ -381,16 +381,17 @@ static int cmd_composite(int argc, const char **argv) {
   }
 
   size_t total_written = 0;
-  err = fwrite(payload, 1, size, destfile);
-  if (err != size) {
+  size_t written;
+  written = fwrite(payload, 1, size, destfile);
+  if (written != size) {
     err = errno;
     LOG_ERRNO("failed writing to file", err);
     fclose(destfile);
     free(payload);
     return err;
   }
-  LOG_DEBUG("wrote %zu bytes", err);
-  total_written += err;
+  LOG_DEBUG("wrote %zu bytes", written);
+  total_written += written;
   free(payload);
 
   if (sizeof(payload_count) !=
@@ -448,6 +449,7 @@ static int cmd_composite(int argc, const char **argv) {
   }
   fclose(destfile);
   LOG("%zu bytes written", total_written);
+  return 0;
 }
 
 int cmd_command_set(int argc, const char **argv) {

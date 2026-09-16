@@ -1,7 +1,7 @@
 
 #include <errno.h>
 #include <selinux/selinux.h>
-#include <stdio.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
