@@ -68,7 +68,8 @@ enum MHD_Result dumb_log_upload_handler(struct MHD_Connection *connection,
   }
   user_pubkey_hex[ED25519_PUBLIC_KEY_HEX_SIZE - 1] = '\0';
 
-  err = request_id_verify(user, requestid, requestsig, user_pubkey_hex);
+  // FIXME: request ID expire time
+  err = request_id_verify(user, requestid, "TODO", requestsig, user_pubkey_hex);
   LOG_DEBUG("request_id_verify() returned %d", err);
   if (err != 0) {
     LOG_ERRNO("failed to verify request", err);

@@ -106,9 +106,8 @@ enum MHD_Result dumb_handler(struct MHD_Connection *connection) {
     }
     fclose(user_pubkey_file);
 
-    // FIXME:implement replay protection (check for request_data_path file
-    // (meaning requestid used), or create if not exist (consume the requestid))
-    err = request_id_verify(user, requestid, requestsig, user_pubkey);
+    // FIXME: request ID expire
+    err = request_id_verify(user, requestid, "TODO:", requestsig, user_pubkey);
     LOG_DEBUG("request_id_verify return %d", err);
     if (err != 0) {
       free(request_data_path);

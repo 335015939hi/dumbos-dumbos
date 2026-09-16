@@ -100,10 +100,7 @@ int handle_one_payload(int sockfd, struct DUMB_PAYLOAD *payload, time_t time,
     err = payload_cmd_firewall_add_temp(sockfd, payload->payload, payload_size);
   } else if (streq(cmd, CODE_CMD_FW_FLUSH)) {
     err = payload_cmd_firewall_flush();
-  }
-  // TODO:implement other commands
-
-  else {
+  } else {
     LOG_ERR("unknown command:%s", payload->command);
     err = ENOSYS;
     write_string(sockfd, "unknown command:");
@@ -179,7 +176,7 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
     return errno;
   }
   err = request_id_sign(request_signature, userdata->username, requestid,
-                        userdata->priv_key_hex);
+                        net_time, userdata->priv_key_hex);
   if (err != 0) {
     LOG_ERRNO("request_id_sign() failed", err);
     free(request_signature);
@@ -187,8 +184,10 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
     return err;
   }
 
-  err = asprintf(&url, "%s?code=%s&user=%s&requestid=%s&requestsig=%s", host,
-                 argv[0], userdata->username, requestid, request_signature);
+  err =
+      asprintf(&url, "%s?code=%s&user=%s&requestid=%s&requestsig=%s&time=%lld",
+               host, argv[0], userdata->username, requestid, request_signature,
+               (long long)net_time);
   free(request_signature);
   free(userdata);
   if (err < 0) {

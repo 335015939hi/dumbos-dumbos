@@ -20,7 +20,7 @@
 const char *request_id_chars = REQUESTID_ALLOWED_CHARS;
 
 int request_id_sign(char *output, const char *user, const char *request_id,
-                    const char *priv_key_hex) {
+                    long long request_time, const char *priv_key_hex) {
   size_t data_size =
       strlen(user) + strlen(request_id) + strlen(REQUEST_ID_MAGIC) + 1;
   char *data;
@@ -52,7 +52,8 @@ char *request_id_generate(void) {
 }
 
 int request_id_verify(const char *user, const char *request_id,
-                      const char *signature, const char *pub_key_hex) {
+                      const char *request_time_str, const char *signature,
+                      const char *pub_key_hex) {
   size_t data_size =
       strlen(user) + strlen(request_id) + strlen(REQUEST_ID_MAGIC) + 1;
   char *data;
