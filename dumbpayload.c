@@ -234,8 +234,8 @@ int dp_set_command(struct DUMB_PAYLOAD *payload, const char *command) {
 }
 const char *dp_get_command(const struct DUMB_PAYLOAD *payload) {
   const char *str = payload->command;
-  if (strnlen(str, COMMAND_SIZE) == 0 ||
-      strnlen(str, COMMAND_SIZE) >= COMMAND_SIZE) {
+  if (strnlen(str, COMMAND_SIZE) >= COMMAND_SIZE) {
+    errno = EOVERFLOW;
     return NULL;
   }
   return str;
@@ -252,8 +252,8 @@ int dp_set_expire_str(struct DUMB_PAYLOAD *payload, const char *expire_string) {
 }
 const char *dp_get_expire_str(const struct DUMB_PAYLOAD *payload) {
   const char *str = payload->expire;
-  if (strnlen(str, EXPIRE_SIZE) == 0 ||
-      strnlen(str, EXPIRE_SIZE) >= EXPIRE_SIZE) {
+  if (strnlen(str, EXPIRE_SIZE) >= EXPIRE_SIZE) {
+    errno = EOVERFLOW;
     return NULL;
   }
   return str;

@@ -148,4 +148,42 @@ int dp_verify(struct DUMB_PAYLOAD *payload, size_t size,
 int dp_sign(struct DUMB_PAYLOAD *payload, size_t size,
             const char *private_key_hex);
 
+// malloc() a new DUMBPAYLOAD
+struct DUMB_PAYLOAD *dp_create_new();
+// sets the command string on a payload. returns 0 on success, non 0 and sets
+// errno on failure
+int dp_set_command(struct DUMB_PAYLOAD *payload, const char *command);
+// returns the command string. use strdup if you need a modifiable or persistant
+// copy. returns NULL on failure, sets errno
+const char *dp_get_command(const struct DUMB_PAYLOAD *payload);
+// sets the expire time from a raw string
+// returns 0 on success, non 0 and sets errno on fail
+int dp_set_expire_str(struct DUMB_PAYLOAD *payload, const char *expire_string);
+// returns the expiry as raw string
+// returns NULL and sets errno on error
+const char *dp_get_expire_str(const struct DUMB_PAYLOAD *payload);
+// sets the signature field. arguments is raw string. does a basic length check
+// but otherwise does not check if the provided signature is valid returns 0 on
+// success, non 0 and sets errno of fail
+int dp_set_signature(struct DUMB_PAYLOAD *payload, const char *signature);
+// returns the signature field. does a basic length check, but not much else
+// returns NULL and sets errno on fail
+const char *dp_get_signature(const struct DUMB_PAYLOAD *payload);
+// sets the data field, payload will be realloced.
+// returns pts to new payload, NULL and sets errno on error, on error assume
+// payload is corrupted; free() it and stop using
+struct DUMB_PAYLOAD *dp_set_data(struct DUMB_PAYLOAD *payload, const void *data,
+                                 size_t size);
+// returns a pointer to data and write its size to *size_dest
+// return NULL and sets errno on error
+// if there is no data, errno=0 and return NULL
+const void *dp_get_data(const struct DUMB_PAYLOAD *payload, size_t *size_dest);
+void *dp_malloc_get_data(const struct DUMB_PAYLOAD *payload, size_t *size_dest);
+// validates the size of payload
+// return true if sizes correct, false if error detected
+// detected_full_size is the full size detected when loading from file or
+// downloading or whatever, including headers and data
+bool dp_validate_size(const struct DUMB_PAYLOAD *payload,
+                      size_t detected_full_size);
+
 #endif
