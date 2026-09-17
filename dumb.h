@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <time.h>
 
 #include "common.h"  //for DEBUG_MODE
@@ -38,6 +39,10 @@ void *malloc_prepare_file(const char *const code, size_t *ret_len);
 // DEFAULT_EXPIRE_TIME seconds after being used for the first time
 #define DEFAULT_EXPIRE_TIME 60
 
+// cap the max payload data size at 512MiB. the actual payload will be a little
+// bigger, because of metadata
+#define DUMB_PAYLOAD_DATA_MAX_SIZE (512 * 1024 * 1024)
+
 // struct defining a payload.
 // sizeof(struct DUMB_PAYLOAD) will exlucde the .payload (to be renamed .data)
 // field
@@ -52,6 +57,9 @@ struct DUMB_PAYLOAD {
   char expire[EXPIRE_SIZE];
   // the command. see the macros below CODE_CMD_*
   char command[COMMAND_SIZE];
+  // the size of the data, in network endianess
+  // use helper functions to get or set this
+  uint32_t data_size;
   // the data of the payload. this is dependent in what the payload is supposed
   // to do and therefore of unknown size. sizeof will exclude this field.
   // FIXME:rename to data
