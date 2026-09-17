@@ -358,6 +358,9 @@ void *dp_malloc_get_data(const struct DUMB_PAYLOAD *payload,
 // downloading or whatever, including headers and data
 bool dp_validate_size(const struct DUMB_PAYLOAD *payload,
                       size_t detected_full_size) {
+  if (detected_full_size < sizeof(struct DUMB_PAYLOAD)) {
+    return false;
+  }
   ssize_t data_size = dp_get_data_size(payload);
   if (data_size < 0) {
     return false;
