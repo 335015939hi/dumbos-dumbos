@@ -19,28 +19,6 @@
 #include "dumb.h"
 #include "ed25519.h"
 
-// checks code for illegal characters
-// FIXME: i wrote a better one somewhere, use that instead
-static bool check_code_allowed_chars(const char *const code) {
-  unsigned int len = strlen(code);
-  if (len > CODE_MAXLEN) {
-    return false;
-  }
-  for (unsigned int i = 0; i < len; i++) {
-    bool good = false;
-    for (unsigned int j = 0; j < strlen(SECRET_CODE_ALLOWED_CHARS); j++) {
-      if (SECRET_CODE_ALLOWED_CHARS[j] == code[i]) {
-        good = true;
-        break;
-      }
-    }
-    if (!good) {
-      return false;
-    }
-  }
-  return true;
-}
-
 int dp_sign(struct DUMB_PAYLOAD *payload, size_t size,
             const char *private_key_hex) {
   char signature[ED25519_SIGNATURE_HEX_SIZE];
