@@ -64,6 +64,8 @@ int dp_verify(struct DUMB_PAYLOAD *payload, size_t size,
   // consistancy
   memcpy(signature, payload->signature, ED25519_SIGNATURE_HEX_SIZE);
   memset(payload->signature, '\0', ED25519_SIGNATURE_HEX_SIZE);
+  // force NULL-terminate
+  signature[ED25519_SIGNATURE_HEX_SIZE - 1] = '\0';
   // magic
   return ed25519_verify_hex(pubkey_hex, payload, size, signature);
 }
