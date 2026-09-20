@@ -185,5 +185,9 @@ void *dp_malloc_get_data(const struct DUMB_PAYLOAD *payload, size_t *size_dest);
 // downloading or whatever, including headers and data
 bool dp_validate_size(const struct DUMB_PAYLOAD *payload,
                       size_t detected_full_size);
+// warning: this function trusts the data_size field. make sure the source of
+// the payload is trustworthy!! write <payload> to file at <pathname>. returns 0
+// on success, not 0 and sets errno on fail
+int dp_write_to_file(const struct DUMB_PAYLOAD *payload, const char *pathname);
 
 #endif

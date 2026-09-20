@@ -13,6 +13,8 @@ a.out
 /server/dumb-codes/
 /server/public/
 /server/cmake_install.cmake
+#dumbtool cargo output
+/dumbtool/target/
 
 #keys
 /keys/

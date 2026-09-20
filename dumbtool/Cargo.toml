@@ -1,0 +1,12 @@
+[package]
+name = "dumbtool"
+version = "0.1.0"
+edition = "2024"
+build="build.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+errno = "0.3.14"
+
+[build-dependencies]
+cc = "1"
