@@ -308,7 +308,7 @@ int read_file(const int fd, const char *const dest) {
   size = ntohl(size);
 
   // weight control
-  if (size > MAX_FILE_SIZE || size < 0) {
+  if (size > MAX_FILE_SIZE) {
     close(destfd);
     unlink(dest);
     errno = EFBIG;
