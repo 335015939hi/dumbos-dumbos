@@ -1,5 +1,5 @@
-mod cmd_new;
 mod cmd_cmdget;
+mod cmd_new;
 mod dumb;
 
 use clap::{Parser, Subcommand};
