@@ -355,16 +355,18 @@ bool dp_validate_size(const struct DUMB_PAYLOAD *payload,
 // the payload is trustworthy!! write <payload> to file at <pathname>. returns 0
 // on success, not 0 and sets errno on fail
 int dp_write_to_file(const struct DUMB_PAYLOAD *payload, const char *pathname) {
-  int fd = open(pathname, O_WRONLY | O_CREAT, 00600);
+  int fd = open(pathname, O_WRONLY | O_CREAT | O_TRUNC, 00600);
   if (fd < 0) {
     return -1;
   }
   ssize_t size = dp_get_data_size(payload);
   if (size < 0) {
+    close(fd);
     return -1;
   }
   size += sizeof(struct DUMB_PAYLOAD);
   if (write_all(fd, payload, size) < 0) {
+    close(fd);
     return -1;
   }
   close(fd);
