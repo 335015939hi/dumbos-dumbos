@@ -17,9 +17,7 @@ pub fn main(code: Option<Vec<String>>, file: Option<Vec<String>>) -> Result<(), 
     }
 
     for file in filelist {
-        println!("creating new code {file}");
-        let payload = dumb::create_new();
-        dumb::write_to_file(payload, file);
+        println!("{file}");
     }
     return Ok(());
 }
