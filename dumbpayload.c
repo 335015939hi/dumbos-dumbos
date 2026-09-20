@@ -361,12 +361,16 @@ int dp_write_to_file(const struct DUMB_PAYLOAD *payload, const char *pathname) {
   }
   ssize_t size = dp_get_data_size(payload);
   if (size < 0) {
+    int err = errno;
     close(fd);
+    errno = err;
     return -1;
   }
   size += sizeof(struct DUMB_PAYLOAD);
   if (write_all(fd, payload, size) < 0) {
+    int err = errno;
     close(fd);
+    errno = err;
     return -1;
   }
   close(fd);

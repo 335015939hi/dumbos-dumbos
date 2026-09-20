@@ -18,7 +18,7 @@ pub fn main(code: Option<Vec<String>>, file: Option<Vec<String>>) -> Result<(), 
 
     for file in filelist {
         let payload = dumb::read_from_file(&file);
-        let command = dumb::get_command(payload);
+        let command = dumb::get_command(&payload);
         println!("{file}:{command}");
     }
     return Ok(());
