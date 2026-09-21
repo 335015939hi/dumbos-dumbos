@@ -28,11 +28,14 @@ impl Drop for DumbPayload {
 }
 
 unsafe extern "C" {
+    //defined in dumb.h
     fn dp_create_new() -> *mut DUMB_PAYLOAD;
     fn dp_write_to_file(payload: *const DUMB_PAYLOAD, pathname: *const c_char) -> c_int;
     fn dp_get_command(payload: *const DUMB_PAYLOAD) -> *const c_char;
+    fn dp_set_command(payload: *mut DUMB_PAYLOAD, command: *const c_char) -> c_int;
     fn dp_malloc_load(path: *const c_char, ret_size: *mut usize) -> *mut DUMB_PAYLOAD;
     fn dp_validate_size(payload: *const DUMB_PAYLOAD, detected_full_size: usize) -> bool;
+    //other C functions
     fn free(buf: *mut c_void);
 }
 
@@ -86,4 +89,17 @@ pub fn get_command(payload: &DumbPayload) -> String {
     }
     let command = unsafe { CStr::from_ptr(command).to_str().unwrap().to_owned() };
     return command;
+}
+
+pub fn set_command(payload: &DumbPayload, command: &String) {
+    unsafe {
+        let result = dp_set_command(
+            payload.ptr,
+            CString::new(command.as_str()).unwrap().as_ptr(),
+        );
+        if result != 0 {
+            let err = errno::errno();
+            panic!("dp_set_command() failed:{} ({})", err.0, err);
+        }
+    }
 }
