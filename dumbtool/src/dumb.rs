@@ -41,8 +41,33 @@ unsafe extern "C" {
         size: usize,
     ) -> *mut DUMB_PAYLOAD;
     fn dp_malloc_get_data(payload: *const DUMB_PAYLOAD, size_dest: *mut usize) -> *mut c_void;
+    fn dp_get_expire_str(payload: *const DUMB_PAYLOAD) -> *const c_char;
+    fn dp_set_expire_str(payload: *mut DUMB_PAYLOAD, expire_string: *const c_char) -> c_int;
     //other C functions
     fn free(buf: *mut c_void);
+}
+
+pub fn set_expire_raw(payload: &mut DumbPayload, expire: &String) {
+    unsafe {
+        let result =
+            dp_set_expire_str(payload.ptr, CString::new(expire.as_str()).unwrap().as_ptr());
+        if result != 0 {
+            let err = errno::errno();
+            panic!("dp_set_expire_str() failed:{} ({})", err.0, err);
+        }
+    }
+}
+pub fn get_expire_raw(payload: &DumbPayload) -> String {
+    let expire: String;
+    unsafe {
+        let result = dp_get_expire_str(payload.ptr);
+        if result == std::ptr::null_mut() {
+            let err = errno::errno();
+            panic!("dp_get_expire_str() failed:{} ({})", err.0, err);
+        }
+        expire = CStr::from_ptr(result).to_str().unwrap().to_owned();
+    }
+    return expire;
 }
 
 pub fn create_new() -> DumbPayload {

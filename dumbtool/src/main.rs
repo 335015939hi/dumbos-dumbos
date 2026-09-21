@@ -1,6 +1,7 @@
 mod cmd_cmdget;
 mod cmd_cmdsetraw;
 mod cmd_datagetset;
+mod cmd_expire;
 mod cmd_new;
 mod dumb;
 
@@ -43,6 +44,13 @@ enum Commands {
         #[arg(short, long, default_value = "-")]
         input: String,
     },
+    /// get expire date as raw string
+    ExpireGetRaw,
+    /// set expire date as raw string
+    ExpireSetRaw {
+        /// the new expire time, as raw string
+        expire: String,
+    },
 }
 
 fn main() -> Result<(), String> {
@@ -76,6 +84,12 @@ fn main() -> Result<(), String> {
         }
         Commands::DataGet { output } => {
             return cmd_datagetset::getdata(&filelist, &output);
+        }
+        Commands::ExpireSetRaw { expire } => {
+            return cmd_expire::setRaw(&filelist, &expire);
+        }
+        Commands::ExpireGetRaw => {
+            return cmd_expire::getRaw(&filelist);
         }
     }
 }
