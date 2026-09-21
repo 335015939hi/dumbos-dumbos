@@ -35,6 +35,12 @@ unsafe extern "C" {
     fn dp_set_command(payload: *mut DUMB_PAYLOAD, command: *const c_char) -> c_int;
     fn dp_malloc_load(path: *const c_char, ret_size: *mut usize) -> *mut DUMB_PAYLOAD;
     fn dp_validate_size(payload: *const DUMB_PAYLOAD, detected_full_size: usize) -> bool;
+    fn dp_set_data(
+        payload: *mut DUMB_PAYLOAD,
+        data: *const c_void,
+        size: usize,
+    ) -> *mut DUMB_PAYLOAD;
+    fn dp_malloc_get_data(payload: *const DUMB_PAYLOAD, size_dest: *mut usize) -> *mut c_void;
     //other C functions
     fn free(buf: *mut c_void);
 }
@@ -91,7 +97,7 @@ pub fn get_command(payload: &DumbPayload) -> String {
     return command;
 }
 
-pub fn set_command(payload: &DumbPayload, command: &String) {
+pub fn set_command(payload: &mut DumbPayload, command: &String) {
     unsafe {
         let result = dp_set_command(
             payload.ptr,
@@ -102,4 +108,39 @@ pub fn set_command(payload: &DumbPayload, command: &String) {
             panic!("dp_set_command() failed:{} ({})", err.0, err);
         }
     }
+}
+
+pub fn set_data(payload: DumbPayload, data: &Vec<u8>) -> DumbPayload {
+    let result: DumbPayload;
+    let size: usize = data.len();
+    unsafe {
+        let data: *const c_void = data.as_ptr().cast();
+        let new_payload = dp_set_data(payload.ptr, data, size);
+        if new_payload == std::ptr::null_mut() {
+            let err = errno::errno();
+            panic!("dp_set_data failed:{} ({})", err.0, err);
+        }
+        result = DumbPayload { ptr: new_payload };
+    }
+    return result;
+}
+
+pub fn get_data(payload: &DumbPayload) -> Vec<u8> {
+    let result: Vec<u8>;
+    unsafe {
+        let mut size: usize = 0;
+        let data = dp_malloc_get_data(payload.ptr, &mut size);
+        if data == std::ptr::null_mut() {
+            let err = errno::errno();
+            if err.0 == 0 {
+                result = vec![];
+                return result;
+            } else {
+                panic!("dp_malloc_get_data() failed:{} ({})", err.0, err);
+            }
+        }
+        result = std::slice::from_raw_parts(data as *const u8, size).to_vec();
+        free(data);
+    }
+    return result;
 }

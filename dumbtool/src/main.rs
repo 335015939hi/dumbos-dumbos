@@ -29,6 +29,18 @@ enum Commands {
         /// new command string
         command: String,
     },
+    /// read the data field
+    DataGet {
+        /// file to write to, stdout by default
+        #[arg(short, long)]
+        output: Option<String>,
+    },
+    /// write to the data field
+    DataSetRaw {
+        /// file to read from, stdin by default
+        #[arg(short, long)]
+        input: Option<String>,
+    },
 }
 
 fn main() -> Result<(), String> {
@@ -44,6 +56,12 @@ fn main() -> Result<(), String> {
         }
         Commands::CmdSetRaw { command } => {
             return cmd_cmdsetraw::main(code, file, &command);
+        }
+        Commands::DataSetRaw { input } => {
+            return Ok(());
+        }
+        Commands::DataGet { output } => {
+            return Ok(());
         }
     }
 }
