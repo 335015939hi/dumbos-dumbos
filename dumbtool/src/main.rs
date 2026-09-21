@@ -47,15 +47,27 @@ fn main() -> Result<(), String> {
     let args = Args::parse();
     let code = args.code;
     let file = args.file;
+    let mut filelist: Vec<String> = Vec::new();
+    if code != None {
+        for codename in code.unwrap() {
+            filelist.push(format!("code-{}", codename));
+        }
+    }
+    if file != None {
+        for filename in file.unwrap() {
+            filelist.push(filename);
+        }
+    }
+
     match args.command {
         Commands::New => {
-            return cmd_new::main(code, file);
+            return cmd_new::main(&filelist);
         }
         Commands::CmdGet => {
-            return cmd_cmdget::main(code, file);
+            return cmd_cmdget::main(&filelist);
         }
         Commands::CmdSetRaw { command } => {
-            return cmd_cmdsetraw::main(code, file, &command);
+            return cmd_cmdsetraw::main(&filelist, &command);
         }
         Commands::DataSetRaw { input } => {
             return Ok(());
