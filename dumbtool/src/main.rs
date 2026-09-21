@@ -1,5 +1,6 @@
 mod cmd_cmdget;
 mod cmd_cmdsetraw;
+mod cmd_datagetset;
 mod cmd_new;
 mod dumb;
 
@@ -30,16 +31,17 @@ enum Commands {
         command: String,
     },
     /// read the data field
+    /// will concatenate output if multiple files specified
     DataGet {
         /// file to write to, stdout by default
-        #[arg(short, long)]
-        output: Option<String>,
+        #[arg(short, long, default_value = "-")]
+        output: String,
     },
     /// write to the data field
     DataSetRaw {
         /// file to read from, stdin by default
-        #[arg(short, long)]
-        input: Option<String>,
+        #[arg(short, long, default_value = "-")]
+        input: String,
     },
 }
 
@@ -70,10 +72,10 @@ fn main() -> Result<(), String> {
             return cmd_cmdsetraw::main(&filelist, &command);
         }
         Commands::DataSetRaw { input } => {
-            return Ok(());
+            return cmd_datagetset::setdata(&filelist, &input);
         }
         Commands::DataGet { output } => {
-            return Ok(());
+            return cmd_datagetset::getdata(&filelist, &output);
         }
     }
 }

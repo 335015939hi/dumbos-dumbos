@@ -110,8 +110,7 @@ pub fn set_command(payload: &mut DumbPayload, command: &String) {
     }
 }
 
-pub fn set_data(payload: DumbPayload, data: &Vec<u8>) -> DumbPayload {
-    let result: DumbPayload;
+pub fn set_data(mut payload: DumbPayload, data: &Vec<u8>) -> DumbPayload {
     let size: usize = data.len();
     unsafe {
         let data: *const c_void = data.as_ptr().cast();
@@ -120,9 +119,9 @@ pub fn set_data(payload: DumbPayload, data: &Vec<u8>) -> DumbPayload {
             let err = errno::errno();
             panic!("dp_set_data failed:{} ({})", err.0, err);
         }
-        result = DumbPayload { ptr: new_payload };
+        payload.ptr = new_payload;
     }
-    return result;
+    return payload;
 }
 
 pub fn get_data(payload: &DumbPayload) -> Vec<u8> {
@@ -133,8 +132,7 @@ pub fn get_data(payload: &DumbPayload) -> Vec<u8> {
         if data == std::ptr::null_mut() {
             let err = errno::errno();
             if err.0 == 0 {
-                result = vec![];
-                return result;
+                return vec![];
             } else {
                 panic!("dp_malloc_get_data() failed:{} ({})", err.0, err);
             }
