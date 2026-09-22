@@ -100,10 +100,10 @@ fn main() -> Result<(), String> {
             return cmd_datagetset::getdata(&filelist, &output);
         }
         Commands::ExpireSetRaw { expire } => {
-            return cmd_expire::setRaw(&filelist, &expire);
+            return cmd_expire::set_raw(&filelist, &expire);
         }
         Commands::ExpireGetRaw => {
-            return cmd_expire::getRaw(&filelist);
+            return cmd_expire::get_raw(&filelist);
         }
         Commands::ExpireSet {
             raw,

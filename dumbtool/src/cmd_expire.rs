@@ -1,6 +1,6 @@
 use crate::dumb;
 
-pub fn getRaw(filelist: &Vec<String>) -> Result<(), String> {
+pub fn get_raw(filelist: &Vec<String>) -> Result<(), String> {
     if filelist.len() == 0 {
         return Err("One of --code or --file must be specified".to_string());
     }
@@ -13,7 +13,7 @@ pub fn getRaw(filelist: &Vec<String>) -> Result<(), String> {
     return Ok(());
 }
 
-pub fn setRaw(filelist: &Vec<String>, expire: &String) -> Result<(), String> {
+pub fn set_raw(filelist: &Vec<String>, expire: &String) -> Result<(), String> {
     if filelist.len() == 0 {
         return Err("One of --code or --file must be specified".to_string());
     }
@@ -34,15 +34,15 @@ pub fn set(
 ) -> Result<(), String> {
     if *raw != None {
         let s = raw.as_ref().unwrap();
-        return setRaw(filelist, &s);
+        return set_raw(filelist, &s);
     }
     if *timestamp != None {
         let s = format!("{}", timestamp.unwrap());
-        return setRaw(filelist, &s);
+        return set_raw(filelist, &s);
     }
     if *relative != None {
         let s = format!(":{}", relative.unwrap());
-        return setRaw(filelist, &s);
+        return set_raw(filelist, &s);
     }
     return Err("time not found".to_string());
 }

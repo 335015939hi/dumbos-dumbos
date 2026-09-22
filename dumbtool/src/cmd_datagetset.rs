@@ -28,8 +28,8 @@ pub fn getdata(filelist: &Vec<String>, output: &String) -> Result<(), String> {
     let mut data: Vec<u8> = Vec::new();
     for file in filelist {
         let payload = dumb::read_from_file(&file);
-        let mut newData = dumb::get_data(&payload);
-        data.append(&mut newData);
+        let mut new_data = dumb::get_data(&payload);
+        data.append(&mut new_data);
     }
     return Ok(write_file(&output, &data).unwrap());
 }
