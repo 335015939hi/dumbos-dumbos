@@ -51,6 +51,20 @@ enum Commands {
         /// the new expire time, as raw string
         expire: String,
     },
+    /// get expire time
+    ExpireGet,
+    /// set expire time
+    ExpireSet {
+        /// raw string
+        #[arg(long,conflicts_with_all=&["timestamp","relative"])]
+        raw: Option<String>,
+        /// UNIX timestamp
+        #[arg(short, long,conflicts_with_all=&["raw","relative"])]
+        timestamp: Option<u64>,
+        /// relative expire (time after first use), in seconds
+        #[arg(short, long,conflicts_with_all=&["timestamp","raw"])]
+        relative: Option<i32>,
+    },
 }
 
 fn main() -> Result<(), String> {
@@ -90,6 +104,16 @@ fn main() -> Result<(), String> {
         }
         Commands::ExpireGetRaw => {
             return cmd_expire::getRaw(&filelist);
+        }
+        Commands::ExpireSet {
+            raw,
+            timestamp,
+            relative,
+        } => {
+            return cmd_expire::set(&filelist, &raw, &timestamp, &relative);
+        }
+        Commands::ExpireGet => {
+            return cmd_expire::get(&filelist);
         }
     }
 }
