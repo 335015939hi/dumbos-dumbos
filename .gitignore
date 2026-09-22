@@ -15,6 +15,7 @@ a.out
 /server/cmake_install.cmake
 #dumbtool cargo output
 /dumbtool/target/
+/dumbtool/Cargo.lock
 
 #keys
 /keys/
