@@ -3,6 +3,7 @@ mod cmd_cmdsetraw;
 mod cmd_datagetset;
 mod cmd_expire;
 mod cmd_new;
+mod cmdset;
 mod dumb;
 
 use clap::{Parser, Subcommand};
@@ -65,6 +66,23 @@ enum Commands {
         #[arg(short, long,conflicts_with_all=&["timestamp","raw"])]
         relative: Option<i32>,
     },
+
+    ///  set the command of the payload
+    #[command(subcommand)]
+    CommandSet { command: PayloadCommand },
+}
+
+#[derive(Subcommand)]
+enum PayloadCommand {
+    //subcommands for high level payload commands
+    /// set the ok command
+    Ok,
+    /// install a apk file
+    InstallThis {
+        /// path of apk file
+        #[arg(short, long)]
+        apk: String,
+    },
 }
 
 fn main() -> Result<(), String> {
@@ -115,5 +133,13 @@ fn main() -> Result<(), String> {
         Commands::ExpireGet => {
             return cmd_expire::get(&filelist);
         }
+        Commands::CommandSet { command } => match command {
+            PayloadCommand::Ok => {
+                return cmdset::ok(&filelist);
+            }
+            PayloadCommand::InstallThis { apk } => {
+                return cmdset::install_this(&filelist, &apk);
+            }
+        },
     }
 }
