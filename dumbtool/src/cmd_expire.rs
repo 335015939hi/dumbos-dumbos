@@ -1,10 +1,6 @@
 use crate::dumb;
 
 pub fn get_raw(filelist: &Vec<String>) -> Result<(), String> {
-    if filelist.len() == 0 {
-        return Err("One of --code or --file must be specified".to_string());
-    }
-
     for file in filelist {
         let payload = dumb::read_from_file(&file);
         let expire = dumb::get_expire_raw(&payload);
@@ -14,10 +10,6 @@ pub fn get_raw(filelist: &Vec<String>) -> Result<(), String> {
 }
 
 pub fn set_raw(filelist: &Vec<String>, expire: &String) -> Result<(), String> {
-    if filelist.len() == 0 {
-        return Err("One of --code or --file must be specified".to_string());
-    }
-
     for file in filelist {
         let mut payload = dumb::read_from_file(&file);
         dumb::set_expire_raw(&mut payload, &expire);

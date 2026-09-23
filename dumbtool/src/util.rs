@@ -1,5 +1,4 @@
 use std::fs;
-use std::io;
 use std::io::{self, Read, Write};
 
 pub fn read_file(path: &String) -> io::Result<Vec<u8>> {

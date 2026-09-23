@@ -5,6 +5,7 @@ mod cmd_expire;
 mod cmd_new;
 mod cmdset;
 mod dumb;
+mod util;
 
 use clap::{Parser, Subcommand};
 use std::string::String;
@@ -68,8 +69,10 @@ enum Commands {
     },
 
     ///  set the command of the payload
-    #[command(subcommand)]
-    CommandSet { command: PayloadCommand },
+    CommandSet {
+        #[command(subcommand)]
+        command: PayloadCommand,
+    },
 }
 
 #[derive(Subcommand)]
@@ -80,7 +83,6 @@ enum PayloadCommand {
     /// install a apk file
     InstallThis {
         /// path of apk file
-        #[arg(short, long)]
         apk: String,
     },
 }
