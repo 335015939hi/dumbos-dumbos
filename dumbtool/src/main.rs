@@ -85,6 +85,8 @@ enum PayloadCommand {
         /// path of apk file
         apk: String,
     },
+    FileExport,
+    FileImport,
 }
 
 fn main() -> Result<(), String> {
@@ -141,6 +143,12 @@ fn main() -> Result<(), String> {
             }
             PayloadCommand::InstallThis { apk } => {
                 return cmdset::install_this(&filelist, &apk);
+            }
+            PayloadCommand::FileExport => {
+                return cmdset::file_export(&filelist);
+            }
+            PayloadCommand::FileImport => {
+                return cmdset::file_import(&filelist);
             }
         },
     }
