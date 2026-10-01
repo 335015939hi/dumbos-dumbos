@@ -20,6 +20,12 @@ struct Args {
     /// file path instead of name of code
     #[arg(short, long)]
     file: Option<Vec<String>>,
+    /// directory for DumbOS stuff, WD by default
+    #[arg(short, long, default_value = "./")]
+    directory: String,
+    /// user to use, global by default
+    #[arg(short, long)]
+    user: Option<String>,
 }
 
 #[derive(Subcommand)]
@@ -93,10 +99,25 @@ fn main() -> Result<(), String> {
     let args = Args::parse();
     let code = args.code;
     let file = args.file;
+    let mut dumb_dir = args.directory;
+    let user = if args.user != None {
+        args.user.unwrap()
+    } else {
+        String::new()
+    };
+    let user_dir = if user != "" {
+        user + "/"
+    } else {
+        String::new()
+    };
+    if !dumb_dir.ends_with('/') {
+        dumb_dir.push('/');
+    }
+    let dumb_dir = dumb_dir;
     let mut filelist: Vec<String> = Vec::new();
     if code != None {
         for codename in code.unwrap() {
-            filelist.push(format!("code-{}", codename));
+            filelist.push(format!("{}{}code-{}", dumb_dir, user_dir, codename));
         }
     }
     if file != None {
