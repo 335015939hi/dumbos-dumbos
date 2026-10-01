@@ -3,6 +3,7 @@ mod cmd_cmdsetraw;
 mod cmd_datagetset;
 mod cmd_expire;
 mod cmd_new;
+mod cmd_users;
 mod cmdset;
 mod dumb;
 mod util;
@@ -79,6 +80,8 @@ enum Commands {
         #[command(subcommand)]
         command: PayloadCommand,
     },
+    ///create a new user
+    CreateUser,
 }
 
 #[derive(Subcommand)]
@@ -158,6 +161,9 @@ fn main() -> Result<(), String> {
         }
         Commands::ExpireGet => {
             return cmd_expire::get(&filelist);
+        }
+        Commands::CreateUser => {
+            return cmd_users::create(&dumb_dir, &users);
         }
         Commands::CommandSet { command } => match command {
             PayloadCommand::Ok => {
