@@ -5,6 +5,7 @@ mod cmd_expire;
 mod cmd_new;
 mod cmd_users;
 mod cmdset;
+mod consts;
 mod dumb;
 mod util;
 
@@ -22,7 +23,7 @@ struct Args {
     #[arg(short, long)]
     file: Option<Vec<String>>,
     /// directory for DumbOS stuff, WD by default
-    #[arg(short, long, default_value = "./")]
+    #[arg(short, long, default_value = consts::CODE_FILE_PATH)]
     directory: String,
     /// user to use, global by default
     #[arg(short, long)]
@@ -116,10 +117,21 @@ fn main() -> Result<(), String> {
     if code != None {
         for codename in code.unwrap() {
             if users.len() == 0 {
-                filelist.push(format!("{}code-{}", dumb_dir, codename));
+                filelist.push(format!(
+                    "{}{}{}",
+                    dumb_dir,
+                    consts::CODE_FILE_PREFIX,
+                    codename
+                ));
             } else {
                 for user in &users {
-                    filelist.push(format!("{}{}/code-{}", dumb_dir, user, codename));
+                    filelist.push(format!(
+                        "{}{}/{}{}",
+                        dumb_dir,
+                        user,
+                        consts::CODE_FILE_PREFIX,
+                        codename
+                    ));
                 }
             }
         }

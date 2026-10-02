@@ -1,4 +1,4 @@
-use crate::{dumb, util};
+use crate::{consts, dumb, util};
 
 use std::fs;
 
@@ -12,10 +12,9 @@ pub fn create(directory: &String, users: &Vec<String>) -> Result<(), String> {
         if !directory.ends_with('/') {
             directory.push('/');
         }
-        let user_path = format!("{directory}{user}/");
+        let user_path = format!("{directory}{}{user}/", consts::USERDATA_PREFIX);
         let user_blob_file_path = format!("{user_path}{user}.blob");
-        //defined in server/src/dumbserver.h
-        let user_pubkey_path = format!("{user_path}pubkey");
+        let user_pubkey_path = format!("{user_path}{}", consts::SERVER_USER_PUBKEY_FILE);
 
         fs::create_dir_all(user_path).unwrap();
         util::write_file(&user_pubkey_path, &public_key.into_bytes()).unwrap();
