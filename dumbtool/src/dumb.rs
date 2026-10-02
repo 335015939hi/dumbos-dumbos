@@ -43,8 +43,41 @@ unsafe extern "C" {
     fn dp_malloc_get_data(payload: *const DUMB_PAYLOAD, size_dest: *mut usize) -> *mut c_void;
     fn dp_get_expire_str(payload: *const DUMB_PAYLOAD) -> *const c_char;
     fn dp_set_expire_str(payload: *mut DUMB_PAYLOAD, expire_string: *const c_char) -> c_int;
+    //defined in requestid.h
+    fn dumbos_alloc_new_user(user: *const c_char, priv_key_hex: *const c_char) -> *mut c_void;
+    fn dumbos_user_data_size() -> usize;
+    //defined in ed25519.h
+    fn ed25519_generate_keypair_hex(public_hex: *mut c_char, private_hex: *mut c_char) -> c_int;
     //other C functions
     fn free(buf: *mut c_void);
+}
+
+pub fn ed25519_generate_keys() -> (String, String) {
+    //defined in ed25519.h
+    let public_key_hex_size = 65;
+    //defined in ed25519.h
+    let private_key_hex_size = 65;
+    let mut public_key: Vec<u8> = vec![0; public_key_hex_size];
+    let mut private_key: Vec<u8> = vec![0; private_key_hex_size];
+    unsafe {
+        let status = ed25519_generate_keypair_hex(
+            public_key.as_mut_ptr() as *mut c_char,
+            private_key.as_mut_ptr() as *mut c_char,
+        );
+        if status != 0 {
+            let err = errno::errno();
+            panic!("ed25519_generate_keypair_hex() failed:{} ({err})", err.0);
+        }
+        let public_key = CStr::from_ptr(public_key.as_ptr() as *const c_char)
+            .to_str()
+            .unwrap()
+            .to_owned();
+        let private_key = CStr::from_ptr(private_key.as_ptr() as *const c_char)
+            .to_str()
+            .unwrap()
+            .to_owned();
+        return (public_key, private_key);
+    }
 }
 
 pub fn set_expire_raw(payload: &mut DumbPayload, expire: &String) {
@@ -166,4 +199,21 @@ pub fn get_data(payload: &DumbPayload) -> Vec<u8> {
         free(data);
     }
     return result;
+}
+
+pub fn make_user(username: &String, priv_key: &String) -> Vec<u8> {
+    let data: Vec<u8>;
+    unsafe {
+        let size = dumbos_user_data_size();
+        let data_raw = dumbos_alloc_new_user(
+            CString::new(username.as_str()).unwrap().as_ptr(),
+            CString::new(priv_key.as_str()).unwrap().as_ptr(),
+        );
+        if data_raw == std::ptr::null_mut() {
+            let err = errno::errno();
+            panic!("dumbos_alloc_new_user() failed:{} ({})", err.0, err);
+        }
+        data = std::slice::from_raw_parts(data_raw as *const u8, size).to_vec();
+    }
+    return data;
 }

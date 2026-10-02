@@ -157,3 +157,5 @@ struct DUMBOS_USER_DATA *dumbos_alloc_new_user(const char *user,
   LOG_DEBUG("dumbos_alloc_new_user(): new user '%s'", user);
   return new_user;
 }
+
+size_t dumbos_user_data_size(void) { return sizeof(struct DUMBOS_USER_DATA); }

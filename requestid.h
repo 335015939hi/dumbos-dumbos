@@ -32,5 +32,7 @@ int request_id_verify(const char *user, const char *request_id,
 struct DUMBOS_USER_DATA *dumbos_alloc_get_user(void);
 struct DUMBOS_USER_DATA *dumbos_alloc_new_user(const char *user,
                                                const char *priv_key_hex);
+// for rust
+size_t dumbos_user_data_size(void);
 
 #endif
