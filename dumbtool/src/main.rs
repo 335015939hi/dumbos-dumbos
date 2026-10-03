@@ -1,5 +1,6 @@
 mod cmd_cmdget;
 mod cmd_cmdsetraw;
+mod cmd_createheaders;
 mod cmd_datagetset;
 mod cmd_expire;
 mod cmd_new;
@@ -83,6 +84,9 @@ enum Commands {
     },
     /// create a new user
     CreateUser,
+    /// create the public/private key header files required to compile the DumbOS server and client.
+    /// copy the generated key_*.h headers into /repo/root/keys/ (or just use --directory /repo/root/keys/)
+    CreateKeyHeaders,
 }
 
 #[derive(Subcommand)]
@@ -176,6 +180,9 @@ fn main() -> Result<(), String> {
         }
         Commands::CreateUser => {
             return cmd_users::create(&dumb_dir, &users);
+        }
+        Commands::CreateKeyHeaders => {
+            return cmd_createheaders::main(&dumb_dir);
         }
         Commands::CommandSet { command } => match command {
             PayloadCommand::Ok => {
