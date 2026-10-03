@@ -99,7 +99,9 @@ enum PayloadCommand {
         /// path of apk file
         apk: String,
     },
+    /// export local storage to external USB (format as exfat)
     FileExport,
+    /// import files from external USB (formate as exfat) to local storage
     FileImport,
 }
 
