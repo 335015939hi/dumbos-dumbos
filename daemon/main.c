@@ -17,11 +17,12 @@
 // full path of the default socket
 #define DEFAULT_SOCKET_PATH "/dev/socket/dumbosd.socket"
 // default server
-#define DEFAULT_SERVER "https://91-226-221-47.sslip.io:4738/dumb"
+#define DEFAULT_SERVER "http://10.0.2.2:8080/dumb"
 // default socket permissions
-#define DEFAULT_SOCKET_MODE "666"
+#define DEFAULT_SOCKET_MODE "660"
 // default socket ownership
-#define DEFAULT_SOCKET_OWNER "root:system"
+// custom UID defined in frameworks/base/data/etc/oem-defined-uids.xml
+#define DEFAULT_SOCKET_OWNER "2947:0"
 
 static const struct option long_opts[];
 static const char *const short_opts;
