@@ -103,6 +103,22 @@ enum PayloadCommand {
     FileExport,
     /// import files from external USB (formate as exfat) to local storage
     FileImport,
+    /// allow an app, by package name, to access network. note that this is UID-based and certain
+    /// apps (especially system apps) may share UIDs, allowing one app will allow all apps sharing
+    /// the same UID
+    FirewallAllow {
+        /// package name of app, specify multiple times for multiple apps
+        app: Vec<String>,
+    },
+    /// revoke permission of app, by package name, from accessing network. note that this is UID-based and certain
+    /// apps (especially system apps) may share UIDs. make sure to remove all of them sharing the
+    /// same UID.
+    FirewallDeny {
+        /// package name of app, specify multiple times for multiple apps
+        app: Vec<String>,
+    },
+    /// reset the firewall permissions
+    FirewallFlush,
 }
 
 fn main() -> Result<(), String> {
@@ -198,6 +214,15 @@ fn main() -> Result<(), String> {
             }
             PayloadCommand::FileImport => {
                 return cmdset::file_import(&filelist);
+            }
+            PayloadCommand::FirewallAllow { app } => {
+                return cmdset::firewall_allow(&filelist, &app);
+            }
+            PayloadCommand::FirewallDeny { app } => {
+                return cmdset::firewall_deny(&filelist, &app);
+            }
+            PayloadCommand::FirewallFlush => {
+                return cmdset::firewall_flush(&filelist);
             }
         },
     }
