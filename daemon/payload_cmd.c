@@ -21,6 +21,10 @@
 #include "command.h"
 #include "util.h"
 
+// see firewall/
+#define FIREWALL_CONFFILE "/data/local/tmp/dumb/dumbos-firewall.conf"
+#define FIREWALL_RELOAD_SCRIPT "/system/bin/dumbos-firewall.sh"
+
 // commmand handlers.
 // return a malloc'ed string for info. put return status into *ret_val.
 #ifdef DEBUG_MODE
@@ -58,6 +62,15 @@ int payload_cmd_install_this(void *apk, size_t apk_size, int sockfd,
   LOG_DEBUG("cmd_install_this()");
   int err;
   int fd;
+  // reload firewall before installing apps, to prevent stealing UID of
+  // previously allowed but uninstalled app
+  LOG_DEBUG("reloading firewall");
+  err = execv_wrapper(FIREWALL_RELOAD_SCRIPT,
+                      (char *[]){FIREWALL_RELOAD_SCRIPT, NULL});
+  if (err != 0) {
+    LOG_ERRNO(FIREWALL_RELOAD_SCRIPT "failed", err);
+    return err;
+  }
   LOG_DEBUG("cmd_install_this() apk_size=%ld", apk_size);
   char *path = malloc(PATH_MAX);
   if (path == NULL) {
@@ -371,9 +384,7 @@ static int firewall_helper(int sockfd, enum FIREWALL_POLICY policy, char *data,
     return 0;
   }
 }
-// see firewall/
-#define FIREWALL_CONFFILE "/data/local/tmp/dumb/dumbos-firewall.conf"
-#define FIREWALL_RELOAD_SCRIPT "/system/bin/dumbos-firewall.sh"
+
 int payload_cmd_firewall_flush() {
   LOG_VERBOSE("unlinking %s", FIREWALL_CONFFILE);
   if (unlink(FIREWALL_CONFFILE) < 0 && errno != ENOENT) {
