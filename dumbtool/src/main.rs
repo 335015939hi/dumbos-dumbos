@@ -36,7 +36,7 @@ enum Commands {
     New,
     /// get the command of payload
     CmdGet,
-    /// set the command, nothing extra
+    /// set the command as a raw string
     CmdSetRaw {
         /// new command string
         command: String,
@@ -76,19 +76,19 @@ enum Commands {
         relative: Option<i32>,
     },
 
-    ///  set the command of the payload
+    /// set the command of the payload
     CommandSet {
         #[command(subcommand)]
         command: PayloadCommand,
     },
-    ///create a new user
+    /// create a new user
     CreateUser,
 }
 
 #[derive(Subcommand)]
 enum PayloadCommand {
-    //subcommands for high level payload commands
-    /// set the ok command
+    // subcommands for high level payload commands
+    /// no-op, doesn't do anything. useful for testing, or disabling
     Ok,
     /// install a apk file
     InstallThis {
