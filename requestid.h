@@ -3,7 +3,8 @@
 
 #include "ed25519.h"
 
-#define DUMBOS_USERNAME_MAXLEN 127
+#define DUMBOS_USERNAME_MAXLEN 64
+#define DUMBOS_FANCY_NAME_MAXLEN 127
 #define DUMBOS_DEFAULT_USER "hspiqpwoasfddhaksuuiwqueqwrds"
 #define DUMBOS_USER_ALLOWED_CHARS                                              \
   "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM-_1234567890"
@@ -16,6 +17,9 @@ struct DUMBOS_USER_DATA {
   char magic[DUMBOS_USER_DATA_MAGIC_SIZE];
   char username[DUMBOS_USERNAME_MAXLEN];
   char null_byte;
+  // display name, supports special characters, etc.
+  char fancy_name[DUMBOS_FANCY_NAME_MAXLEN];
+  char fancy_null_byte;
   char priv_key_hex[ED25519_PRIVATE_KEY_HEX_SIZE];
 };
 
@@ -32,6 +36,13 @@ int request_id_verify(const char *user, const char *request_id,
 struct DUMBOS_USER_DATA *dumbos_alloc_get_user(void);
 struct DUMBOS_USER_DATA *dumbos_alloc_new_user(const char *user,
                                                const char *priv_key_hex);
+
+// returns a pointer to the fancy name, falling back to normal username by
+// default. do not modify this
+const char *dumbos_get_fancy_name(const struct DUMBOS_USER_DATA *data);
+// sets the 'fancy name', return 0 on success, non-0 and setss errno on error
+int dumbos_set_fancy_name(struct DUMBOS_USER_DATA *data, const char *name);
+
 // for rust
 size_t dumbos_user_data_size(void);
 

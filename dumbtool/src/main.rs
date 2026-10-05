@@ -82,7 +82,9 @@ enum Commands {
         #[command(subcommand)]
         command: PayloadCommand,
     },
-    /// create a new user
+    /// create a new user.
+    /// specify usernames by --user. set the display name with text after a '/' (allow special
+    /// characters, chinese, etc.)
     CreateUser,
     /// create the public/private key header files required to compile the DumbOS server and client.
     /// copy the generated key_*.h headers into /repo/root/keys/ (or just use --directory /repo/root/keys/)

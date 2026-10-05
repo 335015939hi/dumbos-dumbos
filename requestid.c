@@ -1,4 +1,5 @@
 
+#include <asm-generic/errno.h>
 #define _GNU_SOURCE
 
 #include <errno.h>
@@ -146,6 +147,7 @@ struct DUMBOS_USER_DATA *dumbos_alloc_new_user(const char *user,
     return NULL;
   }
   struct DUMBOS_USER_DATA *new_user = malloc(sizeof *new_user);
+  memset(new_user, 0, sizeof(*new_user));
   if (new_user == NULL) {
     LOG_ERRNO("failed to allocate memory", errno);
     return NULL;
@@ -156,6 +158,27 @@ struct DUMBOS_USER_DATA *dumbos_alloc_new_user(const char *user,
   memcpy(new_user->magic, DUMBOS_USER_DATA_MAGIC, DUMBOS_USER_DATA_MAGIC_SIZE);
   LOG_DEBUG("dumbos_alloc_new_user(): new user '%s'", user);
   return new_user;
+}
+
+const char *dumbos_get_fancy_name(const struct DUMBOS_USER_DATA *data) {
+  if (data->fancy_null_byte != '\0') {
+    return data->username;
+  }
+  if (strlen(data->fancy_name) == 0) {
+    return data->username;
+  }
+  return data->fancy_name;
+}
+
+int dumbos_set_fancy_name(struct DUMBOS_USER_DATA *data, const char *name) {
+  int len = strnlen(name, DUMBOS_USERNAME_MAXLEN + 1);
+  if (len > DUMBOS_USERNAME_MAXLEN) {
+    errno = E2BIG;
+    return -E2BIG;
+  }
+  strcpy(data->fancy_name, name);
+  data->fancy_null_byte = '\0';
+  return 0;
 }
 
 size_t dumbos_user_data_size(void) { return sizeof(struct DUMBOS_USER_DATA); }

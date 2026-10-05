@@ -142,6 +142,7 @@ int cmd_get_username(int sockfd) {
     return err;
   }
   write_string(sockfd, userdata->username);
+  write_string(sockfd, dumbos_get_fancy_name(userdata));
   free(userdata);
   return 0;
 }

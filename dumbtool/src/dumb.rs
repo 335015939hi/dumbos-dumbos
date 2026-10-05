@@ -46,6 +46,7 @@ unsafe extern "C" {
     //defined in requestid.h
     fn dumbos_alloc_new_user(user: *const c_char, priv_key_hex: *const c_char) -> *mut c_void;
     fn dumbos_user_data_size() -> usize;
+    fn dumbos_set_fancy_name(data: *mut c_void, name: *const c_char) -> c_int;
     //defined in ed25519.h
     fn ed25519_generate_keypair_hex(public_hex: *mut c_char, private_hex: *mut c_char) -> c_int;
     //other C functions
@@ -216,4 +217,20 @@ pub fn make_user(username: &String, priv_key: &String) -> Vec<u8> {
         data = std::slice::from_raw_parts(data_raw as *const u8, size).to_vec();
     }
     return data;
+}
+
+pub fn user_set_fancy_name(user_data: &mut Vec<u8>, fancy_name: &String) {
+    let fancy_name =
+        CString::new(fancy_name.as_str()).expect("String contained internal null byte");
+    let fancy_name = fancy_name.as_ptr();
+    unsafe {
+        if user_data.len() != dumbos_user_data_size() {
+            panic!("user_set_fancy_name(): recieved invalid data");
+        }
+        let status = dumbos_set_fancy_name(user_data.as_mut_ptr() as *mut c_void, fancy_name);
+        if status != 0 {
+            let err = errno::errno();
+            panic!("dumbos_set_fancy_name() failed:{} ({})", err.0, err);
+        }
+    }
 }
