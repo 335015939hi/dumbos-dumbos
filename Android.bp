@@ -32,6 +32,7 @@ cc_binary {
         "daemon/secret_code.c",
         "daemon/util.c",
         "daemon/curl.c",
+        "daemon/lockscreentext.c",
         "daemon/payload_cmd.c",
         "daemon/mount_copy_ns.c",
         "requestid.c",
@@ -46,6 +47,7 @@ cc_binary {
         "libcurl",
         "liblog",
         "libselinux",
+        "libsqlite",
     ],
 
     cflags: [
