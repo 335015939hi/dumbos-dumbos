@@ -5,10 +5,12 @@ edition = "2024"
 build="build.rs"
 
 [dependencies]
+axum = "0.8.9"
 chrono = "0.4.45"
 clap = { version = "4", features = ["derive"] }
 errno = "0.3.14"
 ratatui = "0.30.2"
+tokio = {version="1.53.2",features=["full"]}
 
 [build-dependencies]
 cc = "1"
