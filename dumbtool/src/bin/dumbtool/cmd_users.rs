@@ -1,5 +1,6 @@
-use crate::{consts, dumb, util};
-
+use dumbtool::consts;
+use dumbtool::dumb;
+use dumbtool::util;
 use std::fs;
 
 pub fn create(directory: &String, users: &Vec<String>) -> Result<(), String> {

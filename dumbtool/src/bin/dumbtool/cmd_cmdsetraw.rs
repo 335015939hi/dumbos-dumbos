@@ -1,4 +1,4 @@
-use crate::dumb;
+use dumbtool::dumb;
 
 pub fn main(filelist: &Vec<String>, command: &String) -> Result<(), String> {
     for file in filelist {

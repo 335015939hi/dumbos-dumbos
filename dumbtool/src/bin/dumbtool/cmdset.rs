@@ -1,6 +1,6 @@
 use crate::consts;
-use crate::dumb;
-use crate::util;
+use dumbtool::dumb;
+use dumbtool::util;
 
 fn set_command(filelist: &Vec<String>, command: &str) -> Result<(), String> {
     for file in filelist {

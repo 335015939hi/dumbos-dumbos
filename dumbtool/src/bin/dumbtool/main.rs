@@ -6,9 +6,7 @@ mod cmd_expire;
 mod cmd_new;
 mod cmd_users;
 mod cmdset;
-mod consts;
-mod dumb;
-mod util;
+use dumbtool::consts;
 
 use clap::{Parser, Subcommand};
 use std::string::String;
