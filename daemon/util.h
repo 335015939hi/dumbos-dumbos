@@ -27,4 +27,11 @@ int mount_copy_unmount_ns(const char *device, const char *mountpoint,
                           const char *mount_data, const char *copy_src,
                           const char *copy_dst, int _dumbos_client_socketfd);
 
+// used be main() on startup
+// sets the text on the lockscreen, from the 'fancy name' of the user
+// sets errno and returns non-0 on error, 0 on success
+// errno==EOWNERDEAD means no user available (finally! a place to use that error
+// code)
+int maybe_set_lockscreen_text(void);
+
 #endif //
