@@ -1,4 +1,4 @@
-use crate::dumb;
+use dumbtool::dumb;
 
 pub fn get_raw(filelist: &Vec<String>) -> Result<(), String> {
     for file in filelist {

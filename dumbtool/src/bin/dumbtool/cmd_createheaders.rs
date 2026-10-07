@@ -1,6 +1,6 @@
-use crate::consts;
-use crate::dumb;
-use crate::util;
+use dumbtool::consts;
+use dumbtool::dumb;
+use dumbtool::util;
 
 pub fn main(directory: &String) -> Result<(), String> {
     let pubkey_path = format!("{directory}{}", consts::PUBKEY_HEADER);

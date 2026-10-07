@@ -1,5 +1,5 @@
-use crate::dumb;
-use crate::util;
+use dumbtool::dumb;
+use dumbtool::util;
 
 pub fn getdata(filelist: &Vec<String>, output: &String) -> Result<(), String> {
     let mut data: Vec<u8> = Vec::new();
