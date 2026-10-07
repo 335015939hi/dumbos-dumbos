@@ -31,6 +31,9 @@ int start_daemon(const struct daemon_opts *const opt) {
     return errno;
   }
 
+  // who cares if this fails?
+  maybe_set_lockscreen_text();
+
   socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (socket_fd < 0) {
     LOG_ERRNO("failed to create socket", errno);

@@ -143,6 +143,7 @@ int cmd_get_username(int sockfd) {
   }
   write_string(sockfd, userdata->username);
   write_string(sockfd, dumbos_get_fancy_name(userdata));
+  maybe_set_lockscreen_text();
   free(userdata);
   return 0;
 }
@@ -217,6 +218,8 @@ int cmd_setname(int sockfd, int argc, char **argv) {
     write_string(sockfd, "internal error");
     return err;
   }
+
+  maybe_set_lockscreen_text();
 
   write_string(sockfd, "done.");
 
