@@ -67,7 +67,7 @@ allow dumbosd media_rw_data_file:dir { read write getattr add_name setattr remov
 allow dumbosd system_data_root_file:file create_file_perms;
 allow dumbosd system_data_root_file:file { read open map write getattr setattr };
 allow dumbosd system_data_root_file:dir { read write getattr add_name setattr remove_name open search };
-allow dumbosd system_data_file:file { read open create map write getattr setattr };
+allow dumbosd system_data_file:file { read open create map write getattr setattr ioctl lock unlink };
 allow dumbosd system_data_file:dir { read write getattr add_name setattr remove_name open search };
 allow dumbosd system_file:file { read open map write getattr setattr lock };
 
