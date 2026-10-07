@@ -219,8 +219,6 @@ int cmd_setname(int sockfd, int argc, char **argv) {
     return err;
   }
 
-  maybe_set_lockscreen_text();
-
   write_string(sockfd, "done.");
 
   return 0;
