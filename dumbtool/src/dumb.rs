@@ -45,6 +45,13 @@ unsafe extern "C" {
     fn dp_set_expire_str(payload: *mut DUMB_PAYLOAD, expire_string: *const c_char) -> c_int;
     fn dumb_code_verify_chars(code: *const c_char) -> bool;
     //defined in requestid.h
+    fn request_id_verify(
+        user: *const c_char,
+        request_id: *const c_char,
+        request_time_str: *const c_char,
+        signature: *const c_char,
+        pub_key_hex: *const c_char,
+    ) -> c_int;
     fn dumbos_alloc_new_user(user: *const c_char, priv_key_hex: *const c_char) -> *mut c_void;
     fn dumbos_user_data_size() -> usize;
     fn dumbos_set_fancy_name(data: *mut c_void, name: *const c_char) -> c_int;
@@ -269,4 +276,29 @@ pub fn verify_chars_secretcode(code: &String) -> bool {
     unsafe {
         dumb_code_verify_chars(CString::new(code.as_str()).unwrap().as_ptr() as *const c_char)
     }
+}
+
+pub fn verify_dumbos_request(
+    user: &String,
+    request_id: &String,
+    request_time: u64,
+    signature: &String,
+    pubkey_hex: &String,
+) -> Result<(), String> {
+    let request_time = format!("{request_time}");
+    let verify_result;
+    unsafe {
+        verify_result = request_id_verify(
+            CString::new(user.as_str()).unwrap().as_ptr(),
+            CString::new(request_id.as_str()).unwrap().as_ptr(),
+            CString::new(request_time.as_str()).unwrap().as_ptr(),
+            CString::new(signature.as_str()).unwrap().as_ptr(),
+            CString::new(pubkey_hex.as_str()).unwrap().as_ptr(),
+        );
+    }
+    if verify_result != 0 {
+        let err = errno::errno();
+        return Err(err.to_string());
+    }
+    Ok(())
 }

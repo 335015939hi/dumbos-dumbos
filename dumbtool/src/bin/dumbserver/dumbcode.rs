@@ -46,5 +46,21 @@ pub async fn main(
         }
     };
 
+    match dumb::verify_dumbos_request(
+        &user,
+        &requestid,
+        time,
+        &requestsig,
+        &String::from_utf8(user_pubkey).unwrap(),
+    ) {
+        Ok(_) => {
+            println!("asdasdasdafsd");
+        }
+        Err(msg) => {
+            println!("verify_dumbos_request() failed:{msg}");
+            return Err(StatusCode::FORBIDDEN);
+        }
+    }
+
     Err(StatusCode::NOT_FOUND)
 }

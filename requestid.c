@@ -77,10 +77,12 @@ int request_id_verify(const char *user, const char *request_id,
   long long request_time;
   if (parse_long_long(request_time_str, &request_time) != 0) {
     LOG_ERR("request time '%s': invalid string", request_time_str);
+    errno = EINVAL;
     return EINVAL;
   }
   if (request_time + DEFAULT_EXPIRE_TIME < time(NULL)) {
     LOG_ERR("request ID expired");
+    errno = EKEYEXPIRED;
     return EKEYEXPIRED;
   }
 
