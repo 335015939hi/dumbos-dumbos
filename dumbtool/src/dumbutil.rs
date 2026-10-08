@@ -24,3 +24,19 @@ pub fn create_code_filename(
         consts::CODE_FILE_PREFIX
     ));
 }
+
+pub fn create_user_pubkey_path(directory: &String, user: &String) -> String {
+    let mut directory = directory.clone();
+    if !directory.ends_with('/') {
+        directory.push('/');
+    }
+    let mut user = user.clone();
+    if user != "" && !user.ends_with('/') {
+        user.push('/');
+    }
+    return format!(
+        "{directory}{}{user}{}",
+        consts::USERDATA_PREFIX,
+        consts::SERVER_USER_PUBKEY_FILE
+    );
+}

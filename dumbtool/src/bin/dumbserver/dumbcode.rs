@@ -1,5 +1,7 @@
 use axum::http::StatusCode;
+use dumbtool::dumb;
 use dumbtool::dumbutil;
+use dumbtool::util;
 
 pub async fn main(
     directory: &String,
@@ -18,13 +20,31 @@ pub async fn main(
             return Err(StatusCode::FORBIDDEN);
         }
     }
-    match (dumbutil::create_code_filename(directory, user, code)) {
+    match dumbutil::create_code_filename(directory, user, code) {
         Ok(path) => code_path_user = path,
         Err(msg) => {
             println!("{msg}");
             return Err(StatusCode::FORBIDDEN);
         }
     }
-    println!("{code_path_global} {code_path_user}");
-    Err(StatusCode::FORBIDDEN)
+    if dumb::verify_chars_requestid(requestid) == false {
+        println!("bad characters found in requestid");
+        return Err(StatusCode::FORBIDDEN);
+    }
+    let user_pubkey = dumbutil::create_user_pubkey_path(directory, user);
+    let user_pubkey = util::read_file(&user_pubkey);
+    let user_pubkey = match user_pubkey {
+        Ok(key) => key,
+        Err(e) => {
+            if e.kind() == std::io::ErrorKind::NotFound {
+                println!("user {user} probably doesn't exist");
+                return Err(StatusCode::FORBIDDEN);
+            } else {
+                println!("{}", e.to_string());
+                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+        }
+    };
+
+    Err(StatusCode::NOT_FOUND)
 }
