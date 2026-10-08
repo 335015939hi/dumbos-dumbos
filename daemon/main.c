@@ -17,7 +17,7 @@
 // full path of the default socket
 #define DEFAULT_SOCKET_PATH "/dev/socket/dumbosd.socket"
 // default server
-#define DEFAULT_SERVER "http://10.0.2.2/dumb"
+#define DEFAULT_SERVER "http://10.0.2.2:8080/dumb"
 // default socket permissions
 #define DEFAULT_SOCKET_MODE "666"
 // default socket ownership
