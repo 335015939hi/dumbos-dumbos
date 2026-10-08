@@ -27,6 +27,15 @@
 // comment this out if you're not debugging
 // #define DEBUG_MODE 1
 
+// debug mode for emulator
+#ifndef DEBUG_MODE
+#if defined(__x86_64__) || defined(_M_X64)
+#define DEBUG_MODE
+#else
+#error Debug enabled for non-emulator detected. remove this line if you really know what you're doing. 
+#endif
+#endif
+
 #ifdef DEBUG_MODE
 #define VERSION_STRING _VERSION_STRING "-debug"
 #define VERSION_MAJOR (-_VERSION_MAJOR)
