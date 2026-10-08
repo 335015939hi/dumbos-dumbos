@@ -5,7 +5,6 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <linux/limits.h>
-#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -54,8 +53,9 @@ int dp_verify(struct DUMB_PAYLOAD *payload, size_t size,
     errno = EINVAL;
     return -1;
   }
+
   // basic check to make sure payload is valid (or at least valid size)
-  if (size < sizeof(struct DUMB_PAYLOAD)) {
+  if (!dp_validate_size(payload, size)) {
     errno = EINVAL;
     return -1;
   }
