@@ -90,6 +90,8 @@ unsafe extern "C" {
     fn dumb_code_verify_chars(code: *const c_char) -> bool;
     fn dp_get_base_size() -> usize;
     fn dp_get_data_size(payload: *const DUMB_PAYLOAD) -> isize;
+    fn dp_is_expired(payload: *mut DUMB_PAYLOAD) -> bool;
+    fn dp_sign(paylod: *mut DUMB_PAYLOAD, size: usize, private_key_hex: *const c_char) -> c_int;
     //defined in requestid.h
     fn request_id_verify(
         user: *const c_char,
@@ -345,6 +347,32 @@ pub fn verify_dumbos_request(
     if verify_result != 0 {
         let err = errno::errno();
         return Err(err.to_string());
+    }
+    Ok(())
+}
+
+pub fn check_expire_and_set(payload: &mut DumbPayload) -> bool {
+    unsafe {
+        return dp_is_expired(payload.ptr);
+    }
+}
+
+pub fn sign(payload: &mut DumbPayload, priv_key: &String) -> Result<(), String> {
+    let result;
+    unsafe {
+        let size = dp_get_data_size(payload.ptr) as usize + dp_get_base_size();
+        if dp_validate_size(payload.ptr, size) == false {
+            return Err("invalid payload".into());
+        }
+        result = dp_sign(
+            payload.ptr,
+            size,
+            CString::new(priv_key.as_str()).unwrap().as_ptr(),
+        );
+    }
+    if result != 0 {
+        let err = errno::errno();
+        return Err(format!("dp_sign() failed:{} (OS error {})", err, err.0));
     }
     Ok(())
 }

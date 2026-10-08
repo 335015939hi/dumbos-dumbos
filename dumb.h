@@ -145,6 +145,7 @@ int dp_verify(struct DUMB_PAYLOAD *payload, size_t size,
 
 // signs the payload using private_key_hex. returns 0 on success, non-0 and sets
 // errno on failure
+// size is the size of entire payload, including data and base struct
 int dp_sign(struct DUMB_PAYLOAD *payload, size_t size,
             const char *private_key_hex);
 

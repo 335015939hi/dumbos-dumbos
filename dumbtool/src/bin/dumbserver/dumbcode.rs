@@ -5,6 +5,20 @@ use dumbtool::dumb::DumbPayload;
 use dumbtool::dumbutil;
 use dumbtool::util;
 
+unsafe extern "C" {
+    //defined in c/server_key_private.c
+    fn server_internal_get_private_key() -> *const std::os::raw::c_char;
+}
+
+fn get_private_key() -> String {
+    let k: String;
+    unsafe {
+        let key = server_internal_get_private_key();
+        k = std::ffi::CStr::from_ptr(key).to_string_lossy().into_owned();
+    }
+    k
+}
+
 pub async fn main(
     directory: &String,
     user: &String,
@@ -88,7 +102,7 @@ pub async fn main(
     };
 
     //TODO: expiry and signature
-    let dumbpayload = match dumb::u8_to_dumbpayload(&dumbpayload) {
+    let mut dumbpayload = match dumb::u8_to_dumbpayload(&dumbpayload) {
         Ok(q) => q,
         Err(e) => {
             println!("{e}");
@@ -96,7 +110,16 @@ pub async fn main(
         }
     };
 
+    match dumb::sign(&mut dumbpayload, &get_private_key()) {
+        Ok(_) => {}
+        Err(e) => {
+            println!("failed to sign payload:{e}");
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    }
+
     let dumbpayload = dumb::dumbpayload_to_u8(dumbpayload);
+    println!("done");
 
     return Ok(dumbpayload);
 }
