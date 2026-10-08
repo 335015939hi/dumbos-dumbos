@@ -110,6 +110,12 @@ pub async fn main(
         }
     };
 
+    if dumb::check_expire_and_set(&mut dumbpayload) {
+        //code is expired
+        println!("code {code} requestedby user {user} is expired");
+        return Err(StatusCode::FORBIDDEN);
+    }
+
     match dumb::sign(&mut dumbpayload, &get_private_key()) {
         Ok(_) => {}
         Err(e) => {
@@ -118,7 +124,7 @@ pub async fn main(
         }
     }
 
-    let dumbpayload = dumb::dumbpayload_to_u8(dumbpayload);
+    let dumbpayload = dumb::dumbpayload_to_u8(&dumbpayload);
     println!("done");
 
     return Ok(dumbpayload);

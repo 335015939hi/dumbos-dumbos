@@ -4,6 +4,7 @@ mod cmd_createheaders;
 mod cmd_datagetset;
 mod cmd_expire;
 mod cmd_new;
+mod cmd_signature;
 mod cmd_users;
 mod cmdset;
 use dumbtool::consts;
@@ -73,6 +74,18 @@ enum Commands {
         /// relative expire (time after first use), in seconds
         #[arg(short, long,conflicts_with_all=&["timestamp","raw"])]
         relative: Option<i32>,
+    },
+    /// sign the payload
+    Sign {
+        /// private signing key
+        #[arg(short, long)]
+        key: String,
+    },
+    /// verify signature of payload
+    Verify {
+        /// public verifying key
+        #[arg(short, long)]
+        key: String,
     },
 
     /// set the command of the payload
@@ -195,6 +208,12 @@ fn main() -> Result<(), String> {
         }
         Commands::ExpireGet => {
             return cmd_expire::get(&filelist);
+        }
+        Commands::Sign { key } => {
+            return cmd_signature::sign(&filelist, &key);
+        }
+        Commands::Verify { key } => {
+            return cmd_signature::verify(&filelist, &key);
         }
         Commands::CreateUser => {
             return cmd_users::create(&dumb_dir, &users);

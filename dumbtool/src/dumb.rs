@@ -61,7 +61,7 @@ pub fn u8_to_dumbpayload(data: &Vec<u8>) -> Result<DumbPayload, String> {
 }
 
 // danger!!! a payload with an invalid size, or reporting a invalid data size, could cause bad things to happen
-pub fn dumbpayload_to_u8(payload: DumbPayload) -> Vec<u8> {
+pub fn dumbpayload_to_u8(payload: &DumbPayload) -> Vec<u8> {
     let size: usize;
     let result: Vec<u8>;
     unsafe {
@@ -92,6 +92,7 @@ unsafe extern "C" {
     fn dp_get_data_size(payload: *const DUMB_PAYLOAD) -> isize;
     fn dp_is_expired(payload: *mut DUMB_PAYLOAD) -> bool;
     fn dp_sign(paylod: *mut DUMB_PAYLOAD, size: usize, private_key_hex: *const c_char) -> c_int;
+    fn dp_verify(payload: *mut DUMB_PAYLOAD, size: usize, pubkey_hex: *const c_char) -> c_int;
     //defined in requestid.h
     fn request_id_verify(
         user: *const c_char,
@@ -373,6 +374,28 @@ pub fn sign(payload: &mut DumbPayload, priv_key: &String) -> Result<(), String> 
     if result != 0 {
         let err = errno::errno();
         return Err(format!("dp_sign() failed:{} (OS error {})", err, err.0));
+    }
+    Ok(())
+}
+
+pub fn verify(payload: &DumbPayload, pub_key: &String) -> Result<(), String> {
+    let payload = u8_to_dumbpayload(&dumbpayload_to_u8(payload))?;
+    let size;
+    let result;
+    unsafe {
+        size = dp_get_base_size() + dp_get_data_size(payload.ptr) as usize;
+        result = dp_verify(
+            payload.ptr,
+            size,
+            CString::new(pub_key.as_str()).unwrap().as_ptr(),
+        );
+    }
+    if result != 0 {
+        let err = errno::errno();
+        return Err(format!(
+            "payload verify failed:{} (OS error {})",
+            err, err.0
+        ));
     }
     Ok(())
 }
