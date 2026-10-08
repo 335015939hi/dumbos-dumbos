@@ -5,7 +5,7 @@ use dumbtool::util;
 pub fn main(directory: &String) -> Result<(), String> {
     let pubkey_path = format!("{directory}{}", consts::PUBKEY_HEADER);
     let privkey_path = format!("{directory}{}", consts::PRIVKEY_HEADER);
-    let keys = dumb::ed25519_generate_keys();
+    let keys = dumb::ed25519_generate_keys()?;
     let pubkey = keys.0;
     let privkey = keys.1;
     let pubkey = format!(

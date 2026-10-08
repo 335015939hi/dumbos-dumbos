@@ -56,7 +56,7 @@ unsafe extern "C" {
     fn free(buf: *mut c_void);
 }
 
-pub fn ed25519_generate_keys() -> (String, String) {
+pub fn ed25519_generate_keys() -> Result<(String, String), String> {
     //defined in ed25519.h
     let public_key_hex_size = 65;
     //defined in ed25519.h
@@ -70,7 +70,10 @@ pub fn ed25519_generate_keys() -> (String, String) {
         );
         if status != 0 {
             let err = errno::errno();
-            panic!("ed25519_generate_keypair_hex() failed:{} ({err})", err.0);
+            return Err(format!(
+                "ed25519_generate_keypair_hex() failed:{} ({err})",
+                err.0
+            ));
         }
         let public_key = CStr::from_ptr(public_key.as_ptr() as *const c_char)
             .to_str()
@@ -80,86 +83,90 @@ pub fn ed25519_generate_keys() -> (String, String) {
             .to_str()
             .unwrap()
             .to_owned();
-        return (public_key, private_key);
+        return Ok((public_key, private_key));
     }
 }
 
-pub fn set_expire_raw(payload: &mut DumbPayload, expire: &String) {
+pub fn set_expire_raw(payload: &mut DumbPayload, expire: &String) -> Result<(), String> {
     unsafe {
         let result =
             dp_set_expire_str(payload.ptr, CString::new(expire.as_str()).unwrap().as_ptr());
         if result != 0 {
             let err = errno::errno();
-            panic!("dp_set_expire_str() failed:{} ({})", err.0, err);
+            return Err(format!("dp_set_expire_str() failed:{} ({})", err.0, err));
         }
     }
+    Ok(())
 }
-pub fn get_expire_raw(payload: &DumbPayload) -> String {
+pub fn get_expire_raw(payload: &DumbPayload) -> Result<String, String> {
     let expire: String;
     unsafe {
         let result = dp_get_expire_str(payload.ptr);
         if result == std::ptr::null_mut() {
             let err = errno::errno();
-            panic!("dp_get_expire_str() failed:{} ({})", err.0, err);
+            return Err(format!("dp_get_expire_str() failed:{} ({})", err.0, err));
         }
         expire = CStr::from_ptr(result).to_str().unwrap().to_owned();
     }
-    return expire;
+    return Ok(expire);
 }
 
-pub fn create_new() -> DumbPayload {
+pub fn create_new() -> Result<DumbPayload, String> {
     let new_payload: *mut DUMB_PAYLOAD;
     unsafe {
         new_payload = dp_create_new();
         if new_payload == std::ptr::null_mut() {
             let err = errno::errno();
-            panic!("dp_create_new() failed:{} ({})", err.0, err);
+            return Err(format!("dp_create_new() failed:{} ({})", err.0, err));
         }
     }
-    return DumbPayload { ptr: new_payload };
+    return Ok(DumbPayload { ptr: new_payload });
 }
 
-pub fn write_to_file(payload: &DumbPayload, path: &String) {
+pub fn write_to_file(payload: &DumbPayload, path: &String) -> Result<(), String> {
     let result;
     unsafe {
         result = dp_write_to_file(payload.ptr, CString::new(path.as_str()).unwrap().as_ptr());
     }
     if result != 0 {
         let err = errno::errno();
-        panic!("dp_write_to_file() failed: {} ({})", err.0, err);
+        return Err(format!("dp_write_to_file() failed: {} ({})", err.0, err));
     }
+    Ok(())
 }
 
-pub fn read_from_file(path: &String) -> DumbPayload {
+pub fn read_from_file(path: &String) -> Result<DumbPayload, String> {
     let mut size: usize = 0;
     let payload: *mut DUMB_PAYLOAD;
     unsafe {
         payload = dp_malloc_load(CString::new(path.as_str()).unwrap().as_ptr(), &mut size);
         if payload == std::ptr::null_mut() {
             let err = errno::errno();
-            panic!("dp_malloc_load failed:{} ({})", err.0, err);
+            return Err(format!("dp_malloc_load failed:{} ({})", err.0, err));
         }
         if !dp_validate_size(payload, size) {
-            panic!("malformed payload detected (stated size doesn't match detected size)");
+            return Err(format!(
+                "malformed payload detected (stated size doesn't match detected size)"
+            ));
         }
     }
-    return DumbPayload { ptr: payload };
+    return Ok(DumbPayload { ptr: payload });
 }
 
-pub fn get_command(payload: &DumbPayload) -> String {
+pub fn get_command(payload: &DumbPayload) -> Result<String, String> {
     let command: *const c_char;
     unsafe {
         command = dp_get_command(payload.ptr);
         if command == std::ptr::null_mut() {
             let err = errno::errno();
-            panic!("dp_get_command() failed:{} ({})", err.0, err);
+            return Err(format!("dp_get_command() failed:{} ({})", err.0, err));
         }
     }
     let command = unsafe { CStr::from_ptr(command).to_str().unwrap().to_owned() };
-    return command;
+    Ok(command)
 }
 
-pub fn set_command(payload: &mut DumbPayload, command: &String) {
+pub fn set_command(payload: &mut DumbPayload, command: &String) -> Result<(), String> {
     unsafe {
         let result = dp_set_command(
             payload.ptr,
@@ -167,26 +174,27 @@ pub fn set_command(payload: &mut DumbPayload, command: &String) {
         );
         if result != 0 {
             let err = errno::errno();
-            panic!("dp_set_command() failed:{} ({})", err.0, err);
+            return Err(format!("dp_set_command() failed:{} ({})", err.0, err));
         }
     }
+    Ok(())
 }
 
-pub fn set_data(mut payload: DumbPayload, data: &Vec<u8>) -> DumbPayload {
+pub fn set_data(mut payload: DumbPayload, data: &Vec<u8>) -> Result<DumbPayload, String> {
     let size: usize = data.len();
     unsafe {
         let data: *const c_void = data.as_ptr().cast();
         let new_payload = dp_set_data(payload.ptr, data, size);
         if new_payload == std::ptr::null_mut() {
             let err = errno::errno();
-            panic!("dp_set_data failed:{} ({})", err.0, err);
+            return Err(format!("dp_set_data failed:{} ({})", err.0, err));
         }
         payload.ptr = new_payload;
     }
-    return payload;
+    return Ok(payload);
 }
 
-pub fn get_data(payload: &DumbPayload) -> Vec<u8> {
+pub fn get_data(payload: &DumbPayload) -> Result<Vec<u8>, String> {
     let result: Vec<u8>;
     unsafe {
         let mut size: usize = 0;
@@ -194,18 +202,18 @@ pub fn get_data(payload: &DumbPayload) -> Vec<u8> {
         if data == std::ptr::null_mut() {
             let err = errno::errno();
             if err.0 == 0 {
-                return vec![];
+                return Ok(vec![]);
             } else {
-                panic!("dp_malloc_get_data() failed:{} ({})", err.0, err);
+                return Err(format!("dp_malloc_get_data() failed:{} ({})", err.0, err));
             }
         }
         result = std::slice::from_raw_parts(data as *const u8, size).to_vec();
         free(data);
     }
-    return result;
+    return Ok(result);
 }
 
-pub fn make_user(username: &String, priv_key: &String) -> Vec<u8> {
+pub fn make_user(username: &String, priv_key: &String) -> Result<Vec<u8>, String> {
     let data: Vec<u8>;
     unsafe {
         let size = dumbos_user_data_size();
@@ -215,27 +223,34 @@ pub fn make_user(username: &String, priv_key: &String) -> Vec<u8> {
         );
         if data_raw == std::ptr::null_mut() {
             let err = errno::errno();
-            panic!("dumbos_alloc_new_user() failed:{} ({})", err.0, err);
+            return Err(format!(
+                "dumbos_alloc_new_user() failed:{} ({})",
+                err.0, err
+            ));
         }
         data = std::slice::from_raw_parts(data_raw as *const u8, size).to_vec();
     }
-    return data;
+    Ok(data)
 }
 
-pub fn user_set_fancy_name(user_data: &mut Vec<u8>, fancy_name: &String) {
+pub fn user_set_fancy_name(user_data: &mut Vec<u8>, fancy_name: &String) -> Result<(), String> {
     let fancy_name =
         CString::new(fancy_name.as_str()).expect("String contained internal null byte");
     let fancy_name = fancy_name.as_ptr();
     unsafe {
         if user_data.len() != dumbos_user_data_size() {
-            panic!("user_set_fancy_name(): recieved invalid data");
+            return Err(format!("user_set_fancy_name(): recieved invalid data"));
         }
         let status = dumbos_set_fancy_name(user_data.as_mut_ptr() as *mut c_void, fancy_name);
         if status != 0 {
             let err = errno::errno();
-            panic!("dumbos_set_fancy_name() failed:{} ({})", err.0, err);
+            return Err(format!(
+                "dumbos_set_fancy_name() failed:{} ({})",
+                err.0, err
+            ));
         }
     }
+    Ok(())
 }
 
 pub fn verify_chars_requestid(requestid: &String) -> bool {

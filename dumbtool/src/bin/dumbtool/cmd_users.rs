@@ -15,11 +15,11 @@ pub fn create(directory: &String, users: &Vec<String>) -> Result<(), String> {
             username = user.clone();
         }
 
-        let keypair = dumb::ed25519_generate_keys();
+        let keypair = dumb::ed25519_generate_keys()?;
         let public_key = keypair.0;
         let private_key = keypair.1;
-        let mut user_blob = dumb::make_user(&username, &private_key);
-        dumb::user_set_fancy_name(&mut user_blob, &fancy_name);
+        let mut user_blob = dumb::make_user(&username, &private_key)?;
+        dumb::user_set_fancy_name(&mut user_blob, &fancy_name)?;
         let mut directory = directory.clone();
         if !directory.ends_with('/') {
             directory.push('/');

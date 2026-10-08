@@ -2,8 +2,8 @@ use dumbtool::dumb;
 
 pub fn get_raw(filelist: &Vec<String>) -> Result<(), String> {
     for file in filelist {
-        let payload = dumb::read_from_file(&file);
-        let expire = dumb::get_expire_raw(&payload);
+        let payload = dumb::read_from_file(&file)?;
+        let expire = dumb::get_expire_raw(&payload)?;
         println!("{file}:{expire}");
     }
     return Ok(());
@@ -11,9 +11,9 @@ pub fn get_raw(filelist: &Vec<String>) -> Result<(), String> {
 
 pub fn set_raw(filelist: &Vec<String>, expire: &String) -> Result<(), String> {
     for file in filelist {
-        let mut payload = dumb::read_from_file(&file);
-        dumb::set_expire_raw(&mut payload, &expire);
-        dumb::write_to_file(&payload, &file);
+        let mut payload = dumb::read_from_file(&file)?;
+        dumb::set_expire_raw(&mut payload, &expire)?;
+        dumb::write_to_file(&payload, &file)?;
     }
     return Ok(());
 }
@@ -41,8 +41,8 @@ pub fn set(
 
 pub fn get(filelist: &Vec<String>) -> Result<(), String> {
     for file in filelist {
-        let payload = dumb::read_from_file(&file);
-        let mut expire = dumb::get_expire_raw(&payload);
+        let payload = dumb::read_from_file(&file)?;
+        let mut expire = dumb::get_expire_raw(&payload)?;
         let mut is_relative = false;
         let mut is_default = false;
         //see dumb.h
