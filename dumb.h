@@ -189,8 +189,12 @@ bool dp_validate_size(const struct DUMB_PAYLOAD *payload,
 // the payload is trustworthy!! write <payload> to file at <pathname>. returns 0
 // on success, not 0 and sets errno on fail
 int dp_write_to_file(const struct DUMB_PAYLOAD *payload, const char *pathname);
+// gets the size of data
+// return <0 on error and sets errno
+ssize_t dp_get_data_size(const struct DUMB_PAYLOAD *payload);
 
 // for rust
 bool dumb_code_verify_chars(const char *code);
+size_t dp_get_base_size(void);
 
 #endif

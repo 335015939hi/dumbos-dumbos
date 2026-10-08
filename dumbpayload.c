@@ -380,3 +380,5 @@ int dp_write_to_file(const struct DUMB_PAYLOAD *payload, const char *pathname) {
 bool dumb_code_verify_chars(const char *code) {
   return check_allowed_chars(code, SECRET_CODE_ALLOWED_CHARS);
 }
+
+size_t dp_get_base_size(void) { return sizeof(struct DUMB_PAYLOAD); }

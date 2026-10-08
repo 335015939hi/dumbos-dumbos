@@ -1,5 +1,7 @@
+use axum::extract::path::ErrorKind;
 use axum::http::StatusCode;
 use dumbtool::dumb;
+use dumbtool::dumb::DumbPayload;
 use dumbtool::dumbutil;
 use dumbtool::util;
 
@@ -53,14 +55,48 @@ pub async fn main(
         &requestsig,
         &String::from_utf8(user_pubkey).unwrap(),
     ) {
-        Ok(_) => {
-            println!("asdasdasdafsd");
-        }
+        Ok(_) => {}
         Err(msg) => {
             println!("verify_dumbos_request() failed:{msg}");
             return Err(StatusCode::FORBIDDEN);
         }
     }
 
-    Err(StatusCode::NOT_FOUND)
+    println!("{code_path_user} {code_path_global}");
+
+    let dumbpayload = match util::read_file(&code_path_user) {
+        Ok(q) => q,
+        Err(e) => {
+            if e.kind() == std::io::ErrorKind::NotFound {
+                match util::read_file(&code_path_global) {
+                    Ok(q) => q,
+                    Err(e) => {
+                        if e.kind() == std::io::ErrorKind::NotFound {
+                            println!("no code {code} found for user {user}");
+                            return Err(StatusCode::FORBIDDEN);
+                        } else {
+                            println!("failed to open {code_path_global}:{}", e.to_string());
+                            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                        }
+                    }
+                }
+            } else {
+                println!("failed to open {code_path_user}:{}", e.to_string());
+                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+        }
+    };
+
+    //TODO: expiry and signature
+    let dumbpayload = match dumb::u8_to_dumbpayload(&dumbpayload) {
+        Ok(q) => q,
+        Err(e) => {
+            println!("{e}");
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+
+    let dumbpayload = dumb::dumbpayload_to_u8(dumbpayload);
+
+    return Ok(dumbpayload);
 }

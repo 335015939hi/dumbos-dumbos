@@ -3,6 +3,7 @@ use std::ffi::CString;
 use std::os::raw::c_char;
 use std::os::raw::c_int;
 use std::os::raw::c_void;
+use std::ptr;
 
 #[repr(C)]
 #[allow(non_camel_case_types)]
@@ -27,6 +28,49 @@ impl Drop for DumbPayload {
     }
 }
 
+pub fn u8_to_dumbpayload_nocheck(data: &Vec<u8>) -> Result<DumbPayload, String> {
+    unsafe {
+        let ptr = libc::malloc(data.len()) as *mut u8;
+
+        if ptr.is_null() {
+            let err = errno::errno();
+            return Err(format!("malloc failed:{} (OS error {})", err, err.0));
+        }
+
+        ptr::copy_nonoverlapping(data.as_ptr(), ptr, data.len());
+
+        Ok(DumbPayload {
+            ptr: ptr as *mut DUMB_PAYLOAD,
+        })
+    }
+}
+
+pub fn u8_to_dumbpayload(data: &Vec<u8>) -> Result<DumbPayload, String> {
+    unsafe {
+        if data.len() < dp_get_base_size() {
+            return Err(String::from("invalid payload"));
+        }
+    }
+    let payload = u8_to_dumbpayload_nocheck(data)?;
+    unsafe {
+        if dp_validate_size(payload.ptr, data.len()) == false {
+            return Err(String::from("invalid payload"));
+        }
+    }
+    Ok(payload)
+}
+
+// danger!!! a payload with an invalid size, or reporting a invalid data size, could cause bad things to happen
+pub fn dumbpayload_to_u8(payload: DumbPayload) -> Vec<u8> {
+    let size: usize;
+    let result: Vec<u8>;
+    unsafe {
+        size = dp_get_base_size() + dp_get_data_size(payload.ptr) as usize;
+        result = std::slice::from_raw_parts(payload.ptr as *const u8, size).to_vec();
+    }
+    result
+}
+
 unsafe extern "C" {
     //defined in dumb.h
     fn dp_create_new() -> *mut DUMB_PAYLOAD;
@@ -44,6 +88,8 @@ unsafe extern "C" {
     fn dp_get_expire_str(payload: *const DUMB_PAYLOAD) -> *const c_char;
     fn dp_set_expire_str(payload: *mut DUMB_PAYLOAD, expire_string: *const c_char) -> c_int;
     fn dumb_code_verify_chars(code: *const c_char) -> bool;
+    fn dp_get_base_size() -> usize;
+    fn dp_get_data_size(payload: *const DUMB_PAYLOAD) -> isize;
     //defined in requestid.h
     fn request_id_verify(
         user: *const c_char,
