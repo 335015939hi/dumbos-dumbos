@@ -27,5 +27,5 @@ pub const SERVER_USER_PUBKEY_FILE: &str = "pubkey";
 pub const CODE_FILE_PREFIX: &str = "code-";
 //default path prefix component
 pub const CODE_FILE_PATH: &str = "dumb-codes/";
-//path of the requestID table
-pub const REQUESTID_TABLE_PATH: &str = "dumb-codes/request_ids.bin";
+//path of the fjall database
+pub const FJALL_DB_PATH: &str = "dumb-codes/dumb.bin";

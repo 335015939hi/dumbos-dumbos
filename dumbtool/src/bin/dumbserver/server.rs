@@ -4,6 +4,7 @@ use serde::Deserialize;
 use std::sync::OnceLock;
 
 use crate::dumbcode;
+use dumbtool::tables;
 
 static DIRECTORY: OnceLock<String> = OnceLock::new();
 

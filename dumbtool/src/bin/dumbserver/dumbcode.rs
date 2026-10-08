@@ -1,9 +1,10 @@
-use axum::extract::path::ErrorKind;
 use axum::http::StatusCode;
 use dumbtool::dumb;
-use dumbtool::dumb::DumbPayload;
 use dumbtool::dumbutil;
+use dumbtool::tables;
 use dumbtool::util;
+
+use crate::FJALL_DB;
 
 unsafe extern "C" {
     //defined in c/server_key_private.c
@@ -61,7 +62,25 @@ pub async fn main(
             }
         }
     };
-
+    let request_id_table = match tables::RequestIdTable::open(FJALL_DB.get().unwrap()) {
+        Ok(table) => match table.exists(requestid.as_str()) {
+            Ok(v) => {
+                if v {
+                    println!("user {user} tried to make a duplicate request (id={requestid})");
+                    return Err(StatusCode::FORBIDDEN);
+                }
+                table
+            }
+            Err(e) => {
+                println!("{e}");
+                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+        },
+        Err(e) => {
+            println!("{e}");
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
     match dumb::verify_dumbos_request(
         &user,
         &requestid,
@@ -76,7 +95,13 @@ pub async fn main(
         }
     }
 
-    println!("{code_path_user} {code_path_global}");
+    match request_id_table.insert(requestid.as_str()) {
+        Ok(_) => {}
+        Err(e) => {
+            println!("consuming request id failed:{e}");
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    }
 
     let dumbpayload = match util::read_file(&code_path_user) {
         Ok(q) => q,
@@ -101,7 +126,6 @@ pub async fn main(
         }
     };
 
-    //TODO: expiry and signature
     let mut dumbpayload = match dumb::u8_to_dumbpayload(&dumbpayload) {
         Ok(q) => q,
         Err(e) => {
