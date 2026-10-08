@@ -182,3 +182,9 @@ int dumbos_set_fancy_name(struct DUMBOS_USER_DATA *data, const char *name) {
 }
 
 size_t dumbos_user_data_size(void) { return sizeof(struct DUMBOS_USER_DATA); }
+bool request_id_verify_chars(const char *request) {
+  return check_allowed_chars(request, REQUESTID_ALLOWED_CHARS);
+}
+bool dumbos_user_verify_chars(const char *user) {
+  return check_allowed_chars(user, DUMBOS_USER_ALLOWED_CHARS);
+}

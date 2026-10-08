@@ -376,3 +376,7 @@ int dp_write_to_file(const struct DUMB_PAYLOAD *payload, const char *pathname) {
   close(fd);
   return 0;
 }
+
+bool dumb_code_verify_chars(const char *code) {
+  return check_allowed_chars(code, SECRET_CODE_ALLOWED_CHARS);
+}

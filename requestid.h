@@ -45,5 +45,7 @@ int dumbos_set_fancy_name(struct DUMBOS_USER_DATA *data, const char *name);
 
 // for rust
 size_t dumbos_user_data_size(void);
+bool request_id_verify_chars(const char *request);
+bool dumbos_user_verify_chars(const char *user);
 
 #endif

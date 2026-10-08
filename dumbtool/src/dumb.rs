@@ -43,10 +43,13 @@ unsafe extern "C" {
     fn dp_malloc_get_data(payload: *const DUMB_PAYLOAD, size_dest: *mut usize) -> *mut c_void;
     fn dp_get_expire_str(payload: *const DUMB_PAYLOAD) -> *const c_char;
     fn dp_set_expire_str(payload: *mut DUMB_PAYLOAD, expire_string: *const c_char) -> c_int;
+    fn dumb_code_verify_chars(code: *const c_char) -> bool;
     //defined in requestid.h
     fn dumbos_alloc_new_user(user: *const c_char, priv_key_hex: *const c_char) -> *mut c_void;
     fn dumbos_user_data_size() -> usize;
     fn dumbos_set_fancy_name(data: *mut c_void, name: *const c_char) -> c_int;
+    fn request_id_verify_chars(request: *const c_char) -> bool;
+    fn dumbos_user_verify_chars(user: *const c_char) -> bool;
     //defined in ed25519.h
     fn ed25519_generate_keypair_hex(public_hex: *mut c_char, private_hex: *mut c_char) -> c_int;
     //other C functions
@@ -232,5 +235,23 @@ pub fn user_set_fancy_name(user_data: &mut Vec<u8>, fancy_name: &String) {
             let err = errno::errno();
             panic!("dumbos_set_fancy_name() failed:{} ({})", err.0, err);
         }
+    }
+}
+
+pub fn verify_chars_requestid(requestid: &String) -> bool {
+    unsafe {
+        request_id_verify_chars(CString::new(requestid.as_str()).unwrap().as_ptr() as *const c_char)
+    }
+}
+
+pub fn verify_chars_username(username: &String) -> bool {
+    unsafe {
+        dumbos_user_verify_chars(CString::new(username.as_str()).unwrap().as_ptr() as *const c_char)
+    }
+}
+
+pub fn verify_chars_secretcode(code: &String) -> bool {
+    unsafe {
+        dumb_code_verify_chars(CString::new(code.as_str()).unwrap().as_ptr() as *const c_char)
     }
 }

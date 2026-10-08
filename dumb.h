@@ -190,4 +190,7 @@ bool dp_validate_size(const struct DUMB_PAYLOAD *payload,
 // on success, not 0 and sets errno on fail
 int dp_write_to_file(const struct DUMB_PAYLOAD *payload, const char *pathname);
 
+// for rust
+bool dumb_code_verify_chars(const char *code);
+
 #endif
