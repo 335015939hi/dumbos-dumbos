@@ -1,3 +1,4 @@
+use axum::http::StatusCode;
 use axum::{Router, extract::Query, routing::get};
 use serde::Deserialize;
 use std::sync::OnceLock;
@@ -16,7 +17,7 @@ struct Params {
     time: u64,
 }
 
-async fn dumbcode(Query(q): Query<Params>) -> Vec<u8> {
+async fn dumbcode(Query(q): Query<Params>) -> Result<Vec<u8>, StatusCode> {
     dumbcode::main(
         &DIRECTORY.get().unwrap(),
         &q.user,
