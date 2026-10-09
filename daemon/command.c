@@ -1,9 +1,11 @@
 
 #include <errno.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -11,6 +13,7 @@
 #include "../exec_wrapper.h"
 #include "../requestid.h"
 #include "command.h"
+#include "curl.h"
 #include "util.h"
 
 // location to write to for init to copy to persist location
@@ -23,7 +26,7 @@
 
 static const char *const commands_list[] = {
     "ok",          "notok",       "code",         "get_name",
-    "oem_lock",    "version",     "set_name",
+    "oem_lock",    "version",     "set_name",     "upload_data",
 #ifdef DEBUG_MODE
     "oem_unlock",  "enable_wifi", "disable_wifi", "enable_adb",
     "disable_adb", "shell",
@@ -38,6 +41,7 @@ enum {
   CMD_OEM_LOCK,
   CMD_VERSION,
   CMD_SETNAME,
+  CMD_UPLOAD_DATA,
 #ifdef DEBUG_MODE
   CMD_OEM_UNLOCK,
   CMD_ENABLE_WIFI,
@@ -58,6 +62,7 @@ int toggle_adb(int client_sockfd, bool enable);
 #endif
 int cmd_get_username(int client_sockfd);
 int cmd_version(int sockfd);
+int cmd_upload_data(int argc, char **argv, int sockfd, const char *server);
 // sets the DumbOS user data, only if it's not already set. this integrates with
 // dumbosd.rc, because getting dumbosd r/w on /mnt/vendor/persist requires
 // waging war on selinux
@@ -103,6 +108,9 @@ int do_command(int argc, char **argv, int sockfd, const char *const server,
     break;
   case CMD_VERSION:
     ret = cmd_version(sockfd);
+    break;
+  case CMD_UPLOAD_DATA:
+    ret = cmd_upload_data(argc, argv, sockfd, server);
     break;
 #ifdef DEBUG_MODE
   case CMD_SHELL:
@@ -280,4 +288,66 @@ int oem_locking(int client_sockfd, bool lock) {
 int cmd_version(int sockfd) {
   write_string(sockfd, VERSION_STRING);
   return 0;
+}
+
+int cmd_upload_data(int argc, char **argv, int sockfd, const char *server) {
+  int fd = -1;
+  void *buffer = NULL;
+  const char *file = "";
+  int err = errno;
+  // TODO: path whitelist (information disclosure)
+  // FIXME: path blacklist (hacking around in /dev, /sys, etc)
+  LOG_DEBUG("cmd_upload_data()");
+  if (argc < 1) {
+    write_string(sockfd, "not enough arguments");
+    LOG_ERR("cmd_upload_data(): expected >=1 arguments, got %d", argc);
+    return EINVAL;
+  }
+  for (argc -= 1; argc >= 0; argc--) {
+    const char *file = argv[argc];
+    LOG_DEBUG("cmd_upload_data():processing file %s", file);
+    struct stat st;
+    if (stat(file, &st) == 0) {
+      size_t size = st.st_size;
+      LOG_DEBUG("file %s: %zu bytes", file, size);
+
+      if (0 == (fd = open(file, O_RDONLY))) {
+        LOG_ERR("cmd_upload_data(): could not open %s", file);
+        goto fail;
+      }
+
+      buffer = malloc(size);
+      if (buffer == NULL) {
+        LOG_ERRNO("cmd_upload_data(): malloc failed", errno);
+        goto fail;
+      }
+
+      if (0 > read_all(fd, buffer, size)) {
+        LOG_ERR("failed reading from %s", file);
+        goto fail;
+      }
+
+      if (0 != post_buffer(server, buffer, size, &err)) {
+        LOG_ERR("posting failed");
+        goto fail;
+      }
+
+    } else {
+      goto fail;
+    }
+    free(buffer);
+    buffer = NULL;
+    close(fd);
+    fd = -1;
+  }
+  return 0;
+fail:
+  err = errno;
+  LOG_ERR("cmd_upload_data():failed processing file %s:%d (%s)", file, errno,
+          strerror(err));
+  if (fd >= 0)
+    close(fd);
+  if (buffer)
+    free(buffer);
+  return errno;
 }

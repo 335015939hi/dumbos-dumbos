@@ -403,4 +403,69 @@ fail:
   return NULL;
 }
 
+int post_buffer(const char *url, const void *data, size_t data_len,
+                int *http_response) {
+  CURL *curl = curl_easy_init();
+  int rc;
+  int saved_errno;
+  if (curl == NULL) {
+    errno = ENOMEM;
+    return -1;
+  }
+
+  struct curl_slist *headers = NULL;
+  headers =
+      curl_slist_append(headers, "Content-Type: application/octet-stream");
+
+  SET_CURL_OPT(curl, CURLOPT_URL, url);
+  // Send data as the POST body.
+  SET_CURL_OPT(curl, CURLOPT_POST, 1L);
+  SET_CURL_OPT(curl, CURLOPT_POSTFIELDS, data);
+  SET_CURL_OPT(curl, CURLOPT_POSTFIELDSIZE, (long)data_len);
+  // HTTP headers.
+  SET_CURL_OPT(curl, CURLOPT_HTTPHEADER, headers);
+
+  // TLS certificate verification.
+  SET_CURL_OPT(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+  SET_CURL_OPT(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+  /*
+   * Only allow HTTP and HTTPS.
+   * This prevents cursed redirects like http://good.example ->
+   * file:///etc/passwd.
+   */
+  SET_CURL_OPT(curl, CURLOPT_PROTOCOLS_STR, "http,https");
+  SET_CURL_OPT(curl, CURLOPT_REDIR_PROTOCOLS_STR, "http,https");
+  /*
+   * Important for daemons and threaded programs.
+   */
+  SET_CURL_OPT(curl, CURLOPT_NOSIGNAL, 1L);
+  /*
+   * Treat HTTP 4xx/5xx as failure.
+   */
+  SET_CURL_OPT(curl, CURLOPT_FAILONERROR, 1L);
+  CURLcode res = curl_easy_perform(curl);
+
+  long response_code = 0;
+  if (res == CURLE_OK) {
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+  }
+
+  curl_slist_free_all(headers);
+  curl_easy_cleanup(curl);
+
+  if (res != CURLE_OK) {
+    errno = curlcode_to_errno(res);
+    return -1;
+  }
+
+  // HTTP status code, e.g. 200, 201, 400, etc.
+  if (http_response != NULL) {
+    *http_response = response_code;
+  }
+  return 0;
+fail:
+  errno = saved_errno;
+  return -1;
+}
+
 #undef SET_CURL_OPT
