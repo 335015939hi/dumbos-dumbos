@@ -8,6 +8,6 @@ pub async fn main(
     time: u64,
     data: Vec<u8>,
 ) -> Result<String, StatusCode> {
-    println!("{user}{time}{}", data.len());
+    println!("{user} {time} {}", data.len());
     Ok(String::from(""))
 }

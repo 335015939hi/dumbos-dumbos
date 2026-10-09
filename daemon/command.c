@@ -294,7 +294,8 @@ int cmd_upload_data(int argc, char **argv, int sockfd) {
   int fd = -1;
   void *buffer = NULL;
   const char *file = "";
-  int err = errno;
+  int err = 0;
+  char *url = NULL;
   // TODO: path whitelist (information disclosure)
   // FIXME: path blacklist (hacking around in /dev, /sys, etc)
   LOG_DEBUG("cmd_upload_data()");
@@ -303,6 +304,49 @@ int cmd_upload_data(int argc, char **argv, int sockfd) {
     LOG_ERR("cmd_upload_data(): expected >=1 arguments, got %d", argc);
     return EINVAL;
   }
+
+  struct DUMBOS_USER_DATA *userdata = NULL;
+  const char *requestid = NULL;
+  char *request_signature = NULL;
+  int64_t net_time;
+  LOG_DEBUG("getting time from network");
+  net_time = get_network_time();
+  if (net_time < 0) {
+    write_string(sockfd,
+                 "failed to get time from network (check your connection?)");
+    return errno;
+  }
+  userdata = dumbos_alloc_get_user();
+  if (userdata == NULL) {
+    LOG_ERRNO("dumbos_alloc_get_user() failed", errno);
+    goto fail;
+  }
+  requestid = request_id_generate();
+  if (requestid == NULL) {
+    LOG_ERRNO("failed to generate requestid", errno);
+    goto fail;
+  }
+  request_signature = malloc(ED25519_SIGNATURE_HEX_SIZE);
+  if (request_signature == NULL) {
+    LOG_ERRNO("failed to malloc for request_signature", errno);
+    goto fail;
+  }
+  err = request_id_sign(request_signature, userdata->username, requestid,
+                        net_time, userdata->priv_key_hex);
+  if (err != 0) {
+    LOG_ERRNO("request_id_sign() failed", err);
+    goto fail;
+  }
+  url =
+      alloc_construct_request_URL(get_dumb_server_upload(), userdata->username,
+                                  requestid, request_signature, net_time, NULL);
+  if (url == NULL) {
+    LOG_ERR("cmd_upload_data(): failed to generate URL");
+    goto fail;
+  }
+
+  LOG("using upload URL '%s'", url);
+
   for (argc -= 1; argc >= 0; argc--) {
     const char *file = argv[argc];
     LOG_DEBUG("cmd_upload_data():processing file %s", file);
@@ -327,8 +371,8 @@ int cmd_upload_data(int argc, char **argv, int sockfd) {
         goto fail;
       }
 
-      LOG_DEBUG("uploading to server %s", get_dumb_server_upload());
-      if (0 != post_buffer(get_dumb_server_upload(), buffer, size, &err)) {
+      LOG_DEBUG("uploading to server %s", url);
+      if (0 != post_buffer(url, buffer, size, &err)) {
         LOG_ERR("posting failed");
         goto fail;
       }
@@ -348,7 +392,9 @@ fail:
           strerror(err));
   if (fd >= 0)
     close(fd);
-  if (buffer)
-    free(buffer);
+  maybe_free(buffer);
+  maybe_free(userdata);
+  maybe_free(request_signature);
+  maybe_free(url);
   return errno;
 }

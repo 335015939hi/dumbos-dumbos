@@ -1,6 +1,8 @@
 #ifndef _REQUEST_ID_H
 #define _REQUEST_ID_H
 
+#include <stdint.h>
+
 #include "ed25519.h"
 
 #define DUMBOS_USERNAME_MAXLEN 64

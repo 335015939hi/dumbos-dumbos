@@ -268,18 +268,17 @@ static size_t geturltime_header_callback(char *buffer, size_t size,
   return total_size;
 }
 
-char *geturltime(void) {
-  LOG_DEBUG("geturltime()");
+int64_t get_network_time(void) {
+  LOG_DEBUG("get_network_time()");
   CURL *curl;
   CURLcode res;
   time_t remote_epoch = -1;
-  char *result_str = NULL;
 
   curl = curl_easy_init();
   if (!curl) {
     LOG_ERRNO("curl_easy_init() fail", errno);
     errno = ENOMEM;
-    return NULL;
+    return -1;
   }
 
   // Configure the request to a highly reliable HTTPS server
@@ -311,16 +310,27 @@ char *geturltime(void) {
   if (res != CURLE_OK || remote_epoch == -1) {
     LOG_ERRNO("curl failed", errno);
     errno = (res == CURLE_OUT_OF_MEMORY) ? ENOMEM : ECOMM;
-    return NULL;
+    return -1;
   }
 
-  // Allocate memory for the returned string (enough for a 64-bit integer)
-  result_str = malloc(24);
-  if (!result_str) {
-    errno = ENOMEM;
+  return remote_epoch;
+}
+
+char *alloc_construct_request_URL(const char *baseURL, const char *user,
+                                  const char *requestid, const char *requestsig,
+                                  int64_t net_time, const char *code) {
+  int err;
+  char *url = NULL;
+  if (code) {
+    err =
+        asprintf(&url, "%s?code=%s&user=%s&requestid=%s&requestsig=%s&time=%ld",
+                 baseURL, code, user, requestid, requestsig, net_time);
+  } else {
+    err = asprintf(&url, "%s?user=%s&requestid=%s&requestsig=%s&time=%ld",
+                   baseURL, user, requestid, requestsig, net_time);
+  }
+  if (err < 0) {
     return NULL;
   }
-
-  snprintf(result_str, 24, "%ld", (long)remote_epoch);
-  return result_str;
+  return url;
 }

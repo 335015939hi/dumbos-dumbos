@@ -114,7 +114,6 @@ int secret_code(int argc, char **argv, int sockfd) {
   struct DUMB_PAYLOAD *payload = NULL;
   size_t payload_size;
   int err;
-  char *net_time_str = NULL;
   long long net_time;
 
   if (argc != 1) {
@@ -139,20 +138,12 @@ int secret_code(int argc, char **argv, int sockfd) {
   // save and use that time to calculate expiry (in case download takes a long
   // time and it expires meanwhile)
   LOG_DEBUG("getting time from network");
-  net_time_str = geturltime();
-  if (NULL == net_time_str) {
+  net_time = get_network_time();
+  if (net_time < 0) {
     write_string(sockfd,
                  "failed to get time from network (check your connection?)");
     return errno;
   }
-  if (parse_long_long(net_time_str, &net_time) != 0) {
-    LOG_ERRNO("invalid time from server", errno);
-    write_string(sockfd,
-                 "server returned invalid time (check your connection?)");
-    free(net_time_str);
-    return EPROTO;
-  }
-  free(net_time_str);
   LOG("network time is %lld", net_time);
 
   char *url = NULL;
@@ -182,15 +173,13 @@ int secret_code(int argc, char **argv, int sockfd) {
     return err;
   }
 
-  err =
-      asprintf(&url, "%s?code=%s&user=%s&requestid=%s&requestsig=%s&time=%lld",
-               get_dumb_server_code(), argv[0], userdata->username, requestid,
-               request_signature, (long long)net_time);
+  url = alloc_construct_request_URL(get_dumb_server_code(), userdata->username,
+                                    requestid, request_signature, net_time,
+                                    argv[0]);
   free(request_signature);
   free(userdata);
-  if (err < 0) {
-    err = errno;
-    LOG_ERRNO("asprintf() failed", err);
+  if (url == NULL) {
+    LOG_ERRNO("alloc_construct_request_URL() failed", err);
     return err;
   }
 
