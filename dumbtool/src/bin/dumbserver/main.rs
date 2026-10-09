@@ -1,4 +1,5 @@
 mod dumbcode;
+mod dumbupload;
 mod server;
 
 use dumbtool::consts;

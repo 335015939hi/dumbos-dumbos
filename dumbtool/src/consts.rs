@@ -12,6 +12,9 @@ pub const CMD_FW_ALLOW: &str = "fw-allow";
 pub const CMD_FW_DENY: &str = "fw-deny";
 pub const CMD_FW_FLUSH: &str = "fw-flush";
 
+pub const DUMB_URL_CODE_PATH: &str = "dumb";
+pub const DUMB_URL_UPLOAD_PATH: &str = "upload";
+
 //defined in C files that include these headers
 pub const PUBKEY_HEADER: &str = "key_public.h";
 pub const PRIVKEY_HEADER: &str = "key_private.h";

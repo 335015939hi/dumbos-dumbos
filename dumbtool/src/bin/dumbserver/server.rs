@@ -1,24 +1,33 @@
+use axum::body::Bytes;
 use axum::http::StatusCode;
-use axum::{Router, extract::Query, routing::get};
+use axum::{Router, extract::Query, routing::get, routing::post};
 use serde::Deserialize;
 use std::sync::OnceLock;
 
 use crate::dumbcode;
-use dumbtool::tables;
+use crate::dumbupload;
+use dumbtool::consts;
 
 static DIRECTORY: OnceLock<String> = OnceLock::new();
 
 #[derive(Deserialize)]
 // see daemon/secret_code.c
-struct Params {
+struct DumbCodeParams {
     user: String,
     code: String,
     requestid: String,
     requestsig: String,
     time: u64,
 }
+#[derive(Deserialize)]
+struct DumbUploadParams {
+    user: String,
+    requestid: String,
+    requestsig: String,
+    time: u64,
+}
 
-async fn dumbcode(Query(q): Query<Params>) -> Result<Vec<u8>, StatusCode> {
+async fn dumbcode(Query(q): Query<DumbCodeParams>) -> Result<Vec<u8>, StatusCode> {
     dumbcode::main(
         &DIRECTORY.get().unwrap(),
         &q.user,
@@ -29,12 +38,30 @@ async fn dumbcode(Query(q): Query<Params>) -> Result<Vec<u8>, StatusCode> {
     )
     .await
 }
+async fn dumbpost(Query(q): Query<DumbUploadParams>, data: Bytes) -> Result<String, StatusCode> {
+    dumbupload::main(
+        &DIRECTORY.get().unwrap(),
+        &q.user,
+        &q.requestid,
+        &q.requestsig,
+        q.time,
+        data.to_vec(),
+    )
+    .await
+}
 
 pub async fn main(_allow_output: bool, directory: String, port: u32) {
     DIRECTORY.set(directory).unwrap();
     let server: Router = Router::new()
         .route("/", get(|| async { "hello" }))
-        .route("/dumb", get(dumbcode));
+        .route(
+            (String::from("/") + consts::DUMB_URL_CODE_PATH).as_str(),
+            get(dumbcode),
+        )
+        .route(
+            (String::from("/") + consts::DUMB_URL_UPLOAD_PATH).as_str(),
+            post(dumbpost),
+        );
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{port}"))
         .await
         .unwrap();

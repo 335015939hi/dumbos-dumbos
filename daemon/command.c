@@ -327,6 +327,7 @@ int cmd_upload_data(int argc, char **argv, int sockfd) {
         goto fail;
       }
 
+      LOG_DEBUG("uploading to server %s", get_dumb_server_upload());
       if (0 != post_buffer(get_dumb_server_upload(), buffer, size, &err)) {
         LOG_ERR("posting failed");
         goto fail;
