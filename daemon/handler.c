@@ -2,9 +2,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "../common.h"
 #include "command.h"
@@ -13,7 +11,7 @@
 // max number of arguments we will accept from the client
 #define MAX_ARGS 256
 
-int handler(const int client_fd, const char *const server, const char *tmpdir) {
+int handler(const int client_fd) {
   char *client_v_str;
   unsigned short client_v_major;
   unsigned short client_v_minor;
@@ -122,7 +120,7 @@ int handler(const int client_fd, const char *const server, const char *tmpdir) {
 #endif
 
   if (!haserror) {
-    ret = do_command(argc, argv, client_fd, server, tmpdir);
+    ret = do_command(argc, argv, client_fd);
     LOG_DEBUG("do_command exited with %d", ret);
   }
 

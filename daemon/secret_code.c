@@ -20,6 +20,7 @@
 #include "../requestid.h"
 #include "command.h"
 #include "curl.h"
+#include "daemon.h"
 #include "util.h"
 
 // this header file should define static const char * const
@@ -32,7 +33,7 @@
 #define streq(a, b) (!strcmp(a, b))
 
 int handle_one_payload(int sockfd, struct DUMB_PAYLOAD *payload, time_t time,
-                       size_t payload_size, const char *tmpdir) {
+                       size_t payload_size) {
   int err;
 
   if (dp_is_expired_compare(payload, time)) {
@@ -69,8 +70,7 @@ int handle_one_payload(int sockfd, struct DUMB_PAYLOAD *payload, time_t time,
     write_string(sockfd, "ok");
     err = 0;
   } else if (streq(cmd, CODE_CMD_INSTALLTHIS)) {
-    err = payload_cmd_install_this(payload->payload, payload_size, sockfd,
-                                   tmpdir);
+    err = payload_cmd_install_this(payload->payload, payload_size, sockfd);
   } else if (streq(cmd, CODE_CMD_INSTALL_PATH)) {
     err = payload_cmd_install_path(payload->payload, payload_size, sockfd);
   } else if (streq(cmd, CODE_CMD_FILE_EXPORT)) {
@@ -90,8 +90,7 @@ int handle_one_payload(int sockfd, struct DUMB_PAYLOAD *payload, time_t time,
   } else if (streq(cmd, CODE_CMD_OEM_LOCK)) {
     err = payload_cmd_set_oem_unlock_enabled(false);
   } else if (streq(cmd, CODE_CMD_COMPOSITE)) {
-    err = payload_cmd_composite(payload->payload, payload_size, tmpdir, time,
-                                sockfd);
+    err = payload_cmd_composite(payload->payload, payload_size, time, sockfd);
   } else if (streq(cmd, CODE_CMD_FW_ALLOW)) {
     err = payload_cmd_firewall_add(sockfd, payload->payload, payload_size);
   } else if (streq(cmd, CODE_CMD_FW_DENY)) {
@@ -110,8 +109,7 @@ int handle_one_payload(int sockfd, struct DUMB_PAYLOAD *payload, time_t time,
   return err;
 }
 
-int secret_code(int argc, char **argv, int sockfd, const char *const host,
-                const char *const tmpdir) {
+int secret_code(int argc, char **argv, int sockfd) {
   size_t secret_len_max;
   struct DUMB_PAYLOAD *payload = NULL;
   size_t payload_size;
@@ -128,7 +126,7 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
   // safety:set umask
   umask(0177);
 
-  secret_len_max = PATH_MAX - (strlen(tmpdir) + 1 // NULL terminator
+  secret_len_max = PATH_MAX - (strlen(get_tmpdir()) + 1 // NULL terminator
                               );
   LOG_VERBOSE("secret code maximum length is %zu", secret_len_max - 1);
   if (strlen(argv[0]) > secret_len_max) {
@@ -186,8 +184,8 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
 
   err =
       asprintf(&url, "%s?code=%s&user=%s&requestid=%s&requestsig=%s&time=%lld",
-               host, argv[0], userdata->username, requestid, request_signature,
-               (long long)net_time);
+               get_dumb_server_code(), argv[0], userdata->username, requestid,
+               request_signature, (long long)net_time);
   free(request_signature);
   free(userdata);
   if (err < 0) {
@@ -226,7 +224,7 @@ int secret_code(int argc, char **argv, int sockfd, const char *const host,
 
   payload_size -= sizeof(*payload);
 
-  err = handle_one_payload(sockfd, payload, net_time, payload_size, tmpdir);
+  err = handle_one_payload(sockfd, payload, net_time, payload_size);
 
   free(payload);
   return err;

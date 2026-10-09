@@ -14,6 +14,7 @@
 #include "../requestid.h"
 #include "command.h"
 #include "curl.h"
+#include "daemon.h"
 #include "util.h"
 
 // location to write to for init to copy to persist location
@@ -62,14 +63,13 @@ int toggle_adb(int client_sockfd, bool enable);
 #endif
 int cmd_get_username(int client_sockfd);
 int cmd_version(int sockfd);
-int cmd_upload_data(int argc, char **argv, int sockfd, const char *server);
+int cmd_upload_data(int argc, char **argv, int sockfd);
 // sets the DumbOS user data, only if it's not already set. this integrates with
 // dumbosd.rc, because getting dumbosd r/w on /mnt/vendor/persist requires
 // waging war on selinux
 int cmd_setname(int sockfd, int argc, char **argv);
 
-int do_command(int argc, char **argv, int sockfd, const char *const server,
-               const char *tmpdir) {
+int do_command(int argc, char **argv, int sockfd) {
   LOG("recieved command %s", argv[0]);
 
   int command = -1;
@@ -98,7 +98,7 @@ int do_command(int argc, char **argv, int sockfd, const char *const server,
     ret = 1;
     break;
   case CMD_CODE:
-    ret = secret_code(argc, argv, sockfd, server, tmpdir);
+    ret = secret_code(argc, argv, sockfd);
     break;
   case CMD_GET_USERNAME:
     ret = cmd_get_username(sockfd);
@@ -110,7 +110,7 @@ int do_command(int argc, char **argv, int sockfd, const char *const server,
     ret = cmd_version(sockfd);
     break;
   case CMD_UPLOAD_DATA:
-    ret = cmd_upload_data(argc, argv, sockfd, server);
+    ret = cmd_upload_data(argc, argv, sockfd);
     break;
 #ifdef DEBUG_MODE
   case CMD_SHELL:
@@ -290,7 +290,7 @@ int cmd_version(int sockfd) {
   return 0;
 }
 
-int cmd_upload_data(int argc, char **argv, int sockfd, const char *server) {
+int cmd_upload_data(int argc, char **argv, int sockfd) {
   int fd = -1;
   void *buffer = NULL;
   const char *file = "";
@@ -327,7 +327,7 @@ int cmd_upload_data(int argc, char **argv, int sockfd, const char *server) {
         goto fail;
       }
 
-      if (0 != post_buffer(server, buffer, size, &err)) {
+      if (0 != post_buffer(get_dumb_server_upload(), buffer, size, &err)) {
         LOG_ERR("posting failed");
         goto fail;
       }

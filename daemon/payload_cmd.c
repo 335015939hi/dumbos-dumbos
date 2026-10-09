@@ -19,6 +19,7 @@
 #include "../common.h"
 #include "../exec_wrapper.h"
 #include "command.h"
+#include "daemon.h"
 #include "util.h"
 
 // see firewall/
@@ -57,8 +58,7 @@ int payload_cmd_shell(void *script, size_t script_size, int sockfd) {
 }
 
 #endif // DEBUG_MODE
-int payload_cmd_install_this(void *apk, size_t apk_size, int sockfd,
-                             const char *tmpdir) {
+int payload_cmd_install_this(void *apk, size_t apk_size, int sockfd) {
   LOG_DEBUG("cmd_install_this()");
   int err;
   int fd;
@@ -80,7 +80,7 @@ int payload_cmd_install_this(void *apk, size_t apk_size, int sockfd,
     return err;
   }
 
-  err = snprintf(path, PATH_MAX, "%s%s", tmpdir, "tmp.apk");
+  err = snprintf(path, PATH_MAX, "%s%s", get_tmpdir(), "tmp.apk");
   if (err < 0) {
     err = errno;
     LOG_ERRNO("snprintf() failed", err);
@@ -151,8 +151,7 @@ int payload_cmd_set_oem_unlock_enabled(bool enabled) {
   LOG("%s OEM unlock", enabled ? "enabling" : "disabling");
   return set_oem_lock(!enabled);
 }
-int payload_cmd_composite(void *data, size_t size, const char *tmpdir,
-                          time_t time, int sockfd) {
+int payload_cmd_composite(void *data, size_t size, time_t time, int sockfd) {
   if (size < sizeof(uint16_t)) {
     LOG_ERR("composite payload: invalid size detected");
     write_string(sockfd, "invalid");
@@ -189,7 +188,7 @@ int payload_cmd_composite(void *data, size_t size, const char *tmpdir,
     }
     int err = handle_one_payload(
         sockfd, (struct DUMB_PAYLOAD *)(((char *)data) + offset), time,
-        payload_size - sizeof(struct DUMB_PAYLOAD), tmpdir);
+        payload_size - sizeof(struct DUMB_PAYLOAD));
     LOG_DEBUG("handle_one_payload() exited with %d", err);
     if (err != 0) {
       LOG_ERRNO("handle_one_payload() failed", err);

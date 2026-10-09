@@ -180,4 +180,9 @@ bool check_allowed_chars(const char *s, const char *whitelist);
 char *malloc_buf_to_hex(const void *buf, size_t size);
 void *malloc_hex_to_buf(const char *hex);
 
+// URL path component of secret codes
+#define DUMB_URL_CODE_PATH "dumb"
+// URL path component of data upload
+#define DUMB_URL_UPLOAD_PATH "upload"
+
 #endif

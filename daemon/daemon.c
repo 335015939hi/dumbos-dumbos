@@ -1,7 +1,10 @@
 
+#define _GNU_SOURCE
+
 #include <errno.h>
 #include <selinux/selinux.h>
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -17,6 +20,77 @@
 // max length of struct sockaddr_un.sun_path, with NULL, in bytes
 #define MAX_SOCK_PATH (sizeof(((struct sockaddr_un *)0)->sun_path))
 
+static char *default_server = NULL;
+static char *dumb_upload_server = NULL;
+static char *dumb_code_server = NULL;
+static char *dumb_tmpdir = NULL;
+
+static char *alloc_dumb_server_append(const char *s) {
+
+  if (default_server == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+  if (strlen(default_server) == 0) {
+    errno = EINVAL;
+    return 0;
+  }
+  const char *slash = "";
+  if (default_server[strlen(default_server) - 1] != '/') {
+    slash = "/";
+  }
+  char *result;
+  int err = asprintf(&result, "%s%s%s", default_server, slash, s);
+  if (err < 0) {
+    return NULL;
+  }
+  return result;
+}
+const char *get_dumb_server_code(void) { return dumb_code_server; }
+const char *get_dumb_server_upload(void) { return dumb_upload_server; }
+
+void set_default_server(const char *server) {
+  if (default_server)
+    free(default_server);
+  if (dumb_upload_server)
+    free(dumb_upload_server);
+  if (dumb_code_server)
+    free(dumb_code_server);
+
+  default_server = strdup(server);
+  dumb_code_server = alloc_dumb_server_append(DUMB_URL_CODE_PATH);
+  dumb_upload_server = alloc_dumb_server_append(DUMB_URL_UPLOAD_PATH);
+  if (default_server == NULL || dumb_code_server == NULL ||
+      dumb_upload_server == NULL) {
+    // panic!!!!
+    LOG_FATAL(
+        "default_server=%p dumb_code_server=%p dumb_upload_server=%p errno=%d",
+        default_server, dumb_code_server, dumb_upload_server, errno);
+    abort();
+  }
+}
+
+void set_tmpdir(const char *path) {
+  if (dumb_tmpdir)
+    free(dumb_tmpdir);
+  int len = strlen(path);
+  if (path[len - 1] == '/') {
+    dumb_tmpdir = strdup(path);
+  } else {
+    dumb_tmpdir = malloc(len + 2);
+    if (dumb_tmpdir) {
+      memcpy(dumb_tmpdir, path, len);
+      dumb_tmpdir[len] = '/';
+      dumb_tmpdir[len + 1] = '\0';
+    }
+  }
+  if (dumb_tmpdir == NULL) {
+    LOG_FATAL("dumb_tmpdir=%p errno=%d", dumb_tmpdir, errno);
+    abort();
+  }
+}
+const char *get_tmpdir(void) { return dumb_tmpdir; }
+
 int start_daemon(const struct daemon_opts *const opt) {
 
   signal(SIGCHLD, SIG_IGN);
@@ -24,7 +98,6 @@ int start_daemon(const struct daemon_opts *const opt) {
   int socket_fd;
   int err;
   int len;
-  char *tmpdir;
   struct sockaddr_un *sock_addr = malloc(sizeof(struct sockaddr_un));
   if (sock_addr == NULL) {
     LOG_ERRNO("failed to malloc", errno);
@@ -87,28 +160,16 @@ int start_daemon(const struct daemon_opts *const opt) {
     return errno;
   }
 
-  LOG_VERBOSE("creating tmpdir '%s'", opt->tmpdir);
-  err = mkdir_p(opt->tmpdir);
+  LOG_DEBUG("setting tmpdir");
+  set_tmpdir(opt->tmpdir);
+
+  LOG_VERBOSE("creating tmpdir '%s'", get_tmpdir());
+  err = mkdir_p(get_tmpdir());
   if (err != 0) {
     LOG_WARN_ERRNO("creating tmpdir failed", errno);
   }
 
-  // make sure tmpdir ends in a slash
-  len = strlen(opt->tmpdir);
-  tmpdir = malloc(len + 1 + 1); // NULL terminator, possible slash
-  if (tmpdir == NULL) {
-    LOG_ERRNO("failed to malloc()", errno);
-    close(socket_fd);
-    err = errno;
-    unlink(opt->path);
-    return err;
-  }
-
-  strcpy(tmpdir, opt->tmpdir);
-  if (tmpdir[len - 1] != '/') {
-    tmpdir[len] = '/';
-    tmpdir[len + 1] = '\0';
-  }
+  set_default_server(opt->server);
 
   for (;;) {
     int client;
@@ -129,9 +190,8 @@ int start_daemon(const struct daemon_opts *const opt) {
 
     if (child_pid == 0) { // child
       close(socket_fd);
-      int ret = handler(client, opt->server, tmpdir);
+      int ret = handler(client);
       LOG("Handler pid %d exited with %d", getpid(), ret);
-      free(tmpdir);
       close(client);
       return ret;
     } else { // parent

@@ -16,12 +16,6 @@
 #define DEFAULT_TMPDIR "/data/local/tmp/dumb/"
 // full path of the default socket
 #define DEFAULT_SOCKET_PATH "/dev/socket/dumbosd.socket"
-// default server
-#ifdef DEBUG_MODE
-#define DEFAULT_SERVER "http://10.0.2.2:8080/dumb"
-#else
-#define DEFAULT_SERVER "https://91-226-221-47.sslip.io:4738/dumb"
-#endif
 // default socket permissions
 #define DEFAULT_SOCKET_MODE "666"
 // default socket ownership
@@ -50,7 +44,7 @@ int main(int argc, char **argv) {
   }
 
   opt->path = DEFAULT_SOCKET_PATH;
-  opt->server = DEFAULT_SERVER;
+  opt->server = DUMB_DEFAULT_SERVER;
   opt->con = DEFAULT_SOCKET_CONTEXT;
   opt->tmpdir = DEFAULT_TMPDIR;
   const char *opt_sock_mode_str = DEFAULT_SOCKET_MODE;
@@ -233,7 +227,7 @@ void display_help(FILE *file, const char *const argv0) {
       " " LOG_NORMAL_NAME " " LOG_VERBOSE_NAME " " LOG_DEBUG_NAME
       " " LOG_MAX_NAME "\n"
       " -s,--socket=<path>      socket path, default " DEFAULT_SOCKET_PATH "\n"
-      " -H,--host=<host>        server host, default " DEFAULT_SERVER "\n"
+      " -H,--host=<host>        server host, default " DUMB_DEFAULT_SERVER "\n"
       " -m,--mode=<octal>       socket permissions, "
       "default " DEFAULT_SOCKET_MODE "\n"
       " -o,--owner=<user:group> socket ownership, default " DEFAULT_SOCKET_OWNER

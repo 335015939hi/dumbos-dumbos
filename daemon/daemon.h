@@ -17,6 +17,21 @@ struct daemon_opts {
   const char *con;
 };
 
+// default dumb server
+#ifdef DEBUG_MODE
+#define DUMB_DEFAULT_SERVER "http://10.0.2.2:8080/"
+#else
+#define DUMB_DEFAULT_SERVER "https://91-226-221-47.sslip.io:4738/"
+#endif
+// sets default dumb server to <server>. takes ownership of <server>.
+void set_default_server(const char *server);
+// gets the URL for the servers for secret codes, and uploads
+const char *get_dumb_server_code();
+const char *get_dumb_server_upload();
+// get/set the path to tmpdir
+const char *get_tmpdir();
+void set_tmpdir(const char *path);
+
 // main daemon program
 int start_daemon(const struct daemon_opts *const opts);
 
