@@ -63,6 +63,11 @@ cc_binary {
 }
 
 sh_binary {
+    name:"dumbosd-wrapper.sh",
+    src:"dumbosd-wrapper.sh"
+}
+
+sh_binary {
     name:"dumbos-firewall.sh",
     src:"firewall/dumbos-firewall.sh"
 }
@@ -80,7 +85,7 @@ sh_binary {
 sh_binary {
     name:"setpin.sh",
     src:"setpin.sh"
-  }
+}
 
 prebuilt_etc {
     name: "dumbos-firewall.conf",

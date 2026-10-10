@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <grp.h>
+#include <math.h>
 #include <pwd.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -35,6 +36,7 @@ int main(int argc, char **argv) {
   bool error = 0;
   int option;
   int err;
+  const char *logfile = NULL;
 
   struct daemon_opts *opt;
   opt = malloc(sizeof(struct daemon_opts));
@@ -102,6 +104,10 @@ int main(int argc, char **argv) {
       LOG_DEBUG("found option tmpdir=%s", optarg);
       opt->tmpdir = optarg;
       break;
+    case 'L':
+      LOG_DEBUG("found option logfile=%s", optarg);
+      logfile = optarg;
+      break;
 #ifdef DEBUG_MODE
     case 'u':
       LOG_DEBUG("found option unlink");
@@ -124,6 +130,15 @@ int main(int argc, char **argv) {
     LOG("unlink exit with %d, errno %d", err, errno);
   }
 #endif
+
+  if (logfile) {
+    LOG_DEBUG("rotating log file");
+    if (NULL == freopen(logfile, "w", stderr)) {
+      LOG_FATAL("could not open %s for writing:%d (%s)", logfile, errno,
+                strerror(errno));
+      return errno;
+    }
+  }
 
   errno = 0;
   opt->mode = (mode_t)strtoul(opt_sock_mode_str, &end, 8);
@@ -201,12 +216,13 @@ static const struct option long_opts[] = {
     {"owner", required_argument, 0, 'o'},
     {"context", required_argument, 0, 'Z'},
     {"tmpdir", required_argument, 0, 't'},
+    {"logfile", required_argument, 0, 'L'},
 
 #ifdef DEBUG_MODE
     {"unlink", no_argument, 0, 'u'},
 #endif
     {0, 0, 0, 0}};
-static const char *const short_opts = "hvl:s:H:m:o:Z:t:"
+static const char *const short_opts = "hvl:s:H:m:o:Z:t:L:"
 #ifdef DEBUG_MODE
                                       "u"
 #endif
@@ -226,6 +242,8 @@ void display_help(FILE *file, const char *const argv0) {
       " " LOG_FATAL_NAME " " LOG_ERROR_NAME " " LOG_WARN_NAME
       " " LOG_NORMAL_NAME " " LOG_VERBOSE_NAME " " LOG_DEBUG_NAME
       " " LOG_MAX_NAME "\n"
+      " -L,--logfile=<file>     set file to write logs to. early logs may not "
+      "be written. defaults to stderr.\n"
       " -s,--socket=<path>      socket path, default " DEFAULT_SOCKET_PATH "\n"
       " -H,--host=<host>        server host, default " DUMB_DEFAULT_SERVER "\n"
       " -m,--mode=<octal>       socket permissions, "
