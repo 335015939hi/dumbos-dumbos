@@ -1,10 +1,9 @@
 use axum::http::StatusCode;
 use dumbtool::dumb;
 use dumbtool::dumbutil;
-use dumbtool::tables;
 use dumbtool::util;
 
-use crate::FJALL_DB;
+use crate::server;
 
 unsafe extern "C" {
     //defined in c/server_key_private.c
@@ -44,55 +43,17 @@ pub async fn main(
             return Err(StatusCode::FORBIDDEN);
         }
     }
-    if dumb::verify_chars_requestid(requestid) == false {
-        println!("bad characters found in requestid");
-        return Err(StatusCode::FORBIDDEN);
-    }
-    let user_pubkey = dumbutil::create_user_pubkey_path(directory, user);
-    let user_pubkey = util::read_file(&user_pubkey);
-    let user_pubkey = match user_pubkey {
-        Ok(key) => key,
-        Err(e) => {
-            if e.kind() == std::io::ErrorKind::NotFound {
-                println!("user {user} probably doesn't exist");
-                return Err(StatusCode::FORBIDDEN);
-            } else {
-                println!("{}", e.to_string());
-                return Err(StatusCode::INTERNAL_SERVER_ERROR);
-            }
-        }
-    };
-    let request_id_table = crate::server::REQUEST_ID_TABLE.get().unwrap();
-    match request_id_table.exists(requestid.as_str()) {
-        Ok(v) => {
-            if v {
-                println!("user {user} tried to make a duplicate request (id={requestid})");
+
+    match server::dumb_verify_request(&directory, &user, &code, &requestid, &requestsig, time) {
+        Ok(v) => match v {
+            Ok(_) => {}
+            Err(e) => {
+                println!("{e}");
                 return Err(StatusCode::FORBIDDEN);
             }
-        }
+        },
         Err(e) => {
             println!("{e}");
-            return Err(StatusCode::INTERNAL_SERVER_ERROR);
-        }
-    }
-    match dumb::verify_dumbos_request(
-        &user,
-        &requestid,
-        time,
-        &requestsig,
-        &String::from_utf8(user_pubkey).unwrap(),
-    ) {
-        Ok(_) => {}
-        Err(msg) => {
-            println!("verify_dumbos_request() failed:{msg}");
-            return Err(StatusCode::FORBIDDEN);
-        }
-    }
-
-    match request_id_table.insert(requestid.as_str()) {
-        Ok(_) => {}
-        Err(e) => {
-            println!("consuming request id failed:{e}");
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
     }

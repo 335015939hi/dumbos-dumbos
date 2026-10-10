@@ -321,14 +321,9 @@ char *alloc_construct_request_URL(const char *baseURL, const char *user,
                                   int64_t net_time, const char *code) {
   int err;
   char *url = NULL;
-  if (code) {
-    err =
-        asprintf(&url, "%s?code=%s&user=%s&requestid=%s&requestsig=%s&time=%ld",
+  code = code ? code : "dummy";
+  err = asprintf(&url, "%s?code=%s&user=%s&requestid=%s&requestsig=%s&time=%ld",
                  baseURL, code, user, requestid, requestsig, net_time);
-  } else {
-    err = asprintf(&url, "%s?user=%s&requestid=%s&requestsig=%s&time=%ld",
-                   baseURL, user, requestid, requestsig, net_time);
-  }
   if (err < 0) {
     return NULL;
   }
