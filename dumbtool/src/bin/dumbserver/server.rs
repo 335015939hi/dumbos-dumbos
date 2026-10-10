@@ -74,6 +74,8 @@ pub fn dumb_verify_request(
         return Ok(Err("bad characters found in requestid".into()));
     }
 
+    let user_requestid = user.clone() + "/" + requestid;
+
     let user_pubkey_path = dumbutil::create_user_pubkey_path(directory, user);
     let user_pubkey = util::read_file(&user_pubkey_path);
     let user_pubkey = match user_pubkey {
@@ -91,7 +93,7 @@ pub fn dumb_verify_request(
     };
 
     let request_id_table = REQUEST_ID_TABLE.get().unwrap();
-    match request_id_table.exists(requestid.as_str()) {
+    match request_id_table.exists(user_requestid.as_str()) {
         Ok(v) => {
             if v {
                 return Ok(Err(format!(
@@ -117,7 +119,7 @@ pub fn dumb_verify_request(
         }
     }
 
-    match request_id_table.insert(requestid.as_str()) {
+    match request_id_table.insert(user_requestid.as_str()) {
         Ok(_) => return Ok(Ok(())),
         Err(e) => {
             return Err(format!("consuming request id failed:{e}"));
