@@ -1,6 +1,7 @@
 use axum::body::Bytes;
 use axum::http::StatusCode;
 use axum::{Router, extract::Query, routing::get, routing::post};
+use dumbtool::tables;
 use serde::Deserialize;
 use std::sync::OnceLock;
 
@@ -9,6 +10,8 @@ use crate::dumbupload;
 use dumbtool::consts;
 
 static DIRECTORY: OnceLock<String> = OnceLock::new();
+
+pub static REQUEST_ID_TABLE: OnceLock<tables::RequestIdTable> = OnceLock::new();
 
 #[derive(Deserialize)]
 // see daemon/secret_code.c
@@ -52,6 +55,20 @@ async fn dumbpost(Query(q): Query<DumbUploadParams>, data: Bytes) -> Result<Stri
 
 pub async fn main(_allow_output: bool, directory: String, port: u32) {
     DIRECTORY.set(directory).unwrap();
+    match REQUEST_ID_TABLE.set(
+        match tables::RequestIdTable::open(crate::FJALL_DB.get().unwrap()) {
+            Ok(v) => v,
+            Err(e) => {
+                panic!("failed to open requestId table:{e}");
+            }
+        },
+    ) {
+        Ok(_) => {}
+        Err(_) => {
+            panic!("failed to open requestId table: OnceLock");
+        }
+    }
+
     let server: Router = Router::new()
         .route("/", get(|| async { "hello" }))
         .route(

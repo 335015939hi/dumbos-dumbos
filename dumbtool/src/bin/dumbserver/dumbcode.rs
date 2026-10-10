@@ -62,25 +62,19 @@ pub async fn main(
             }
         }
     };
-    let request_id_table = match tables::RequestIdTable::open(FJALL_DB.get().unwrap()) {
-        Ok(table) => match table.exists(requestid.as_str()) {
-            Ok(v) => {
-                if v {
-                    println!("user {user} tried to make a duplicate request (id={requestid})");
-                    return Err(StatusCode::FORBIDDEN);
-                }
-                table
+    let request_id_table = crate::server::REQUEST_ID_TABLE.get().unwrap();
+    match request_id_table.exists(requestid.as_str()) {
+        Ok(v) => {
+            if v {
+                println!("user {user} tried to make a duplicate request (id={requestid})");
+                return Err(StatusCode::FORBIDDEN);
             }
-            Err(e) => {
-                println!("{e}");
-                return Err(StatusCode::INTERNAL_SERVER_ERROR);
-            }
-        },
+        }
         Err(e) => {
             println!("{e}");
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
-    };
+    }
     match dumb::verify_dumbos_request(
         &user,
         &requestid,
