@@ -49,9 +49,6 @@
 #endif
 
 // logging functions
-#ifndef __ANDROID__
-// for non-android:we print to _log_output, or stderr by default
-// also include timestamp and PID
 #define _LOG_PREFIX(f, p)                                                      \
   fprintf(f, "[%s][%ld]%s ", timestamp(), (long)getpid(), p)
 #define _LOG(v, p, ...)                                                        \
@@ -69,30 +66,6 @@
 #define LOG_WARN(...) _LOG(LOG_VERBOSITY_WARN, "[WARN ]", ##__VA_ARGS__)
 #define LOG_VERBOSE(...) _LOG(LOG_VERBOSITY_VERBOSE, "[VRBOS]", ##__VA_ARGS__)
 #define LOG_DEBUG(...) _LOG(LOG_VERBOSITY_DEBUG, "[DEBUG]", ##__VA_ARGS__)
-#else //__ANDROID
-// logging for android. we will use android's __android_log_print to print to
-// logcat
-//__DUMBOS_CLIENT or __DUMBOSD__ should be defined at compile-time as part of
-// Android.bp, so automatically defined by the build system
-#ifdef __DUMBOSD__
-#define LOG_TAG "Dumbos daemon"
-#else
-#ifdef __DUMBOS_CLIENT
-#define LOG_TAG "Dumbos client"
-#else
-#define LOG_TAG "Dumbos"
-#endif
-#endif
-
-#define _LOG(v, ...) __android_log_print(v, LOG_TAG, ##__VA_ARGS__)
-#define LOG(...) _LOG(ANDROID_LOG_INFO, ##__VA_ARGS__)
-#define LOG_FATAL(...) _LOG(ANDROID_LOG_FATAL, ##__VA_ARGS__)
-#define LOG_ERR(...) _LOG(ANDROID_LOG_ERROR, ##__VA_ARGS__)
-#define LOG_WARN(...) _LOG(ANDROID_LOG_WARN, ##__VA_ARGS__)
-#define LOG_DEBUG(...) _LOG(ANDROID_LOG_DEBUG, ##__VA_ARGS__)
-#define LOG_VERBOSE(...) _LOG(ANDROID_LOG_VERBOSE, ##__VA_ARGS__)
-
-#endif //__ANDROID__
 
 // alias for LOG_ERR
 #define LOG_ERROR(s, ...) LOG_ERR(s, ##__VA_ARGS__)
@@ -102,10 +75,8 @@
 #define LOG_FATAL_ERRNO(s, err) LOG_FATAL("%s:%s", s, strerror(err))
 #define LOG_WARN_ERRNO(s, err) LOG_WARN("%s:%s", s, strerror(err))
 // global variable controlling log verbosity
-// no effect for android
 extern int log_verbosity;
 // verbosity defs, the lower the less verbose
-// no effect for android.
 // FIXME: swap verbose and debug, to be the same as android
 #define LOG_VERBOSITY_NONE 0
 #define LOG_VERBOSITY_FATAL 7
@@ -123,7 +94,7 @@ extern int log_verbosity;
 #define LOG_VERBOSE_NAME "verbose"
 #define LOG_DEBUG_NAME "debug"
 #define LOG_MAX_NAME "max"
-// sets log verbosity. no effect for android.
+// sets log verbosity.
 // accepts one of LOG_*_NAME (case insensative), returns 0
 // on success
 int set_log_verbosity(const char *const lvl);
