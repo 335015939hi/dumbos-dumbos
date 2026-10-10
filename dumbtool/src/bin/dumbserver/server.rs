@@ -18,22 +18,15 @@ pub static REQUEST_ID_TABLE: OnceLock<tables::RequestIdTable> = OnceLock::new();
 
 #[derive(Deserialize)]
 // see daemon/secret_code.c
-struct DumbCodeParams {
+struct DumbRequestParams {
     user: String,
     code: String,
     requestid: String,
     requestsig: String,
     time: u64,
 }
-#[derive(Deserialize)]
-struct DumbUploadParams {
-    user: String,
-    requestid: String,
-    requestsig: String,
-    time: u64,
-}
 
-async fn dumbcode(Query(q): Query<DumbCodeParams>) -> Result<Vec<u8>, StatusCode> {
+async fn dumbcode(Query(q): Query<DumbRequestParams>) -> Result<Vec<u8>, StatusCode> {
     dumbcode::main(
         &DIRECTORY.get().unwrap(),
         &q.user,
@@ -44,10 +37,11 @@ async fn dumbcode(Query(q): Query<DumbCodeParams>) -> Result<Vec<u8>, StatusCode
     )
     .await
 }
-async fn dumbpost(Query(q): Query<DumbUploadParams>, data: Bytes) -> Result<String, StatusCode> {
+async fn dumbpost(Query(q): Query<DumbRequestParams>, data: Bytes) -> Result<String, StatusCode> {
     dumbupload::main(
         &DIRECTORY.get().unwrap(),
         &q.user,
+        &q.code,
         &q.requestid,
         &q.requestsig,
         q.time,

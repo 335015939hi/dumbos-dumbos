@@ -28,6 +28,8 @@ pub const USERDATA_PREFIX: &str = "user/";
 pub const SERVER_USER_PUBKEY_FILE: &str = "pubkey";
 //filename prefix of a payload
 pub const CODE_FILE_PREFIX: &str = "code-";
+//filename prefix of uploaded data
+pub const UPLOAD_FILE_PREFIX: &str = "upload-";
 //default path prefix component
 pub const CODE_FILE_PATH: &str = "dumb-codes/";
 //path of the fjall database

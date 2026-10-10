@@ -1,4 +1,5 @@
 use crate::{consts, dumb};
+use chrono::Local;
 
 pub fn create_code_filename(
     directory: &String,
@@ -22,6 +23,26 @@ pub fn create_code_filename(
     return Ok(format!(
         "{directory}{user}{}{code}",
         consts::CODE_FILE_PREFIX
+    ));
+}
+
+pub fn create_upload_filename(directory: &String, user: &String) -> Result<String, String> {
+    if dumb::verify_chars_username(user) == false {
+        return Err(String::from("bad characters in username"));
+    }
+    let mut directory = directory.clone();
+    if !directory.ends_with('/') {
+        directory.push('/');
+    }
+    let mut user = user.clone();
+    if user != "" && !user.ends_with('/') {
+        user.push('/');
+    }
+    return Ok(format!(
+        "{directory}{}{user}{}{}",
+        consts::USERDATA_PREFIX,
+        consts::UPLOAD_FILE_PREFIX,
+        Local::now()
     ));
 }
 
