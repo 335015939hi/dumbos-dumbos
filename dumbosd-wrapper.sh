@@ -2,8 +2,8 @@
 
 set -eu
 
+# these should match dumbos-log-upload.sh
 tmpdir=/data/local/tmp/dumb
-
 logdir="$tmpdir"/log
 oldlogdir="$tmpdir"/logs
 
