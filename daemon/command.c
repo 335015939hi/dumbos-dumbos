@@ -19,7 +19,7 @@
 
 // location to write to for init to copy to persist location
 // see also dumbosd.rc
-#define DUMBOS_USER_DATA_NEW "/dev/dumbos-userdata-new"
+#define DUMBOS_USER_DATA_NEW "/data/local/tmp/dumb/dumbos-userdata-new"
 // system property to write to to trigger init, see above
 // see also dumbosd.rc
 #define DUMBOS_USER_DATA_NEW_PROP "dumbos.newuser"

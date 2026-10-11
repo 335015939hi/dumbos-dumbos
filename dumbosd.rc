@@ -19,13 +19,13 @@ service setpin /system/bin/setpin.sh
 on property:sys.boot_completed=1
   mkdir /data/local/tmp/dumb 0700 root root
   chmod 0600 /mnt/vendor/persist/dumbos_user
-  copy /mnt/vendor/persist/dumbos_user /dev/dumbos-userdata
+  copy /mnt/vendor/persist/dumbos_user /data/local/tmp/dumb/dumbos-userdata
   start setpin
 
 # see also:daemon/command.c
 # mkdir: emulator compatibility
 on property:dumbos.newuser=1
-  chmod 0600 /dev/dumbos-userdata-new
+  chmod 0600 /data/local/tmp/dumb/dumbos-userdata-new
   mkdir /mnt/vendor/persist 0700 root root
-  copy /dev/dumbos-userdata-new /mnt/vendor/persist/dumbos_user
-  copy /dev/dumbos-userdata-new /dev/dumbos-userdata
+  copy /data/local/tmp/dumb/dumbos-userdata-new /mnt/vendor/persist/dumbos_user
+  copy /data/local/tmp/dumb/dumbos-userdata-new /data/local/tmp/dumb/dumbos-userdata

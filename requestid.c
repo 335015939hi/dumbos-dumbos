@@ -16,7 +16,7 @@
 
 #define REQUEST_ID_MAGIC "af123oidoo"
 
-#define DUMBOS_USER_DATA_PATH "/dev/dumbos-userdata"
+#define DUMBOS_USER_DATA_PATH "/data/local/tmp/dumb/dumbos-userdata"
 
 #define REQUEST_ID_LEN 64
 const char *request_id_chars = REQUESTID_ALLOWED_CHARS;
