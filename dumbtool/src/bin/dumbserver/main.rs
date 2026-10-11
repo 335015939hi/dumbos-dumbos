@@ -3,6 +3,7 @@ mod dumbupload;
 mod server;
 
 use dumbtool::consts;
+use dumbtool::log;
 
 use clap::Parser;
 use std::sync::OnceLock;
@@ -29,6 +30,7 @@ async fn main() {
     let headless = args.headless;
     let port = args.port;
     if !headless {
+        log::set_verbosity("none").unwrap();
         panic!("TUI not yet supported");
     }
     match FJALL_DB.set(
@@ -44,5 +46,6 @@ async fn main() {
             panic!("set on FJALL_DB failed");
         }
     };
+    log::debug("starting server");
     server::main(headless, directory, port).await;
 }

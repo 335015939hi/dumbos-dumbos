@@ -10,6 +10,7 @@ fn main() {
         "c/requestid.c",
         "c/key_private.h",
         "c/server_private_key.c",
+        "c/log.c",
     ] {
         println!("cargo:rerun-if-changed={file}");
     }
@@ -21,7 +22,8 @@ fn main() {
     c.file("c/dumbpayload.c")
         .file("c/common.c")
         .file("c/ed25519.c")
-        .file("c/requestid.c");
+        .file("c/requestid.c")
+        .file("c/log.c");
 
     let path = "c/key_private.h";
     let compile_privkey: bool;
