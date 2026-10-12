@@ -1,16 +1,17 @@
+use crate::dumbcode;
+use crate::dumbupload;
 use axum::body::Bytes;
 use axum::http::{StatusCode, request};
 use axum::{Router, extract::Query, routing::get, routing::post};
-use dumbtool::tables;
-use serde::Deserialize;
-use std::sync::OnceLock;
-
-use crate::dumbcode;
-use crate::dumbupload;
 use dumbtool::consts;
 use dumbtool::dumb;
 use dumbtool::dumbutil;
+use dumbtool::events;
+use dumbtool::tables;
 use dumbtool::util;
+use serde::Deserialize;
+use std::sync::Mutex;
+use std::sync::OnceLock;
 
 static DIRECTORY: OnceLock<String> = OnceLock::new();
 
@@ -136,6 +137,19 @@ pub async fn main(_allow_output: bool, directory: String, port: u32) {
             panic!("failed to open requestId table: OnceLock");
         }
     }
+    match events::EVENTS_TABLE.set(Mutex::new(
+        match tables::EventsTable::open(crate::FJALL_DB.get().unwrap()) {
+            Ok(v) => v,
+            Err(e) => {
+                panic!("failed to open EVENTS_TABLE:{e}");
+            }
+        },
+    )) {
+        Ok(_) => {}
+        Err(_) => {
+            panic!("failed to open EVENTS_TABLE: OnceLock");
+        }
+    };
 
     let server: Router = Router::new()
         .route("/", get(|| async { "hello" }))

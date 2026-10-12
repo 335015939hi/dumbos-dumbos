@@ -32,5 +32,5 @@ pub const CODE_FILE_PREFIX: &str = "code-";
 pub const UPLOAD_FILE_PREFIX: &str = "upload-";
 //default path prefix component
 pub const CODE_FILE_PATH: &str = "dumb-codes/";
-//path of the fjall database
-pub const FJALL_DB_PATH: &str = "dumb-codes/dumb.bin";
+//filename of the fjall database
+pub const FJALL_DB_FILENAME: &str = "dumb.bin";

@@ -34,7 +34,8 @@ async fn main() {
         panic!("TUI not yet supported");
     }
     match FJALL_DB.set(
-        match fjall::Database::builder(consts::FJALL_DB_PATH).open() {
+        match fjall::Database::builder(format!("{directory}/{}", consts::FJALL_DB_FILENAME)).open()
+        {
             Ok(v) => v,
             Err(e) => {
                 panic!("{e}");

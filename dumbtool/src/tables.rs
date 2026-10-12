@@ -44,7 +44,7 @@ impl EventsTable {
             len: len as u64,
         })
     }
-    pub fn push(&mut self, event: events::Event) -> fjall::Result<()> {
+    pub fn push(&mut self, event: &events::Event) -> fjall::Result<()> {
         let value = match postcard::to_stdvec(&event) {
             Ok(v) => v,
             Err(e) => {
@@ -67,5 +67,10 @@ impl EventsTable {
                 Err(e) => panic!("{e}"),
             },
         }
+    }
+    pub fn clear(&mut self) -> fjall::Result<()> {
+        self.keyspace.clear()?;
+        self.len = 0;
+        Ok(())
     }
 }

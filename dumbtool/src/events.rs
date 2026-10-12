@@ -1,9 +1,12 @@
 use crate::log;
+use crate::tables::EventsTable;
 use chrono::DateTime;
 use chrono::Local;
 use clap::builder::Str;
 use serde::Deserialize;
 use serde::Serialize;
+use std::sync::Mutex;
+use std::sync::OnceLock;
 
 #[derive(Serialize, Deserialize)]
 pub enum EventType {
@@ -24,9 +27,16 @@ pub struct Event {
     pub extra: Option<String>,
 }
 
+pub static EVENTS_TABLE: OnceLock<Mutex<EventsTable>> = OnceLock::new();
+
 impl Event {
     pub fn dispatch(&mut self) {
         self.time = chrono::Utc::now().timestamp();
+        let table: &mut EventsTable = &mut EVENTS_TABLE.get().unwrap().lock().unwrap();
+        match table.push(self) {
+            Ok(_) => {}
+            Err(e) => panic!("{e}"),
+        }
         self.print();
     }
     pub fn print(&self) {

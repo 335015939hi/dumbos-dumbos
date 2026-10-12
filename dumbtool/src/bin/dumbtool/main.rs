@@ -2,6 +2,7 @@ mod cmd_cmdget;
 mod cmd_cmdsetraw;
 mod cmd_createheaders;
 mod cmd_datagetset;
+mod cmd_events;
 mod cmd_expire;
 mod cmd_new;
 mod cmd_signature;
@@ -100,6 +101,11 @@ enum Commands {
     /// create the public/private key header files required to compile the DumbOS server and client.
     /// copy the generated key_*.h headers into /repo/root/keys/ (or just use --directory /repo/root/keys/)
     CreateKeyHeaders,
+    /// read the events database
+    Events {
+        #[arg(short, long)]
+        clear: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -220,6 +226,9 @@ fn main() -> Result<(), String> {
         }
         Commands::CreateKeyHeaders => {
             return cmd_createheaders::main(&dumb_dir);
+        }
+        Commands::Events { clear } => {
+            return cmd_events::main(&dumb_dir, clear);
         }
         Commands::CommandSet { command } => match command {
             PayloadCommand::Ok => {
