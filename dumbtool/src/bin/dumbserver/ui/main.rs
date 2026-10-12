@@ -39,9 +39,7 @@ fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
                 _ => {}
             },
             //go back
-            None => {
-                break;
-            }
+            None => {}
         }
     }
     Ok(())

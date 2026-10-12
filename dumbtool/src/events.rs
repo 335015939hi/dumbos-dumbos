@@ -4,6 +4,7 @@ use chrono::DateTime;
 use chrono::Local;
 use serde::Deserialize;
 use serde::Serialize;
+use std::fmt;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 
@@ -28,19 +29,8 @@ pub struct Event {
 
 pub static EVENTS_TABLE: OnceLock<Mutex<EventsTable>> = OnceLock::new();
 
-impl Event {
-    pub fn dispatch(&mut self) {
-        self.time = chrono::Utc::now().timestamp();
-        let table: &mut EventsTable = &mut EVENTS_TABLE.get().unwrap().lock().unwrap();
-        match table.push(self) {
-            Ok(_) => {}
-            Err(e) => panic!("{e}"),
-        }
-        if log::get_verbosity() != 0 {
-            self.print();
-        }
-    }
-    pub fn print(&self) {
+impl fmt::Display for Event {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let time = match DateTime::from_timestamp(self.time, 0) {
             None => String::from(""),
             Some(t) => {
@@ -122,7 +112,24 @@ impl Event {
                 };
             }
         }
-        println!("[{time}][{tag}] {s}");
+        write!(f, "[{time}][{tag}] {s}")
+    }
+}
+
+impl Event {
+    pub fn dispatch(&mut self) {
+        self.time = chrono::Utc::now().timestamp();
+        let table: &mut EventsTable = &mut EVENTS_TABLE.get().unwrap().lock().unwrap();
+        match table.push(self) {
+            Ok(_) => {}
+            Err(e) => panic!("{e}"),
+        }
+        if log::get_verbosity() != 0 {
+            self.print();
+        }
+    }
+    pub fn print(&self) {
+        println!("{self}");
     }
     pub fn code(user: &String, code: &String, personal: bool) -> Self {
         Self {
