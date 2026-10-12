@@ -16,6 +16,7 @@ fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
     loop {
         state = menu::main(
             terminal,
+            "DumbOS Server",
             &vec![
                 "Manage codes".into(),
                 "Manage users".into(),

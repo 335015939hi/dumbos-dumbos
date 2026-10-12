@@ -9,6 +9,7 @@ use ratatui::{
 
 pub fn main(
     terminal: &mut DefaultTerminal,
+    title: &str,
     items: &Vec<String>,
     mut state: ListState,
 ) -> std::io::Result<ListState> {
@@ -24,11 +25,7 @@ pub fn main(
                 .split(frame.area());
 
             let menu = List::new(items.iter().map(|s| ListItem::new(s.as_str())))
-                .block(
-                    Block::default()
-                        .title(" DumbOS server ")
-                        .borders(Borders::ALL),
-                )
+                .block(Block::default().title(title).borders(Borders::ALL))
                 .highlight_style(
                     Style::default()
                         .fg(Color::Yellow)
