@@ -54,7 +54,7 @@ pub async fn main(
             }
         },
         Err(e) => {
-            Event::error(&String::from("verifying code request"), &e).dispatch();
+            Event::error(&String::from("verifying request"), &e).dispatch();
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
     }

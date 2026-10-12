@@ -1,6 +1,7 @@
 use crate::log;
 use chrono::DateTime;
 use chrono::Local;
+use clap::builder::Str;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -66,8 +67,31 @@ impl Event {
                 };
                 is_error = true;
             }
-            EventType::Upload => {}
-            EventType::UploadRejected => {}
+            EventType::Upload => {
+                s += "uploaded ";
+                s += match &self.reason {
+                    Some(s) => s.as_str(),
+                    None => "unknown number of",
+                };
+                s += " bytes to ";
+                s += format!(
+                    "'{}'",
+                    match &self.extra {
+                        Some(s) => s.as_str(),
+                        None => "unknown location",
+                    }
+                )
+                .as_str();
+            }
+            EventType::UploadRejected => {
+                s += "denied upload because ";
+                s += match &self.reason {
+                    Some(s) => s.as_str(),
+                    None => "",
+                };
+                is_error = true;
+            }
+
             EventType::Error => {
                 s += match &self.extra {
                     Some(s) => s.as_str(),
@@ -115,6 +139,24 @@ impl Event {
             time: -1,
             reason: Some(message.clone()),
             extra: Some(action.clone()),
+        }
+    }
+    pub fn reject_upload(user: &String, reason: &String) -> Self {
+        Self {
+            event_type: EventType::UploadRejected,
+            user: Some(user.clone()),
+            time: -1,
+            reason: Some(reason.clone()),
+            extra: None,
+        }
+    }
+    pub fn upload(user: &String, dest: &String, size: usize) -> Self {
+        Self {
+            event_type: EventType::Upload,
+            user: Some(user.clone()),
+            time: -1,
+            reason: Some(format!("{size}")),
+            extra: Some(dest.clone()),
         }
     }
 }
