@@ -14,7 +14,7 @@ pub fn main() {
 fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
     let mut state = ListState::default().with_selected(Some(0));
     loop {
-        state = menu::main(
+        state = menu::simple(
             terminal,
             "DumbOS Server",
             &vec![
