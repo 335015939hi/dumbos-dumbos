@@ -1,6 +1,10 @@
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEventKind;
 use ratatui::DefaultTerminal;
+use ratatui::layout::Margin;
+use ratatui::widgets::Scrollbar;
+use ratatui::widgets::ScrollbarOrientation;
+use ratatui::widgets::ScrollbarState;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
@@ -21,6 +25,24 @@ pub fn render_once(
             .split(frame.area());
 
         frame.render_stateful_widget(menu, chunks[0], state);
+
+        let scrollbar_area = chunks[0].inner(Margin {
+            vertical: 1,
+            horizontal: 0,
+        });
+        let viewport_len = scrollbar_area.height as usize;
+        let item_count = menu.len();
+        // Only show a scrollbar when scrolling is necessary.
+        if item_count > viewport_len && viewport_len > 0 {
+            let mut scrollbar_state = ScrollbarState::new(item_count - viewport_len)
+                .position(state.offset())
+                .viewport_content_length(viewport_len);
+            frame.render_stateful_widget(
+                Scrollbar::new(ScrollbarOrientation::VerticalRight),
+                scrollbar_area,
+                &mut scrollbar_state,
+            );
+        }
 
         match status {
             Some(status) => {
