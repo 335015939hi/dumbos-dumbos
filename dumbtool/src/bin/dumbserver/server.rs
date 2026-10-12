@@ -1,7 +1,7 @@
 use crate::dumbcode;
 use crate::dumbupload;
 use axum::body::Bytes;
-use axum::http::{StatusCode, request};
+use axum::http::StatusCode;
 use axum::{Router, extract::Query, routing::get, routing::post};
 use dumbtool::consts;
 use dumbtool::dumb;

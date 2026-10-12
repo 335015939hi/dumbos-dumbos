@@ -1,12 +1,9 @@
-use std::f32::consts::E;
 
 use fjall::Database;
 use fjall::Keyspace;
 use fjall::KeyspaceCreateOptions;
-use fjall::PersistMode;
 
 use crate::events;
-use crate::events::EventType;
 
 const REQUEST_ID_KEYSPACE: &str = "requestid";
 const EVENTS_KEYSPACE: &str = "dumbEvents";

@@ -2,7 +2,6 @@ use crate::log;
 use crate::tables::EventsTable;
 use chrono::DateTime;
 use chrono::Local;
-use clap::builder::Str;
 use serde::Deserialize;
 use serde::Serialize;
 use std::sync::Mutex;

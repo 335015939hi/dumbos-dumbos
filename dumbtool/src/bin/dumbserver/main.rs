@@ -1,12 +1,12 @@
 mod dumbcode;
 mod dumbupload;
 mod server;
-
+mod ui;
+use clap::Parser;
 use dumbtool::consts;
 use dumbtool::log;
-
-use clap::Parser;
 use std::sync::OnceLock;
+use std::thread;
 
 #[derive(Parser)]
 struct Args {
@@ -31,7 +31,7 @@ async fn main() {
     let port = args.port;
     if !headless {
         log::set_verbosity("none").unwrap();
-        panic!("TUI not yet supported");
+        let _tui_thread = thread::spawn(ui::main::main);
     }
     match FJALL_DB.set(
         match fjall::Database::builder(format!("{directory}/{}", consts::FJALL_DB_FILENAME)).open()
@@ -47,6 +47,7 @@ async fn main() {
             panic!("set on FJALL_DB failed");
         }
     };
+
     log::debug("starting server");
     server::main(headless, directory, port).await;
 }
