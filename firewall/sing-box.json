@@ -1,7 +1,7 @@
 {
   "$schema": "https://sing-box.sagernet.org/schema.json",
   "log": {
-    "level": "debug",
+    "level": "info",
     "timestamp": true
   },
   "dns": {
@@ -46,8 +46,8 @@
       },
       {
         "domain": [
-          "dns.google",
           "91-226-221-47.sslip.io",
+          "falundafa.org",
         ],
         "domain_suffix": [
         ],

@@ -282,7 +282,8 @@ int64_t get_network_time(void) {
   }
 
   // Configure the request to a highly reliable HTTPS server
-  curl_easy_setopt(curl, CURLOPT_URL, "https://google.com");
+  // make sure its allowed by sing-box
+  curl_easy_setopt(curl, CURLOPT_URL, "https://falundafa.org");
 
   // We only need the headers to get the time, so issue a HEAD request to save
   // bandwidth
