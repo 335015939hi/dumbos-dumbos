@@ -37,7 +37,9 @@ impl Event {
             Ok(_) => {}
             Err(e) => panic!("{e}"),
         }
-        self.print();
+        if log::get_verbosity() != 0 {
+            self.print();
+        }
     }
     pub fn print(&self) {
         let time = match DateTime::from_timestamp(self.time, 0) {
@@ -171,7 +173,7 @@ impl Event {
             extra: Some(dest.clone()),
         }
     }
-    pub fn info(msg: String) -> Self {
+    pub fn info(msg: &String) -> Self {
         Self {
             event_type: EventType::Info,
             user: None,

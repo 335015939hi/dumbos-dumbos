@@ -49,6 +49,7 @@ int set_log_verbosity(const char *const lvl) {
   }
   return 0;
 }
+int get_log_verbosity() { return log_verbosity; }
 
 ssize_t write_all(int fd, const void *buf, size_t len) {
   const char *p = buf;

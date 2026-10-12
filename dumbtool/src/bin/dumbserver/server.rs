@@ -165,5 +165,6 @@ pub async fn main(_allow_output: bool, directory: String, port: u32) {
         .await
         .unwrap();
 
+    events::Event::info(&"starting server".into()).dispatch();
     axum::serve(listener, server).await.unwrap();
 }

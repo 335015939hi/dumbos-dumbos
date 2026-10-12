@@ -13,6 +13,7 @@ unsafe extern "C" {
     fn _log_fatal_errno_(s: *const c_char);
     fn _log_warn_errno_(s: *const c_char);
     fn set_log_verbosity(s: *const c_char) -> c_int;
+    fn get_log_verbosity() -> c_int;
 }
 
 pub fn set_verbosity(s: &str) -> Result<(), i32> {
@@ -24,6 +25,11 @@ pub fn set_verbosity(s: &str) -> Result<(), i32> {
         return Ok(());
     }
     return Err(r);
+}
+pub fn get_verbosity() -> i32 {
+    unsafe {
+        return get_log_verbosity();
+    }
 }
 
 pub fn log(s: &str) {

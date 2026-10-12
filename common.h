@@ -98,6 +98,7 @@ extern int log_verbosity;
 // accepts one of LOG_*_NAME (case insensative), returns 0
 // on success
 int set_log_verbosity(const char *const lvl);
+int get_log_verbosity();
 
 // takes a string and tries to parse it as unsigned base 10 integer short.
 // returns -1 on fail, setting errno
