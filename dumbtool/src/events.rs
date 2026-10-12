@@ -40,24 +40,22 @@ impl Event {
         self.print();
     }
     pub fn print(&self) {
-        let mut s = match DateTime::from_timestamp(self.time, 0) {
+        let time = match DateTime::from_timestamp(self.time, 0) {
             None => String::from(""),
             Some(t) => {
                 let t = t.with_timezone(&Local);
-                t.format("[%Y-%m-%d %H:%M:%S] ").to_string()
+                t.format("%Y-%m-%d %H:%M:%S").to_string()
             }
         };
-        let user_str;
-        s += match &self.user {
-            Some(u) => {
-                user_str = format!("user '{u}' ");
-                user_str.as_str()
-            }
-            None => "",
+        let mut s = match &self.user {
+            Some(u) => format!("user '{u}' "),
+
+            None => "".into(),
         };
-        let mut is_error = false;
+        let tag;
         match self.event_type {
             EventType::Code => {
+                tag = "Action";
                 s += "used code ";
                 s += match &self.extra {
                     Some(s) => s.as_str(),
@@ -65,6 +63,7 @@ impl Event {
                 };
             }
             EventType::CodeRejected => {
+                tag = "Reject";
                 s += "denied code ";
                 s += match &self.extra {
                     Some(s) => s.as_str(),
@@ -75,9 +74,9 @@ impl Event {
                     Some(s) => s.as_str(),
                     None => "",
                 };
-                is_error = true;
             }
             EventType::Upload => {
+                tag = "Action";
                 s += "uploaded ";
                 s += match &self.reason {
                     Some(s) => s.as_str(),
@@ -94,15 +93,16 @@ impl Event {
                 .as_str();
             }
             EventType::UploadRejected => {
+                tag = "Reject";
                 s += "denied upload because ";
                 s += match &self.reason {
                     Some(s) => s.as_str(),
                     None => "",
                 };
-                is_error = true;
             }
 
             EventType::Error => {
+                tag = "Error";
                 s += match &self.extra {
                     Some(s) => s.as_str(),
                     None => "something",
@@ -112,14 +112,16 @@ impl Event {
                     Some(s) => s.as_str(),
                     None => "unknown cause",
                 };
-                is_error = true;
             }
-            EventType::Info => {}
+            EventType::Info => {
+                tag = "Info";
+                s += match &self.reason {
+                    Some(s) => s.as_str(),
+                    None => "something happened",
+                };
+            }
         }
-        match is_error {
-            true => log::error(s.as_str()),
-            false => log::log(s.as_str()),
-        }
+        println!("[{time}][{tag}] {s}");
     }
     pub fn code(user: &String, code: &String, personal: bool) -> Self {
         Self {
@@ -167,6 +169,15 @@ impl Event {
             time: -1,
             reason: Some(format!("{size}")),
             extra: Some(dest.clone()),
+        }
+    }
+    pub fn info(msg: String) -> Self {
+        Self {
+            event_type: EventType::Info,
+            user: None,
+            time: -1,
+            reason: Some(msg.clone()),
+            extra: None,
         }
     }
 }
