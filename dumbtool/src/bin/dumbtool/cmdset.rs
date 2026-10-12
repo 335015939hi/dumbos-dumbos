@@ -39,7 +39,7 @@ pub fn firewall_flush(filelist: &Vec<String>) -> Result<(), String> {
 }
 
 pub fn firewall_allow(filelist: &Vec<String>, apps: &Vec<String>) -> Result<(), String> {
-    let mut data: Vec<u8> = vec![0];
+    let mut data: Vec<u8> = vec![];
     if apps.len() == 0 {
         return Err(String::from("Error: no apps specified"));
     }
@@ -58,7 +58,7 @@ pub fn firewall_allow(filelist: &Vec<String>, apps: &Vec<String>) -> Result<(), 
 }
 
 pub fn firewall_deny(filelist: &Vec<String>, apps: &Vec<String>) -> Result<(), String> {
-    let mut data: Vec<u8> = vec![0];
+    let mut data: Vec<u8> = vec![];
     if apps.len() == 0 {
         return Err(String::from("Error: no apps specified"));
     }
