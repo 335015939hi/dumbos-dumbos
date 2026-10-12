@@ -1,6 +1,7 @@
 use axum::http::StatusCode;
 use dumbtool::dumb;
 use dumbtool::dumbutil;
+use dumbtool::events;
 use dumbtool::util;
 
 use crate::server;
@@ -58,12 +59,19 @@ pub async fn main(
         }
     }
 
+    let is_code_personal;
     let dumbpayload = match util::read_file(&code_path_user) {
-        Ok(q) => q,
+        Ok(q) => {
+            is_code_personal = true;
+            q
+        }
         Err(e) => {
             if e.kind() == std::io::ErrorKind::NotFound {
                 match util::read_file(&code_path_global) {
-                    Ok(q) => q,
+                    Ok(q) => {
+                        is_code_personal = false;
+                        q
+                    }
                     Err(e) => {
                         if e.kind() == std::io::ErrorKind::NotFound {
                             println!("no code {code} found for user {user}");
@@ -104,7 +112,7 @@ pub async fn main(
     }
 
     let dumbpayload = dumb::dumbpayload_to_u8(&dumbpayload);
-    println!("done");
+    events::Event::code(user, code, is_code_personal).dispatch();
 
     return Ok(dumbpayload);
 }
