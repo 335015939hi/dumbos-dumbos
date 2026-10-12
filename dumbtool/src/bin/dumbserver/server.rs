@@ -122,7 +122,12 @@ pub fn dumb_verify_request(
     }
 }
 
-pub async fn main(_allow_output: bool, directory: String, port: u32) {
+pub async fn main(
+    _allow_output: bool,
+    directory: String,
+    port: u32,
+    shutdown_rx: Option<tokio::sync::oneshot::Receiver<()>>,
+) {
     DIRECTORY.set(directory).unwrap();
     match REQUEST_ID_TABLE.set(
         match tables::RequestIdTable::open(crate::FJALL_DB.get().unwrap()) {
@@ -165,6 +170,24 @@ pub async fn main(_allow_output: bool, directory: String, port: u32) {
         .await
         .unwrap();
 
+    let shutdown = async move {
+        match shutdown_rx {
+            Some(rx) => {
+                tokio::select! {
+                    _ = rx => {},
+                    _ = tokio::signal::ctrl_c() => {},
+                }
+            }
+            None => {
+                // Headless mode: wait for Ctrl+C.
+                let _ = tokio::signal::ctrl_c().await;
+            }
+        }
+    };
+
     events::Event::info(&"starting server".into()).dispatch();
-    axum::serve(listener, server).await.unwrap();
+    axum::serve(listener, server)
+        .with_graceful_shutdown(shutdown)
+        .await
+        .unwrap();
 }

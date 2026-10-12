@@ -29,10 +29,7 @@ async fn main() {
     let directory = args.directory;
     let headless = args.headless;
     let port = args.port;
-    if !headless {
-        log::set_verbosity("none").unwrap();
-        let _tui_thread = thread::spawn(ui::main::main);
-    }
+
     match FJALL_DB.set(
         match fjall::Database::builder(format!("{directory}/{}", consts::FJALL_DB_FILENAME)).open()
         {
@@ -48,6 +45,18 @@ async fn main() {
         }
     };
 
+    let shutdown_rx = if !headless {
+        log::set_verbosity("none").unwrap();
+        let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
+        thread::spawn(move || {
+            ui::main::main();
+            let _ = shutdown_tx.send(());
+        });
+        Some(shutdown_rx)
+    } else {
+        None
+    };
+
     log::debug("starting server");
-    server::main(headless, directory, port).await;
+    server::main(headless, directory, port, shutdown_rx).await;
 }
