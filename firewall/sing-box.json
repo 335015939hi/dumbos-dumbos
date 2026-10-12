@@ -1,0 +1,66 @@
+{
+  "$schema": "https://sing-box.sagernet.org/schema.json",
+  "log": {
+    "level": "debug",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "udp",
+        "tag": "dns-upstream",
+        "server": "8.8.8.8",
+        "server_port": 53
+      }
+    ],
+    "final": "dns-upstream"
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "address": "172.19.0.1/30",
+      "auto_route": true,
+      "platform": {
+        "http_proxy": {
+          "server": "",
+          "server_port": 0
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct-out"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      {
+        "protocol": "dns",
+        "action": "hijack-dns"
+      },
+      {
+        "domain": [
+          "dns.google",
+          "91-226-221-47.sslip.io",
+        ],
+        "domain_suffix": [
+        ],
+        "ip_cidr": [
+          "10.0.2.2",
+        ],
+        "outbound": "direct-out"
+      },
+      {
+        "action": "reject"
+      }
+    ],
+    "final": "direct-out",
+    "auto_detect_interface": true
+  }
+}

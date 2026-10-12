@@ -97,3 +97,22 @@ prebuilt_etc {
     src: "firewall/dumbos-firewall.conf",
     filename: "dumbos-firewall.conf",
 }
+
+prebuilt_etc {
+    name: "sing-box.json",
+    src: "firewall/sing-box.json",
+    filename: "sing-box.json",
+}
+cc_prebuilt_binary {
+    name: "sing-box",
+    arch: {
+        arm64: {
+            srcs: ["firewall/sing-box_arm64"],
+        },
+        x86_64:{
+            srcs: ["firewall/sing-box_x64"],
+        },
+    },
+    ignore_max_page_size: true,
+    shared_libs: ["libc", "liblog", "libdl"], 
+}
