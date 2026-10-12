@@ -38,11 +38,15 @@ pub fn create_upload_filename(directory: &String, user: &String) -> Result<Strin
     if user != "" && !user.ends_with('/') {
         user.push('/');
     }
+    let time = Local::now();
+    let time = time.format("%Y-%m-%d %H:%M:%S");
+    let uniqueid: String = (0..8)
+        .map(|_| rand::random_range(b'a'..=b'z') as char)
+        .collect();
     return Ok(format!(
-        "{directory}{}{user}{}{}",
+        "{directory}{}{user}{}{time}-{uniqueid}",
         consts::USERDATA_PREFIX,
         consts::UPLOAD_FILE_PREFIX,
-        Local::now()
     ));
 }
 
