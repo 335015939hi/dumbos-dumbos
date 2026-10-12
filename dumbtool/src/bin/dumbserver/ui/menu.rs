@@ -52,7 +52,7 @@ pub fn simple(
                 .fg(Color::Yellow)
                 .add_modifier(Modifier::BOLD),
         )
-        .highlight_symbol(" > ");
+        .highlight_symbol("> ");
 
     loop {
         let key = navigate(terminal, &menu, &mut state, None)?;
@@ -62,6 +62,25 @@ pub fn simple(
             }
             KeyCode::Char('q') | KeyCode::Esc => {
                 break Ok(state);
+            }
+            _ => {}
+        }
+    }
+}
+
+pub fn simple_menu(
+    terminal: &mut DefaultTerminal,
+    menu: &List,
+    mut state: ListState,
+) -> std::io::Result<ListState> {
+    loop {
+        let key = navigate(terminal, &menu, &mut state, None)?;
+        match key {
+            KeyCode::Enter | KeyCode::Char(' ') => {
+                return Ok(state);
+            }
+            KeyCode::Char('q') | KeyCode::Esc => {
+                return Ok(state);
             }
             _ => {}
         }

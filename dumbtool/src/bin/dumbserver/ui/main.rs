@@ -34,7 +34,9 @@ fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
                 //manage users
                 1 => {}
                 //events log
-                2 => {}
+                2 => {
+                    crate::ui::events::main(terminal);
+                }
                 //anything else
                 _ => {}
             },
