@@ -185,9 +185,10 @@ pub async fn main(
         }
     };
 
-    events::Event::info(&"starting server".into()).dispatch();
+    events::Event::info(&"Starting server".into()).dispatch();
     axum::serve(listener, server)
         .with_graceful_shutdown(shutdown)
         .await
         .unwrap();
+    events::Event::info(&"Shutting down server".into()).dispatch();
 }
