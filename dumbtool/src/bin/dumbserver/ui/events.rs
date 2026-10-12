@@ -1,4 +1,3 @@
-use crate::server;
 use crate::ui::menu;
 use dumbtool::events;
 use dumbtool::events::Event;
