@@ -1,7 +1,7 @@
 use axum::http::StatusCode;
 use dumbtool::dumb;
 use dumbtool::dumbutil;
-use dumbtool::events;
+use dumbtool::events::Event;
 use dumbtool::util;
 
 use crate::server;
@@ -33,14 +33,14 @@ pub async fn main(
     match dumbutil::create_code_filename(directory, &String::from(""), code) {
         Ok(path) => code_path_global = path,
         Err(msg) => {
-            println!("{msg}");
+            Event::reject_code(user, code, &msg).dispatch();
             return Err(StatusCode::FORBIDDEN);
         }
     }
     match dumbutil::create_code_filename(directory, user, code) {
         Ok(path) => code_path_user = path,
         Err(msg) => {
-            println!("{msg}");
+            Event::reject_code(user, code, &msg).dispatch();
             return Err(StatusCode::FORBIDDEN);
         }
     }
@@ -49,12 +49,12 @@ pub async fn main(
         Ok(v) => match v {
             Ok(_) => {}
             Err(e) => {
-                println!("{e}");
+                Event::reject_code(user, code, &e).dispatch();
                 return Err(StatusCode::FORBIDDEN);
             }
         },
         Err(e) => {
-            println!("{e}");
+            Event::error(&String::from("verifying code request"), &e).dispatch();
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
     }
@@ -74,16 +74,21 @@ pub async fn main(
                     }
                     Err(e) => {
                         if e.kind() == std::io::ErrorKind::NotFound {
-                            println!("no code {code} found for user {user}");
+                            Event::reject_code(user, code, &String::from("no code found"))
+                                .dispatch();
                             return Err(StatusCode::FORBIDDEN);
                         } else {
-                            println!("failed to open {code_path_global}:{}", e.to_string());
+                            Event::error(
+                                &format!("opening file {code_path_global}"),
+                                &e.to_string(),
+                            )
+                            .dispatch();
                             return Err(StatusCode::INTERNAL_SERVER_ERROR);
                         }
                     }
                 }
             } else {
-                println!("failed to open {code_path_user}:{}", e.to_string());
+                Event::error(&format!("opening file {code_path_user}"), &e.to_string()).dispatch();
                 return Err(StatusCode::INTERNAL_SERVER_ERROR);
             }
         }
@@ -92,7 +97,7 @@ pub async fn main(
     let mut dumbpayload = match dumb::u8_to_dumbpayload(&dumbpayload) {
         Ok(q) => q,
         Err(e) => {
-            println!("{e}");
+            Event::error(&"u8_to_payload()".into(), &e).dispatch();
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
     };
@@ -100,19 +105,21 @@ pub async fn main(
     if dumb::check_expire_and_set(&mut dumbpayload) {
         //code is expired
         println!("code {code} requestedby user {user} is expired");
+        Event::reject_code(user, code, &"expired".into()).dispatch();
         return Err(StatusCode::FORBIDDEN);
     }
 
     match dumb::sign(&mut dumbpayload, &get_private_key()) {
         Ok(_) => {}
         Err(e) => {
+            Event::error(&"signing payload".into(), &e).dispatch();
             println!("failed to sign payload:{e}");
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
     }
 
     let dumbpayload = dumb::dumbpayload_to_u8(&dumbpayload);
-    events::Event::code(user, code, is_code_personal).dispatch();
+    Event::code(user, code, is_code_personal).dispatch();
 
     return Ok(dumbpayload);
 }

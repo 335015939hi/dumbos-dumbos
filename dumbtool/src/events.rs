@@ -59,6 +59,7 @@ impl Event {
                     Some(s) => s.as_str(),
                     None => "(unknown)",
                 };
+                s += " because ";
                 s += match &self.reason {
                     Some(s) => s.as_str(),
                     None => "",
@@ -67,7 +68,18 @@ impl Event {
             }
             EventType::Upload => {}
             EventType::UploadRejected => {}
-            EventType::Error => {}
+            EventType::Error => {
+                s += match &self.extra {
+                    Some(s) => s.as_str(),
+                    None => "something",
+                };
+                s += " failed because ";
+                s += match &self.reason {
+                    Some(s) => s.as_str(),
+                    None => "unknown cause",
+                };
+                is_error = true;
+            }
             EventType::Info => {}
         }
         match is_error {
@@ -89,11 +101,20 @@ impl Event {
     }
     pub fn reject_code(user: &String, code: &String, reason: &String) -> Self {
         Self {
-            event_type: EventType::Code,
+            event_type: EventType::CodeRejected,
             user: Some(user.clone()),
             time: -1,
             reason: Some(reason.clone()),
             extra: Some(code.clone()),
+        }
+    }
+    pub fn error(action: &String, message: &String) -> Self {
+        Self {
+            event_type: EventType::Error,
+            user: None,
+            time: -1,
+            reason: Some(message.clone()),
+            extra: Some(action.clone()),
         }
     }
 }
