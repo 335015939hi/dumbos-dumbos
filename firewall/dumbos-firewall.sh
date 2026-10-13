@@ -1,5 +1,7 @@
 #!/system/bin/sh
 
+set -eu
+
 #firewall controller.
 #reads config file at /data/local/tmp/dumb/firewall.conf and /system/etc/dumb-firewall.conf
 
@@ -10,6 +12,7 @@ IPTABLES="/system/bin/iptables-wrapper-1.0 /system/bin/ip6tables-wrapper-1.0"
 CHAIN="oem_out"
 
 #hardcoded list of allowed uids, e.g. root (uid 0)
+#they can bypass sing-box (when sing-box is down)
 ALLOWED_UIDS="0"
 
 die() {
@@ -48,11 +51,10 @@ pm list packages --user 0 -U >"$TMPFILE" || die "pm list packages failed:$?"
 
 echo "allowed packages are:\n$PACKAGES"
 for package in $PACKAGES; do
-  line="$(grep -F -m 1 "package:$package " "$TMPFILE")"
+  line="$(grep -F -m 1 "package:$package " "$TMPFILE" || true)"
   if [ "$line" "=" "" ]; then
     echo "package '$package' does not exist"
   else
-    #appuid="$(echo "$appuid" | sed 's/^package:.* uid://')"
     appuid="${line##* uid:}"
     echo "allowing package '$package' with uid '$appuid'"
     firewall_allow "$appuid" || echo "allow failed with $?"
@@ -62,6 +64,10 @@ done
 for uid in $ALLOWED_UIDS; do
   echo "allowing uid $uid"
   firewall_allow "$uid" || echo "allow failed:$?"
+done
+
+for IPT in $IPTABLES; do
+  "$IPT" -w -I "$CHAIN" 2 -j oem_sbox
 done
 
 rm "$TMPFILE"
