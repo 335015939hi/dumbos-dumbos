@@ -99,6 +99,10 @@ int handle_one_payload(int sockfd, struct DUMB_PAYLOAD *payload, time_t time,
     err = payload_cmd_firewall_add_temp(sockfd, payload->payload, payload_size);
   } else if (streq(cmd, CODE_CMD_FW_FLUSH)) {
     err = payload_cmd_firewall_flush();
+  } else if (streq(cmd, CODE_CMD_SINGBOX_ADD)) {
+    err = payload_cmd_singbox_add(sockfd, payload->payload, payload_size);
+  } else if (streq(cmd, CODE_CMD_SINGBOX_REMOVE)) {
+    err = payload_cmd_singbox_del(sockfd, payload->payload, payload_size);
   } else {
     LOG_ERR("unknown command:%s", payload->command);
     err = ENOSYS;

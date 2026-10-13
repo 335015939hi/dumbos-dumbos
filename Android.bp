@@ -101,7 +101,7 @@ prebuilt_etc {
 prebuilt_etc {
     name: "sing-box-whitelist",
     src: "firewall/sing-box-whitelist.txt",
-    filename: "sing-box-box-whitelist",
+    filename: "sing-box-whitelist",
 }
 sh_binary {
     name:"sing-box-wrapper.sh",

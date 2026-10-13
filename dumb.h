@@ -110,6 +110,12 @@ struct DUMB_PAYLOAD {
 // temporarily add a internet enabled app, persists until firewall rules are
 // reloaded (reboot or another firewall command)
 #define CODE_CMD_FW_TEMP_ADD "fw-tmp-add"
+// add domain(s) to sing-box whitelist
+// format: NULL separated list of domains, NULL terminated
+#define CODE_CMD_SINGBOX_ADD "singboxadd"
+// remove domain(s) from sing-box whitelist
+// format: NULL separated list of domains, NULL terminated
+#define CODE_CMD_SINGBOX_REMOVE "singboxdel"
 
 // set expire date (epoch time, seconds)
 void dp_set_expire(struct DUMB_PAYLOAD *payload, time_t);

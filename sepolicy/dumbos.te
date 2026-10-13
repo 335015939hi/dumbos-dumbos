@@ -112,3 +112,5 @@ allow dumbosd device:file { write create open read getattr setattr };
 allow dumbosd device:dir { write create open read getattr setattr search add_name };
 
 allow dumbosd default_prop:property_service { set };
+
+allow dumbosd singbox_exec:file { execute execute_no_trans read open };

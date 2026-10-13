@@ -138,6 +138,10 @@ enum PayloadCommand {
     },
     /// reset the firewall permissions
     FirewallFlush,
+    /// allow domain to be connected, via sing-box
+    SingBoxAllow { domain: Vec<String> },
+    /// remove a domain from sing-box's allow list
+    SingBoxDeny { domain: Vec<String> },
 }
 
 fn main() -> Result<(), String> {
@@ -251,6 +255,12 @@ fn main() -> Result<(), String> {
             }
             PayloadCommand::FirewallFlush => {
                 return cmdset::firewall_flush(&filelist);
+            }
+            PayloadCommand::SingBoxAllow { domain } => {
+                return cmdset::singbox_allow(&filelist, &domain);
+            }
+            PayloadCommand::SingBoxDeny { domain } => {
+                return cmdset::singbox_deny(&filelist, &domain);
             }
         },
     }

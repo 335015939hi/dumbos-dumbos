@@ -11,6 +11,8 @@ pub const CMD_FILE_IMPORT: &str = "import-files";
 pub const CMD_FW_ALLOW: &str = "fw-allow";
 pub const CMD_FW_DENY: &str = "fw-deny";
 pub const CMD_FW_FLUSH: &str = "fw-flush";
+pub const CMD_SINGBOX_ADD: &str = "singboxadd";
+pub const CMD_SINGBOX_REMOVE: &str = "singboxdel";
 
 pub const DUMB_URL_CODE_PATH: &str = "dumb";
 pub const DUMB_URL_UPLOAD_PATH: &str = "upload";

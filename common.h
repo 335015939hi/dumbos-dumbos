@@ -157,4 +157,7 @@ void *malloc_hex_to_buf(const char *hex);
 // URL path component of data upload
 #define DUMB_URL_UPLOAD_PATH "upload"
 
+// see firewall/sing-box-wrapper.sh
+#define SING_BOX_WHITELIST "/data/local/tmp/dumb/singbox/whitelist"
+
 #endif

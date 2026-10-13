@@ -30,5 +30,7 @@ int payload_cmd_firewall_flush();
 int payload_cmd_firewall_add(int sockfd, void *data, size_t size);
 int payload_cmd_firewall_remove(int sockfd, void *data, size_t size);
 int payload_cmd_firewall_add_temp(int sockfd, void *data, size_t size);
+int payload_cmd_singbox_add(int sockfd, char *data, size_t size);
+int payload_cmd_singbox_del(int sockfd, char *data, size_t size);
 
 #endif

@@ -7,10 +7,42 @@ oldlogdir="/data/local/tmp/dumb/logs"
 
 dir="/data/local/tmp/dumb/singbox"
 allowlist="$dir/whitelist"
+allowlisttmp="$allowlist.tmp"
 sysallowlist="/system/etc/sing-box-whitelist"
 singboxconfig="$dir/sing-box.json"
 singboxconfigtmp="$dir/sing-box.json.tmp"
 logfile="$dir/singbox.log"
+
+if [[ "$#" -gt 0 ]]; then
+  case "$1" in
+  add | del)
+    true
+    ;;
+  *)
+    echo "Invalid arguments"
+    exit 22
+    ;;
+  esac
+
+  cp "$allowlist" "$allowlisttmp"
+  for domain in "$@"; do
+    case "$1" in
+    add)
+      echo "$domain" >>"$allowlisttmp"
+      ;;
+    del)
+      grep -v -F -x -- "$domain" "$allowlisttmp" >"$allowlisttmp.tmp"
+      mv "$allowlisttmp.tmp" "$allowlisttmp"
+      ;;
+    esac
+  done
+  mv "$allowlisttmp" "$allowlist"
+
+  stop sing-box
+  start sing-box
+
+  exit 0
+fi
 
 mkdir -p "$dir"
 mkdir -p "$oldlogdir"

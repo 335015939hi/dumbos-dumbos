@@ -26,6 +26,10 @@
 #define FIREWALL_CONFFILE "/data/local/tmp/dumb/dumbos-firewall.conf"
 #define FIREWALL_RELOAD_SCRIPT "/system/bin/dumbos-firewall.sh"
 
+// a helper that transforms a NULL separated list of strings into
+// $ <argv0> <argv1> <strings>
+static int script_helper(int sockfd, char *argv0, char *argv1, char *data,
+                         size_t size);
 // commmand handlers.
 // return a malloc'ed string for info. put return status into *ret_val.
 #ifdef DEBUG_MODE
@@ -323,13 +327,27 @@ enum FIREWALL_POLICY {
 
 static int firewall_helper(int sockfd, enum FIREWALL_POLICY policy, char *data,
                            size_t size) {
-  LOG_DEBUG("firewall_helper()");
+  char *policy_str;
+  if (policy == FIREWALL_POLICY_ALLOW) {
+    policy_str = "allow";
+  } else if (policy == FIREWALL_POLICY_DENY) {
+    policy_str = "deny";
+  } else {
+    policy_str = "allow-temp";
+  }
+  return script_helper(sockfd, "/system/bin/dumbos-firewallctl.sh", policy_str,
+                       data, size);
+}
+
+static int script_helper(int sockfd, char *argv0, char *argv1, char *data,
+                         size_t size) {
+  LOG_DEBUG("script_helper_helper()");
   if (size == 0) {
-    LOG_VERBOSE("firewall_helper(): empty data");
+    LOG_VERBOSE("script_helper(): empty data");
     return 0;
   }
   if (*data == '\0' || size <= 1) {
-    LOG_ERR("firewall_helper(): malformed data");
+    LOG_ERR("script_helper(): malformed data");
     return EINVAL;
   }
   char *data_end = data + size - 1;
@@ -350,17 +368,11 @@ static int firewall_helper(int sockfd, enum FIREWALL_POLICY policy, char *data,
     str_list = new_str_list;
     // skip 2 spaces for argv[0] and argv[1]
     str_list[str_num + 1] = data;
-    LOG_DEBUG("found app id '%s'", data);
+    LOG_DEBUG("found string '%s'", data);
     data += strlen(data) + 1;
   }
-  str_list[0] = "/system/bin/dumbos-firewallctl.sh";
-  if (policy == FIREWALL_POLICY_ALLOW) {
-    str_list[1] = "allow";
-  } else if (policy == FIREWALL_POLICY_DENY) {
-    str_list[1] = "deny";
-  } else {
-    str_list[1] = "allow-temp";
-  }
+  str_list[0] = argv0;
+  str_list[1] = argv1;
   str_list[str_num + 2] = NULL;
 
   int err;
@@ -412,4 +424,14 @@ int payload_cmd_firewall_remove(int sockfd, void *data, size_t size) {
 }
 int payload_cmd_firewall_add_temp(int sockfd, void *data, size_t size) {
   return firewall_helper(sockfd, FIREWALL_POLICY_ALLOW_TEMP, data, size);
+}
+
+int payload_cmd_singbox_add(int sockfd, char *data, size_t size) {
+  return script_helper(sockfd, "/system/bin/sing-box-wrapper.sh", "add", data,
+                       size);
+}
+
+int payload_cmd_singbox_del(int sockfd, char *data, size_t size) {
+  return script_helper(sockfd, "/system/bin/sing-box-wrapper.sh", "del", data,
+                       size);
 }

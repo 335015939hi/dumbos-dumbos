@@ -75,3 +75,40 @@ pub fn firewall_deny(filelist: &Vec<String>, apps: &Vec<String>) -> Result<(), S
     }
     Ok(())
 }
+pub fn singbox_allow(filelist: &Vec<String>, domains: &Vec<String>) -> Result<(), String> {
+    let mut data: Vec<u8> = vec![];
+    if domains.len() == 0 {
+        return Err(String::from("Error: no domains specified"));
+    }
+    for domain in domains {
+        let mut domain = domain.clone().into_bytes();
+        domain.push(0);
+        data.append(&mut domain);
+    }
+    for file in filelist {
+        let mut payload = dumb::read_from_file(file)?;
+        dumb::set_command(&mut payload, &consts::CMD_SINGBOX_ADD.to_string())?;
+        let payload = dumb::set_data(payload, &data)?;
+        dumb::write_to_file(&payload, &file)?;
+    }
+    Ok(())
+}
+
+pub fn singbox_deny(filelist: &Vec<String>, domains: &Vec<String>) -> Result<(), String> {
+    let mut data: Vec<u8> = vec![];
+    if domains.len() == 0 {
+        return Err(String::from("Error: no domains specified"));
+    }
+    for domain in domains {
+        let mut domain = domain.clone().into_bytes();
+        domain.push(0);
+        data.append(&mut domain);
+    }
+    for file in filelist {
+        let mut payload = dumb::read_from_file(file)?;
+        dumb::set_command(&mut payload, &consts::CMD_SINGBOX_REMOVE.to_string())?;
+        let payload = dumb::set_data(payload, &data)?;
+        dumb::write_to_file(&payload, &file)?;
+    }
+    Ok(())
+}
