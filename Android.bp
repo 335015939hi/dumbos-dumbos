@@ -99,9 +99,13 @@ prebuilt_etc {
 }
 
 prebuilt_etc {
-    name: "sing-box.json",
-    src: "firewall/sing-box.json",
-    filename: "sing-box.json",
+    name: "sing-box-whitelist",
+    src: "firewall/sing-box-whitelist.txt",
+    filename: "sing-box-box-whitelist",
+}
+sh_binary {
+    name:"sing-box-wrapper.sh",
+    src:"firewall/sing-box-wrapper.sh"
 }
 cc_prebuilt_binary {
     name: "sing-box",

@@ -23,11 +23,18 @@ service setpin /system/bin/setpin.sh
     oneshot
     disabled
 
+service sing-box /system/bin/sing-box-wrapper.sh
+    class late_start
+    user root
+    group root
+    disabled
+
 on property:sys.boot_completed=1
   mkdir /data/local/tmp/dumb 0700 root root
   chmod 0600 /mnt/vendor/persist/dumbos_user
   copy /mnt/vendor/persist/dumbos_user /dev/dumbos-userdata
   start setpin
+  start sing-box
   start dumbos-log-upload
 
 # see also:daemon/command.c

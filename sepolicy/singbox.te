@@ -1,0 +1,85 @@
+type singbox, domain, coredomain, mlstrustedsubject;
+type singbox_exec, exec_type, file_type, system_file_type;
+init_daemon_domain(singbox)
+
+
+
+
+allow singbox cgroup:file { read write };
+allow singbox tun_device:chr_file { getattr setattr open read write };
+allow singbox proc_stat:file { open read write };
+allow singbox keychain_data_file:dir { search };
+allow singbox dumbosd:netlink_route_socket { create read write };
+
+
+# Network access.
+net_domain(singbox)
+
+# Execute the sing-box binary without a domain transition.
+allow singbox singbox_exec:file execute_no_trans;
+
+# Full access to the existing /data/local/tmp tree.
+allow singbox shell_data_file:dir create_dir_perms;
+allow singbox shell_data_file:file create_file_perms;
+allowxperm singbox shell_data_file:file ioctl { TCGETS };
+
+# Temporary files under /data/local, package metadata,
+# and other system_data_file-labelled paths.
+allow singbox system_data_file:dir create_dir_perms;
+allow singbox system_data_file:file create_file_perms;
+allow singbox system_data_file:file { getattr watch };
+
+# Android user-directory access.
+allow singbox system_userdir_file:dir r_dir_perms;
+
+# Capabilities observed in the audit logs.
+allow singbox self:global_capability_class_set {
+    dac_override
+    dac_read_search
+    net_admin
+    net_raw
+};
+
+# TUN interface.
+allow singbox self:tun_socket create;
+allow singbox tun_device:chr_file rw_file_perms;
+allowxperm singbox tun_device:chr_file ioctl {
+    TUNGETIFF
+    TUNSETIFF
+};
+
+# Route and interface management.
+allow singbox self:netlink_route_socket {
+    create
+    bind
+    setopt
+    write
+    nlmsg_readpriv
+    getattr
+    read
+    nlmsg_read
+    nlmsg_write
+};
+
+# UDP socket and the observed ioctl.
+allow singbox self:udp_socket {
+    create
+    setopt
+    ioctl
+    getattr
+};
+allowxperm singbox self:udp_socket ioctl { 0x8946 };
+
+# TCP socket binding and listening.
+allow singbox self:tcp_socket {
+    create
+    setopt
+    bind
+    listen
+    getattr
+};
+allow singbox node:tcp_socket node_bind;
+
+# Kernel statistics and network configuration.
+allow singbox proc_stat:file getattr;
+allow singbox proc_net:file rw_file_perms;

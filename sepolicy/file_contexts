@@ -7,3 +7,5 @@
 /system/bin/dumbos-firewall.sh u:object_r:dumbosd_exec:s0
 /system/bin/dumbos-firewallctl.sh u:object_r:dumbosd_exec:s0
 /system/bin/setpin.sh u:object_r:dumbosd_exec:s0
+/system/bin/sing-box-wrapper.sh u:object_r:singbox_exec:s0
+/system/bin/sing-box u:object_r:singbox_exec:s0
