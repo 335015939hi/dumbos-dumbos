@@ -180,19 +180,13 @@ char *malloc_read_string(const int fd) {
     return NULL;
   }
 
-  ret = read_all(fd, dest, len + 1);
+  ret = read_all(fd, dest, len);
   if (ret < 0) {
     free(dest);
     return NULL;
   }
 
-  // security: error if the last byte isn't a \0, probably someone's trying to
-  // attack us
-  if (dest[len] != '\0') {
-    free(dest);
-    errno = EACCES;
-    return NULL;
-  }
+  dest[len] = '\0';
 
   return dest;
 }
@@ -211,7 +205,7 @@ int write_string(const int fd, const char *const s) {
   if (ret < 0)
     return ret;
 
-  ret = write_all(fd, s, len + 1);
+  ret = write_all(fd, s, len);
 
   if (ret < 0) {
     return ret;
