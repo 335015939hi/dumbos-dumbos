@@ -28,6 +28,8 @@ pub const PRIVKEY_HEADER: &str = "key_private.h";
 pub const USERDATA_PREFIX: &str = "user/";
 //filename of user's public key
 pub const SERVER_USER_PUBKEY_FILE: &str = "pubkey";
+//filename of a user's 'fancy name'
+pub const SERVER_USER_FANCYNAME_FILE: &str = "fancyname";
 //filename prefix of a payload
 pub const CODE_FILE_PREFIX: &str = "code-";
 //filename prefix of uploaded data

@@ -27,9 +27,11 @@ pub fn create(directory: &String, users: &Vec<String>) -> Result<(), String> {
         let user_path = format!("{directory}{}{username}/", consts::USERDATA_PREFIX);
         let user_blob_file_path = format!("{user_path}{username}.blob");
         let user_pubkey_path = format!("{user_path}{}", consts::SERVER_USER_PUBKEY_FILE);
+        let user_fancyname_path = format!("{user_path}{}", consts::SERVER_USER_FANCYNAME_FILE);
 
         fs::create_dir_all(user_path).unwrap();
         util::write_file(&user_pubkey_path, &public_key.into_bytes()).unwrap();
+        util::write_file(&user_fancyname_path, &fancy_name.into_bytes()).unwrap();
         util::write_file(&user_blob_file_path, &user_blob).unwrap();
     }
     Ok(())
