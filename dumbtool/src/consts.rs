@@ -30,6 +30,8 @@ pub const USERDATA_PREFIX: &str = "user/";
 pub const SERVER_USER_PUBKEY_FILE: &str = "pubkey";
 //filename of a user's 'fancy name'
 pub const SERVER_USER_FANCYNAME_FILE: &str = "fancyname";
+//filename of a user's data, (which should be converted to a qr code and sent to the device)
+pub const SERVER_USER_BLOB_FILE: &str = "userdata.blob";
 //filename prefix of a payload
 pub const CODE_FILE_PREFIX: &str = "code-";
 //filename prefix of uploaded data
