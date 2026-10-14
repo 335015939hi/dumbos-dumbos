@@ -31,7 +31,9 @@
 #ifndef DEBUG_MODE
 #if defined(__x86_64__) || defined(_M_X64)
 #define DEBUG_MODE
+#endif
 #else
+#if !defined(__x86_64__) || !defined(_M_X64)
 #error Debug enabled for non-emulator detected. remove this line if you really know what you are doing.
 #endif
 #endif
