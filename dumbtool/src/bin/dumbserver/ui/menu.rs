@@ -11,6 +11,8 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
 };
 
+pub const DEFAULT_STATUS: &str = "↑/↓ or j/k movess, Enter/Space selects, q/Esc returns";
+
 //draw a menu once, and return after a keypress
 pub fn render_once(
     terminal: &mut DefaultTerminal,
@@ -117,7 +119,7 @@ pub fn navigate(
 ) -> std::io::Result<KeyCode> {
     let status = match status {
         Some(s) => s,
-        None => "↑/↓ or j/k movess, Enter/Space selects, q/Esc returns",
+        None => DEFAULT_STATUS,
     };
     loop {
         let key = render_once(terminal, menu, state, Some(status))?;
