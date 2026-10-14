@@ -77,7 +77,7 @@ pub fn dumb_verify_request(
         Ok(key) => key,
         Err(e) => {
             if e.kind() == std::io::ErrorKind::NotFound {
-                return Err("user {user} probably doesn't exist".into());
+                return Err(format!("user {user} probably doesn't exist"));
             } else {
                 return Err(format!(
                     "error opening {user_pubkey_path}:{}",
