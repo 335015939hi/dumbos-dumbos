@@ -264,6 +264,7 @@ pub fn set_data(payload: &mut DumbPayload, data: &Vec<u8>) -> Result<()> {
             return Err(err).context("dp_set_data() failed");
         }
         payload.ptr = new_payload;
+        payload.size = dp_get_base_size() + size;
     }
     return Ok(());
 }

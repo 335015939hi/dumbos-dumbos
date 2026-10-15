@@ -1,11 +1,11 @@
 use anyhow::Result;
 use anyhow::bail;
-use dumbtool::dumb;
+use dumbtool::dumb::DumbPayload;
 
 pub fn get_raw(filelist: &Vec<String>) -> Result<()> {
     for file in filelist {
-        let payload = dumb::read_from_file(&file)?;
-        let expire = dumb::get_expire_raw(&payload)?;
+        let payload = DumbPayload::from_file(&file)?;
+        let expire = payload.expire_raw()?;
         println!("{file}:{expire}");
     }
     return Ok(());
@@ -13,9 +13,9 @@ pub fn get_raw(filelist: &Vec<String>) -> Result<()> {
 
 pub fn set_raw(filelist: &Vec<String>, expire: &String) -> Result<()> {
     for file in filelist {
-        let mut payload = dumb::read_from_file(&file)?;
-        dumb::set_expire_raw(&mut payload, &expire)?;
-        dumb::write_to_file(&payload, &file)?;
+        let mut payload = DumbPayload::from_file(&file)?;
+        payload.set_expire_raw(&expire)?;
+        payload.write_to_file(&file)?;
     }
     return Ok(());
 }
@@ -43,26 +43,11 @@ pub fn set(
 
 pub fn get(filelist: &Vec<String>) -> Result<()> {
     for file in filelist {
-        let payload = dumb::read_from_file(&file)?;
-        let mut expire = dumb::get_expire_raw(&payload)?;
-        let mut is_relative = false;
-        let mut is_default = false;
-        //see dumb.h
-        let default_timeout = 60;
-        if expire.len() != 0 {
-            if expire.as_bytes()[0] == b':' {
-                expire = expire.chars().skip(1).collect();
-                is_relative = true;
-            }
-        }
-        let expire: i64 = match expire.parse() {
-            Ok(n) => n,
-            Err(_e) => {
-                is_relative = true;
-                is_default = true;
-                default_timeout
-            }
-        };
+        let payload = DumbPayload::from_file(&file)?;
+        let expire = payload.effective_expire()?;
+        let is_relative = expire.0;
+        let is_default = expire.1;
+        let expire = expire.2;
         let mut str = format!("{file}: ");
         if is_relative {
             str = format!("{str}+{expire}");

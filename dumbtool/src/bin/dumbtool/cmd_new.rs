@@ -1,11 +1,10 @@
 use anyhow::Result;
-use dumbtool::dumb;
+use dumbtool::dumb::DumbPayload;
 
 pub fn main(filelist: &Vec<String>) -> Result<()> {
     for file in filelist {
-        println!("creating new code {file}");
-        let payload = dumb::create_new()?;
-        dumb::write_to_file(&payload, &file)?;
+        let payload = DumbPayload::new()?;
+        payload.write_to_file(&file)?;
     }
     return Ok(());
 }

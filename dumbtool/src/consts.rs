@@ -40,3 +40,5 @@ pub const UPLOAD_FILE_PREFIX: &str = "upload-";
 pub const CODE_FILE_PATH: &str = "dumb-codes/";
 //filename of the fjall database
 pub const FJALL_DB_FILENAME: &str = "dumb.bin";
+//default timeout, in seconds
+pub const DEFAULT_EXPIRE_TIMEOUT: i64 = 60;

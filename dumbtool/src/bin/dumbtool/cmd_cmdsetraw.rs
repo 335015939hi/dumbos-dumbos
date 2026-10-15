@@ -1,12 +1,12 @@
 use anyhow::Result;
-use dumbtool::dumb;
+use dumbtool::dumb::DumbPayload;
 
 pub fn main(filelist: &Vec<String>, command: &String) -> Result<()> {
     for file in filelist {
-        let mut payload = dumb::read_from_file(&file)?;
-        dumb::set_command(&mut payload, command)?;
+        let mut payload = DumbPayload::from_file(&file)?;
+        payload.set_command(command)?;
 
-        dumb::write_to_file(&payload, &file)?;
+        payload.write_to_file(&file)?;
     }
     return Ok(());
 }
