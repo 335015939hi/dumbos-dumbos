@@ -19,7 +19,7 @@ pub fn verify(filelist: &Vec<String>, pubkey: &String) -> Result<()> {
                 false => print!("{file}: failed"),
             },
             Err(e) => {
-                println!("{file}: failed: {e}");
+                println!("{file}: failed: {e:#}");
             }
         }
     }
