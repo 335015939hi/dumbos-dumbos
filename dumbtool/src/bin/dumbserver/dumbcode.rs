@@ -1,5 +1,6 @@
 use axum::http::StatusCode;
 use dumbtool::dumb;
+use dumbtool::dumb::DumbPayload;
 use dumbtool::dumbutil;
 use dumbtool::events::Event;
 use dumbtool::util;
@@ -96,7 +97,7 @@ pub async fn main(
         }
     };
 
-    let mut dumbpayload = match dumb::u8_to_dumbpayload(&dumbpayload) {
+    let mut dumbpayload = match DumbPayload::from_u8(&dumbpayload) {
         Ok(q) => q,
         Err(e) => {
             let e = format!("{e}");
@@ -122,7 +123,14 @@ pub async fn main(
         }
     }
 
-    let dumbpayload = dumb::dumbpayload_to_u8(&dumbpayload);
+    let dumbpayload = match dumbpayload.to_u8() {
+        Ok(v) => v,
+        Err(e) => {
+            let e = format!("{e}");
+            Event::error(&"dumbpayload_to_u8()".into(), &e).dispatch();
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
     Event::code(user, code, is_code_personal).dispatch();
 
     return Ok(dumbpayload);

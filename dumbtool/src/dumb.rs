@@ -18,6 +18,7 @@ struct DUMB_PAYLOAD {
 
 pub struct DumbPayload {
     ptr: *mut DUMB_PAYLOAD,
+    pub size: usize,
 }
 
 impl Drop for DumbPayload {
@@ -47,6 +48,7 @@ pub fn u8_to_dumbpayload_nocheck(data: &Vec<u8>) -> Result<DumbPayload> {
 
         Ok(DumbPayload {
             ptr: ptr as *mut DUMB_PAYLOAD,
+            size: data.len(),
         })
     }
 }
@@ -64,15 +66,18 @@ pub fn u8_to_dumbpayload(data: &Vec<u8>) -> Result<DumbPayload> {
     Ok(payload)
 }
 
-// danger!!! a payload with an invalid size, or reporting a invalid data size, could cause bad things to happen
-pub fn dumbpayload_to_u8(payload: &DumbPayload) -> Vec<u8> {
+pub fn dumbpayload_to_u8(payload: &DumbPayload) -> Result<Vec<u8>> {
     let size: usize;
     let result: Vec<u8>;
     unsafe {
+        ensure!(
+            dp_validate_size(payload.ptr, payload.size),
+            "invalid payload"
+        );
         size = dp_get_base_size() + dp_get_data_size(payload.ptr) as usize;
         result = std::slice::from_raw_parts(payload.ptr as *const u8, size).to_vec();
     }
-    result
+    Ok(result)
 }
 
 unsafe extern "C" {
@@ -172,7 +177,9 @@ pub fn get_expire_raw(payload: &DumbPayload) -> Result<String> {
 
 pub fn create_new() -> Result<DumbPayload> {
     let new_payload: *mut DUMB_PAYLOAD;
+    let size;
     unsafe {
+        size = dp_get_base_size();
         new_payload = dp_create_new();
         if new_payload == std::ptr::null_mut() {
             let err = errno::errno();
@@ -180,7 +187,10 @@ pub fn create_new() -> Result<DumbPayload> {
             return Err(err).context("dp_create_new() failed");
         }
     }
-    return Ok(DumbPayload { ptr: new_payload });
+    return Ok(DumbPayload {
+        ptr: new_payload,
+        size: size,
+    });
 }
 
 pub fn write_to_file(payload: &DumbPayload, path: &String) -> Result<()> {
@@ -210,7 +220,10 @@ pub fn read_from_file(path: &String) -> Result<DumbPayload> {
             bail!("malformed payload detected (stated size doesn't match detected size)");
         }
     }
-    return Ok(DumbPayload { ptr: payload });
+    return Ok(DumbPayload {
+        ptr: payload,
+        size: size,
+    });
 }
 
 pub fn get_command(payload: &DumbPayload) -> Result<String> {
@@ -386,7 +399,7 @@ pub fn sign(payload: &mut DumbPayload, priv_key: &String) -> Result<()> {
 }
 
 pub fn verify(payload: &DumbPayload, pub_key: &String) -> Result<()> {
-    let payload = u8_to_dumbpayload(&dumbpayload_to_u8(payload))?;
+    let payload = payload.clone()?;
     let size;
     let result;
     unsafe {
@@ -403,4 +416,25 @@ pub fn verify(payload: &DumbPayload, pub_key: &String) -> Result<()> {
         return Err(err).context("dp_verify() failed");
     }
     Ok(())
+}
+
+pub fn payload_clone(payload: &DumbPayload) -> Result<DumbPayload> {
+    let ptr;
+    unsafe {
+        ptr = libc::malloc(payload.size);
+        if ptr.is_null() {
+            let err = errno::errno();
+            let err = io::Error::from_raw_os_error(err.0);
+            return Err(err).context("malloc() failed");
+        }
+        libc::memcpy(payload.ptr as *mut c_void, ptr, payload.size);
+    }
+    Ok(DumbPayload {
+        ptr: ptr as *mut DUMB_PAYLOAD,
+        size: payload.size,
+    })
+}
+
+pub fn payload_size(payload: &DumbPayload) -> usize {
+    payload.size
 }
