@@ -1,5 +1,6 @@
 use crate::consts;
 use dumbtool::dumb;
+use dumbtool::dumbpayload;
 use dumbtool::util;
 
 fn set_command(filelist: &Vec<String>, command: &str) -> Result<(), String> {
@@ -19,9 +20,13 @@ pub fn ok(filelist: &Vec<String>) -> Result<(), String> {
 pub fn install_this(filelist: &Vec<String>, apk: &String) -> Result<(), String> {
     let apkfile = util::read_file(&apk).unwrap();
     for file in filelist {
-        let mut payload = dumb::read_from_file(file)?;
-        dumb::set_command(&mut payload, &consts::CMD_INSTALLTHIS.to_string())?;
-        let payload = dumb::set_data(payload, &apkfile)?;
+        let payload = dumb::read_from_file(file)?;
+        let payload = match dumbpayload::command_install_this_apkdata(payload, &apkfile) {
+            Ok(v) => v,
+            Err(e) => {
+                return Err(format!("{e}"));
+            }
+        };
         dumb::write_to_file(&payload, &file)?;
     }
     Ok(())
