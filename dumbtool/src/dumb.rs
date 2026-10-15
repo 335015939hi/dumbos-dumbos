@@ -425,7 +425,7 @@ pub fn payload_clone(payload: &DumbPayload) -> Result<DumbPayload> {
             let err = io::Error::from_raw_os_error(err.0);
             return Err(err).context("malloc() failed");
         }
-        libc::memcpy(payload.ptr as *mut c_void, ptr, payload.size);
+        libc::memcpy(ptr, payload.ptr as *const c_void, payload.size);
     }
     Ok(DumbPayload {
         ptr: ptr as *mut DUMB_PAYLOAD,
