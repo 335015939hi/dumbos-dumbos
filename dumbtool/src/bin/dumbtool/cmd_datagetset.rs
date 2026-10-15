@@ -16,7 +16,7 @@ pub fn setdata(filelist: &Vec<String>, output: &String) -> Result<()> {
 
     for file in filelist {
         let mut payload = dumb::read_from_file(&file)?;
-        payload = dumb::set_data(payload, &data)?;
+        dumb::set_data(&mut payload, &data)?;
         dumb::write_to_file(&payload, &file)?;
     }
     return Ok(());

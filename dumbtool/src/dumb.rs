@@ -18,7 +18,7 @@ struct DUMB_PAYLOAD {
 
 pub struct DumbPayload {
     ptr: *mut DUMB_PAYLOAD,
-    pub size: usize,
+    size: usize,
 }
 
 impl Drop for DumbPayload {
@@ -253,7 +253,7 @@ pub fn set_command(payload: &mut DumbPayload, command: &String) -> Result<()> {
     Ok(())
 }
 
-pub fn set_data(mut payload: DumbPayload, data: &Vec<u8>) -> Result<DumbPayload> {
+pub fn set_data(payload: &mut DumbPayload, data: &Vec<u8>) -> Result<()> {
     let size: usize = data.len();
     unsafe {
         let data: *const c_void = data.as_ptr().cast();
@@ -265,7 +265,7 @@ pub fn set_data(mut payload: DumbPayload, data: &Vec<u8>) -> Result<DumbPayload>
         }
         payload.ptr = new_payload;
     }
-    return Ok(payload);
+    return Ok(());
 }
 
 pub fn get_data(payload: &DumbPayload) -> Result<Vec<u8>> {
