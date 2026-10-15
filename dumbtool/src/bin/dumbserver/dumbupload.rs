@@ -18,6 +18,7 @@ pub async fn main(
         Ok(v) => match v {
             Ok(_) => {}
             Err(e) => {
+                let e = format!("{e}");
                 Event::reject_upload(user, &e).dispatch();
                 return Err(StatusCode::FORBIDDEN);
             }
@@ -31,6 +32,7 @@ pub async fn main(
     let upload_path = match dumbutil::create_upload_filename(directory, user) {
         Ok(v) => v,
         Err(e) => {
+            let e = format!("{e}");
             Event::error(&"creating upload path".into(), &e).dispatch();
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
@@ -42,7 +44,8 @@ pub async fn main(
     match util::write_file(&upload_path, &data) {
         Ok(_) => {}
         Err(e) => {
-            Event::error(&format!("writing to {upload_path}"), &format!("{e}")).dispatch();
+            let e = format!("{e}");
+            Event::error(&format!("writing to {upload_path}"), &e).dispatch();
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
     }

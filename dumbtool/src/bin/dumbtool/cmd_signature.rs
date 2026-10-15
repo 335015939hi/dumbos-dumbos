@@ -1,6 +1,7 @@
+use anyhow::Result;
 use dumbtool::dumb;
 
-pub fn sign(filelist: &Vec<String>, privkey: &String) -> Result<(), String> {
+pub fn sign(filelist: &Vec<String>, privkey: &String) -> Result<()> {
     for file in filelist {
         let mut payload = dumb::read_from_file(&file)?;
         dumb::sign(&mut payload, privkey)?;
@@ -9,7 +10,7 @@ pub fn sign(filelist: &Vec<String>, privkey: &String) -> Result<(), String> {
     Ok(())
 }
 
-pub fn verify(filelist: &Vec<String>, pubkey: &String) -> Result<(), String> {
+pub fn verify(filelist: &Vec<String>, pubkey: &String) -> Result<()> {
     for file in filelist {
         let payload = dumb::read_from_file(&file)?;
         match dumb::verify(&payload, pubkey) {

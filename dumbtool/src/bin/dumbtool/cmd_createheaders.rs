@@ -1,8 +1,9 @@
+use anyhow::Result;
 use dumbtool::consts;
 use dumbtool::dumb;
 use dumbtool::util;
 
-pub fn main(directory: &String) -> Result<(), String> {
+pub fn main(directory: &String) -> Result<()> {
     let pubkey_path = format!("{directory}{}", consts::PUBKEY_HEADER);
     let privkey_path = format!("{directory}{}", consts::PRIVKEY_HEADER);
     let keys = dumb::ed25519_generate_keys()?;

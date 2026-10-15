@@ -1,6 +1,8 @@
+use anyhow::Result;
+use anyhow::bail;
 use dumbtool::dumb;
 
-pub fn get_raw(filelist: &Vec<String>) -> Result<(), String> {
+pub fn get_raw(filelist: &Vec<String>) -> Result<()> {
     for file in filelist {
         let payload = dumb::read_from_file(&file)?;
         let expire = dumb::get_expire_raw(&payload)?;
@@ -9,7 +11,7 @@ pub fn get_raw(filelist: &Vec<String>) -> Result<(), String> {
     return Ok(());
 }
 
-pub fn set_raw(filelist: &Vec<String>, expire: &String) -> Result<(), String> {
+pub fn set_raw(filelist: &Vec<String>, expire: &String) -> Result<()> {
     for file in filelist {
         let mut payload = dumb::read_from_file(&file)?;
         dumb::set_expire_raw(&mut payload, &expire)?;
@@ -23,7 +25,7 @@ pub fn set(
     raw: &Option<String>,
     timestamp: &Option<u64>,
     relative: &Option<i32>,
-) -> Result<(), String> {
+) -> Result<()> {
     if *raw != None {
         let s = raw.as_ref().unwrap();
         return set_raw(filelist, &s);
@@ -36,10 +38,10 @@ pub fn set(
         let s = format!(":{}", relative.unwrap());
         return set_raw(filelist, &s);
     }
-    return Err("time not found".to_string());
+    bail!("time not found");
 }
 
-pub fn get(filelist: &Vec<String>) -> Result<(), String> {
+pub fn get(filelist: &Vec<String>) -> Result<()> {
     for file in filelist {
         let payload = dumb::read_from_file(&file)?;
         let mut expire = dumb::get_expire_raw(&payload)?;

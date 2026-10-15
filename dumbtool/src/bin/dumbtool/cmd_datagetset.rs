@@ -1,7 +1,8 @@
+use anyhow::Result;
 use dumbtool::dumb;
 use dumbtool::util;
 
-pub fn getdata(filelist: &Vec<String>, output: &String) -> Result<(), String> {
+pub fn getdata(filelist: &Vec<String>, output: &String) -> Result<()> {
     let mut data: Vec<u8> = Vec::new();
     for file in filelist {
         let payload = dumb::read_from_file(&file)?;
@@ -10,7 +11,7 @@ pub fn getdata(filelist: &Vec<String>, output: &String) -> Result<(), String> {
     }
     return Ok(util::write_file(&output, &data).unwrap());
 }
-pub fn setdata(filelist: &Vec<String>, output: &String) -> Result<(), String> {
+pub fn setdata(filelist: &Vec<String>, output: &String) -> Result<()> {
     let data = util::read_file(&output).unwrap();
 
     for file in filelist {

@@ -8,8 +8,8 @@ mod cmd_new;
 mod cmd_signature;
 mod cmd_users;
 mod cmdset;
+use anyhow::Result;
 use dumbtool::consts;
-use std::error::Error;
 
 use clap::{Parser, Subcommand};
 use std::string::String;
@@ -145,7 +145,7 @@ enum PayloadCommand {
     SingBoxDeny { domain: Vec<String> },
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<()> {
     let args = Args::parse();
     let code = args.code;
     let file = args.file;

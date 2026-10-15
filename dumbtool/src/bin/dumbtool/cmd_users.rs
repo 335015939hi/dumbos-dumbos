@@ -1,11 +1,8 @@
-pub fn create(directory: &String, users: &Vec<String>) -> Result<(), String> {
+use anyhow::Result;
+
+pub fn create(directory: &String, users: &Vec<String>) -> Result<()> {
     for user in users {
-        match dumbtool::dumbutil::create_user(directory, user) {
-            Ok(_) => {}
-            Err(e) => {
-                return Err(e.to_string());
-            }
-        }
+        dumbtool::dumbutil::create_user(directory, user)?;
     }
     Ok(())
 }

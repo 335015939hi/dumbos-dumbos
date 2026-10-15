@@ -1,5 +1,4 @@
 use crate::ui::menu;
-use crossterm::event::Event::Key;
 use crossterm::event::KeyCode;
 use dumbtool::events;
 use dumbtool::events::Event;

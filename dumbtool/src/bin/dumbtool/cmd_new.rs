@@ -1,6 +1,7 @@
+use anyhow::Result;
 use dumbtool::dumb;
 
-pub fn main(filelist: &Vec<String>) -> Result<(), String> {
+pub fn main(filelist: &Vec<String>) -> Result<()> {
     for file in filelist {
         println!("creating new code {file}");
         let payload = dumb::create_new()?;

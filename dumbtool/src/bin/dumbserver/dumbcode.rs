@@ -33,6 +33,7 @@ pub async fn main(
     match dumbutil::create_code_filename(directory, &String::from(""), code) {
         Ok(path) => code_path_global = path,
         Err(msg) => {
+            let msg = format!("{msg}");
             Event::reject_code(user, code, &msg).dispatch();
             return Err(StatusCode::FORBIDDEN);
         }
@@ -40,6 +41,7 @@ pub async fn main(
     match dumbutil::create_code_filename(directory, user, code) {
         Ok(path) => code_path_user = path,
         Err(msg) => {
+            let msg = format!("{msg}");
             Event::reject_code(user, code, &msg).dispatch();
             return Err(StatusCode::FORBIDDEN);
         }
@@ -97,6 +99,7 @@ pub async fn main(
     let mut dumbpayload = match dumb::u8_to_dumbpayload(&dumbpayload) {
         Ok(q) => q,
         Err(e) => {
+            let e = format!("{e}");
             Event::error(&"u8_to_payload()".into(), &e).dispatch();
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
@@ -112,6 +115,7 @@ pub async fn main(
     match dumb::sign(&mut dumbpayload, &get_private_key()) {
         Ok(_) => {}
         Err(e) => {
+            let e = format!("{e}");
             Event::error(&"signing payload".into(), &e).dispatch();
             println!("failed to sign payload:{e}");
             return Err(StatusCode::INTERNAL_SERVER_ERROR);

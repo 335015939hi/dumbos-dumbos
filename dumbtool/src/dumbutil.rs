@@ -2,22 +2,21 @@ use crate::consts;
 use crate::dumb;
 use crate::dumbutil;
 use crate::util;
+use anyhow::Result;
+use anyhow::ensure;
 use chrono::Local;
-use std::error::Error;
 use std::fs;
-use std::io;
 
-pub fn create_code_filename(
-    directory: &String,
-    user: &String,
-    code: &String,
-) -> Result<String, String> {
-    if dumb::verify_chars_username(user) == false {
-        return Err(String::from("bad characters in username"));
-    }
-    if dumb::verify_chars_secretcode(code) == false {
-        return Err(String::from("bad characters in code"));
-    }
+pub fn create_code_filename(directory: &String, user: &String, code: &String) -> Result<String> {
+    ensure!(
+        dumb::verify_chars_username(user) == true,
+        "bad characters in username"
+    );
+    ensure!(
+        dumb::verify_chars_secretcode(code) == true,
+        "bad characters in code"
+    );
+
     let mut directory = directory.clone();
     if !directory.ends_with('/') {
         directory.push('/');
@@ -32,10 +31,11 @@ pub fn create_code_filename(
     ));
 }
 
-pub fn create_upload_filename(directory: &String, user: &String) -> Result<String, String> {
-    if dumb::verify_chars_username(user) == false {
-        return Err(String::from("bad characters in username"));
-    }
+pub fn create_upload_filename(directory: &String, user: &String) -> Result<String> {
+    ensure!(
+        dumb::verify_chars_username(user) == true,
+        "bad characters in username"
+    );
     let directory = create_user_path(directory, user);
     let time = Local::now();
     let time = time.format("%Y-%m-%d %H:%M:%S");
@@ -75,7 +75,7 @@ pub fn create_user_fancyname_path(directory: &String, user: &String) -> String {
     return format!("{directory}{}", consts::SERVER_USER_FANCYNAME_FILE);
 }
 
-pub fn create_user(directory: &String, user: &String) -> Result<(), Box<dyn Error>> {
+pub fn create_user(directory: &String, user: &String) -> Result<()> {
     let username;
     let fancy_name;
     if let Some((first_part, second_part)) = user.split_once('/') {
@@ -97,15 +97,10 @@ pub fn create_user(directory: &String, user: &String) -> Result<(), Box<dyn Erro
     let user_pubkey_path = dumbutil::create_user_pubkey_path(directory, user);
     let user_fancyname_path = dumbutil::create_user_fancyname_path(directory, user);
 
-    match fs::exists(&user_path)? {
-        true => {
-            return Err(Box::new(io::Error::new(
-                io::ErrorKind::AlreadyExists,
-                format!("User {username} already exists"),
-            )));
-        }
-        false => {}
-    }
+    ensure!(
+        fs::exists(&user_path)? == false,
+        format!("user {user} already exists")
+    );
 
     fs::create_dir_all(&user_path)?;
     util::write_file(&user_pubkey_path, &public_key.into_bytes())?;
