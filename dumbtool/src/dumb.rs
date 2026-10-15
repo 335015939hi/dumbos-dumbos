@@ -28,7 +28,7 @@ impl Drop for DumbPayload {
         }
         unsafe {
             let ptr: *mut c_void = self.ptr.cast();
-            free(ptr);
+            libc::free(ptr);
             self.ptr = std::ptr::null_mut();
         }
     }
@@ -117,8 +117,6 @@ unsafe extern "C" {
     fn dumbos_user_verify_chars(user: *const c_char) -> bool;
     //defined in ed25519.h
     fn ed25519_generate_keypair_hex(public_hex: *mut c_char, private_hex: *mut c_char) -> c_int;
-    //other C functions
-    fn free(buf: *mut c_void);
 }
 
 pub fn ed25519_generate_keys() -> Result<(String, String)> {
@@ -285,7 +283,7 @@ pub fn get_data(payload: &DumbPayload) -> Result<Vec<u8>> {
             }
         }
         result = std::slice::from_raw_parts(data as *const u8, size).to_vec();
-        free(data);
+        libc::free(data);
     }
     return Ok(result);
 }
