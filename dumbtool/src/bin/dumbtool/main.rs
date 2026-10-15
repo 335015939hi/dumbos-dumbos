@@ -9,6 +9,7 @@ mod cmd_signature;
 mod cmd_users;
 mod cmdset;
 use dumbtool::consts;
+use std::error::Error;
 
 use clap::{Parser, Subcommand};
 use std::string::String;
@@ -144,7 +145,7 @@ enum PayloadCommand {
     SingBoxDeny { domain: Vec<String> },
 }
 
-fn main() -> Result<(), String> {
+fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
     let code = args.code;
     let file = args.file;
@@ -189,79 +190,80 @@ fn main() -> Result<(), String> {
 
     match args.command {
         Commands::New => {
-            return cmd_new::main(&filelist);
+            cmd_new::main(&filelist)?;
         }
         Commands::CmdGet => {
-            return cmd_cmdget::main(&filelist);
+            cmd_cmdget::main(&filelist)?;
         }
         Commands::CmdSetRaw { command } => {
-            return cmd_cmdsetraw::main(&filelist, &command);
+            cmd_cmdsetraw::main(&filelist, &command)?;
         }
         Commands::DataSetRaw { input } => {
-            return cmd_datagetset::setdata(&filelist, &input);
+            cmd_datagetset::setdata(&filelist, &input)?;
         }
         Commands::DataGet { output } => {
-            return cmd_datagetset::getdata(&filelist, &output);
+            cmd_datagetset::getdata(&filelist, &output)?;
         }
         Commands::ExpireSetRaw { expire } => {
-            return cmd_expire::set_raw(&filelist, &expire);
+            cmd_expire::set_raw(&filelist, &expire)?;
         }
         Commands::ExpireGetRaw => {
-            return cmd_expire::get_raw(&filelist);
+            cmd_expire::get_raw(&filelist)?;
         }
         Commands::ExpireSet {
             raw,
             timestamp,
             relative,
         } => {
-            return cmd_expire::set(&filelist, &raw, &timestamp, &relative);
+            cmd_expire::set(&filelist, &raw, &timestamp, &relative)?;
         }
         Commands::ExpireGet => {
-            return cmd_expire::get(&filelist);
+            cmd_expire::get(&filelist)?;
         }
         Commands::Sign { key } => {
-            return cmd_signature::sign(&filelist, &key);
+            cmd_signature::sign(&filelist, &key)?;
         }
         Commands::Verify { key } => {
-            return cmd_signature::verify(&filelist, &key);
+            cmd_signature::verify(&filelist, &key)?;
         }
         Commands::CreateUser => {
-            return cmd_users::create(&dumb_dir, &users);
+            cmd_users::create(&dumb_dir, &users)?;
         }
         Commands::CreateKeyHeaders => {
-            return cmd_createheaders::main(&dumb_dir);
+            cmd_createheaders::main(&dumb_dir)?;
         }
         Commands::Events { clear } => {
-            return cmd_events::main(&dumb_dir, clear);
+            cmd_events::main(&dumb_dir, clear)?;
         }
         Commands::CommandSet { command } => match command {
             PayloadCommand::Ok => {
-                return cmdset::ok(&filelist);
+                cmdset::ok(&filelist)?;
             }
             PayloadCommand::InstallThis { apk } => {
-                return cmdset::install_this(&filelist, &apk);
+                cmdset::install_this(&filelist, &apk)?;
             }
             PayloadCommand::FileExport => {
-                return cmdset::file_export(&filelist);
+                cmdset::file_export(&filelist)?;
             }
             PayloadCommand::FileImport => {
-                return cmdset::file_import(&filelist);
+                cmdset::file_import(&filelist)?;
             }
             PayloadCommand::FirewallAllow { app } => {
-                return cmdset::firewall_allow(&filelist, &app);
+                cmdset::firewall_allow(&filelist, &app)?;
             }
             PayloadCommand::FirewallDeny { app } => {
-                return cmdset::firewall_deny(&filelist, &app);
+                cmdset::firewall_deny(&filelist, &app)?;
             }
             PayloadCommand::FirewallFlush => {
-                return cmdset::firewall_flush(&filelist);
+                cmdset::firewall_flush(&filelist)?;
             }
             PayloadCommand::SingBoxAllow { domain } => {
-                return cmdset::singbox_allow(&filelist, &domain);
+                cmdset::singbox_allow(&filelist, &domain)?;
             }
             PayloadCommand::SingBoxDeny { domain } => {
-                return cmdset::singbox_deny(&filelist, &domain);
+                cmdset::singbox_deny(&filelist, &domain)?;
             }
         },
     }
+    Ok(())
 }
