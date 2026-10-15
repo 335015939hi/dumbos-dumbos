@@ -64,4 +64,10 @@ impl DumbPayload {
     pub fn set_data(&mut self, data: &Vec<u8>) -> Result<()> {
         dumb::set_data(self, data)
     }
+    pub fn sign(&mut self, key: &String) -> Result<()> {
+        dumb::sign(self, key)
+    }
+    pub fn verify(&self, key: &String) -> Result<bool> {
+        dumb::verify(self, key)
+    }
 }

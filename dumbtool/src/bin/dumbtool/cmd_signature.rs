@@ -14,9 +14,10 @@ pub fn verify(filelist: &Vec<String>, pubkey: &String) -> Result<()> {
     for file in filelist {
         let payload = dumb::read_from_file(&file)?;
         match dumb::verify(&payload, pubkey) {
-            Ok(_) => {
-                println!("{file}: passed");
-            }
+            Ok(b) => match b {
+                true => println!("{file}: passed"),
+                false => print!("{file}: failed"),
+            },
             Err(e) => {
                 println!("{file}: failed: {e}");
             }

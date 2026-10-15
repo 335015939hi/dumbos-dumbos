@@ -396,7 +396,7 @@ pub fn sign(payload: &mut DumbPayload, priv_key: &String) -> Result<()> {
     Ok(())
 }
 
-pub fn verify(payload: &DumbPayload, pub_key: &String) -> Result<()> {
+pub fn verify(payload: &DumbPayload, pub_key: &String) -> Result<bool> {
     let payload = payload.clone()?;
     let size;
     let result;
@@ -410,10 +410,15 @@ pub fn verify(payload: &DumbPayload, pub_key: &String) -> Result<()> {
     }
     if result != 0 {
         let err = errno::errno();
+        if err.0 == libc::EPERM {
+            //dp_verify() sets errno to EPERM when signature rejected but otherwise valid.
+            //see ed25519_verify_hex() in ed25519.c
+            return Ok(false);
+        }
         let err = io::Error::from_raw_os_error(err.0);
         return Err(err).context("dp_verify() failed");
     }
-    Ok(())
+    Ok(true)
 }
 
 pub fn payload_clone(payload: &DumbPayload) -> Result<DumbPayload> {
