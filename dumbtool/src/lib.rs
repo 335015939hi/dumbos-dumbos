@@ -5,4 +5,5 @@ pub mod dumbutil;
 pub mod events;
 pub mod log;
 pub mod tables;
+pub mod users;
 pub mod util;

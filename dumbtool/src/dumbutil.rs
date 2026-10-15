@@ -1,11 +1,9 @@
 use crate::consts;
 use crate::dumb;
-use crate::dumbutil;
-use crate::util;
+use crate::users;
 use anyhow::Result;
 use anyhow::ensure;
 use chrono::Local;
-use std::fs;
 
 pub fn create_code_filename(directory: &String, user: &String, code: &String) -> Result<String> {
     ensure!(
@@ -86,25 +84,6 @@ pub fn create_user(directory: &String, user: &String) -> Result<()> {
         username = user.clone();
     }
 
-    let keypair = dumb::ed25519_generate_keys()?;
-    let public_key = keypair.0;
-    let private_key = keypair.1;
-    let mut user_blob = dumb::make_user(&username, &private_key)?;
-    dumb::user_set_fancy_name(&mut user_blob, &fancy_name)?;
-
-    let user_path = dumbutil::create_user_path(directory, user);
-    let user_blob_file_path = dumbutil::create_user_blob_path(directory, user);
-    let user_pubkey_path = dumbutil::create_user_pubkey_path(directory, user);
-    let user_fancyname_path = dumbutil::create_user_fancyname_path(directory, user);
-
-    ensure!(
-        fs::exists(&user_path)? == false,
-        format!("user {user} already exists")
-    );
-
-    fs::create_dir_all(&user_path)?;
-    util::write_file(&user_pubkey_path, &public_key.into_bytes())?;
-    util::write_file(&user_fancyname_path, &fancy_name.into_bytes())?;
-    util::write_file(&user_blob_file_path, &user_blob)?;
+    users::DumbUser::new(directory, username.as_str(), Some(fancy_name.as_str()))?;
     Ok(())
 }
