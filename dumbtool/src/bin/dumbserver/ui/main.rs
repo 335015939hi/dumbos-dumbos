@@ -1,4 +1,5 @@
 use crate::ui::menu;
+use anyhow::Result;
 use ratatui::DefaultTerminal;
 use ratatui::widgets::ListState;
 
@@ -11,7 +12,7 @@ pub fn main() {
     }
 }
 
-fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
+fn app(terminal: &mut DefaultTerminal) -> Result<()> {
     let mut state = ListState::default().with_selected(Some(0));
     loop {
         state = menu::simple(
@@ -32,7 +33,9 @@ fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
                 //manage codes option
                 0 => {}
                 //manage users
-                1 => {}
+                1 => {
+                    crate::ui::users::main(terminal)?;
+                }
                 //events log
                 2 => {
                     crate::ui::events::main(terminal)?;

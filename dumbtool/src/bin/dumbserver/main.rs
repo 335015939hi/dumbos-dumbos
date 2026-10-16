@@ -22,6 +22,7 @@ struct Args {
 }
 
 pub static FJALL_DB: OnceLock<fjall::Database> = OnceLock::new();
+pub static DIRECTORY: OnceLock<String> = OnceLock::new();
 
 #[tokio::main]
 async fn main() {
@@ -44,6 +45,7 @@ async fn main() {
             panic!("set on FJALL_DB failed");
         }
     };
+    DIRECTORY.set(directory.clone()).unwrap();
 
     let shutdown_rx = if !headless {
         log::set_verbosity("none").unwrap();

@@ -18,6 +18,7 @@ rand = "0.10.3"
 ratatui = "0.30.2"
 serde = {version="1.0.229",features = ["derive"] }
 tokio = {version="1.53.2",features=["full"]}
+tui-input = "0.15.5"
 
 [build-dependencies]
 cc = "1"

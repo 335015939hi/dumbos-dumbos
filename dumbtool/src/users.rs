@@ -1,8 +1,10 @@
+use crate::consts;
 use crate::dumb;
 use crate::dumbutil;
 use anyhow::Result;
 use anyhow::bail;
 use anyhow::ensure;
+use core::fmt;
 use std::fs;
 
 pub struct DumbUser {
@@ -81,6 +83,21 @@ impl DumbUser {
             datapath: user_path,
         })
     }
+    pub fn get_all(directory: &String) -> Result<Vec<Self>> {
+        let mut user_list: Vec<DumbUser> = vec![];
+        for maybeuser in fs::read_dir(format!("{directory}/{}", consts::USERDATA_PREFIX))? {
+            let maybeuser = maybeuser?;
+            let keyfile = maybeuser.path().join(consts::SERVER_USER_PUBKEY_FILE);
+            if keyfile.is_file() {
+                let username = maybeuser.file_name();
+                let username = username.to_string_lossy().into_owned();
+                if dumb::verify_chars_username(&username) {
+                    user_list.push(DumbUser::get(directory, username.as_str())?);
+                }
+            }
+        }
+        Ok(user_list)
+    }
 
     pub fn name(&self) -> &String {
         &self.name
@@ -93,5 +110,15 @@ impl DumbUser {
     }
     pub fn path(&self) -> &String {
         &self.datapath
+    }
+}
+
+impl fmt::Display for DumbUser {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.name == self.fancyname {
+            write!(f, "{}", self.name)
+        } else {
+            write!(f, "{} ({})", self.fancyname, self.name)
+        }
     }
 }

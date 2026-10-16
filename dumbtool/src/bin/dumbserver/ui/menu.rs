@@ -1,7 +1,13 @@
+use anyhow::Result;
+use crossterm::event;
+use crossterm::event::Event;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEventKind;
 use ratatui::DefaultTerminal;
+use ratatui::Frame;
+use ratatui::layout::Alignment;
 use ratatui::layout::Margin;
+use ratatui::layout::Position;
 use ratatui::widgets::Scrollbar;
 use ratatui::widgets::ScrollbarOrientation;
 use ratatui::widgets::ScrollbarState;
@@ -10,6 +16,8 @@ use ratatui::{
     style::{Color, Modifier, Style},
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
 };
+
+use tui_input::{Input, backend::crossterm::EventHandler};
 
 pub const DEFAULT_STATUS: &str = "↑/↓ or j/k movess, Enter/Space selects, q/Esc returns";
 
@@ -142,4 +150,160 @@ pub fn navigate(
             }
         }
     }
+}
+
+pub fn input_list(
+    terminal: &mut DefaultTerminal,
+    fields: &Vec<String>,
+) -> Result<Option<Vec<String>>> {
+    let mut input_fields: Vec<Input> = (0..fields.len()).map(|_| Input::default()).collect();
+
+    // Input fields followed by Submit and Cancel.
+    let mut selected: usize = 0;
+    let control_count = fields.len() + 2;
+
+    loop {
+        terminal.draw(|frame| {
+            input_list_draw(frame, &input_fields, fields, selected);
+        })?;
+
+        let event = event::read()?;
+
+        if let Event::Key(key) = &event {
+            if !matches!(key.kind, KeyEventKind::Press | KeyEventKind::Repeat) {
+                continue;
+            }
+
+            match key.code {
+                KeyCode::Esc => {
+                    return Ok(None);
+                }
+
+                KeyCode::Up | KeyCode::BackTab => {
+                    selected = (selected + control_count - 1) % control_count;
+                }
+
+                KeyCode::Down | KeyCode::Tab => {
+                    selected = (selected + 1) % control_count;
+                }
+
+                KeyCode::Enter => {
+                    if selected < fields.len() {
+                        // Advance to the next field or button.
+                        selected = (selected + 1) % control_count;
+                    } else if selected == fields.len() {
+                        // Submit.
+                        return Ok(Some(
+                            input_fields
+                                .iter()
+                                .map(|input| input.value().to_owned())
+                                .collect(),
+                        ));
+                    } else {
+                        // Cancel.
+                        return Ok(None);
+                    }
+                }
+
+                _ if selected < fields.len() => {
+                    let _ = input_fields[selected].handle_event(&event);
+                }
+
+                _ => {}
+            }
+        }
+    }
+}
+
+fn input_list_draw(
+    frame: &mut Frame<'_>,
+    input_fields: &[Input],
+    fields: &[String],
+    selected: usize,
+) {
+    let mut constraints = vec![Constraint::Length(3); input_fields.len()];
+
+    constraints.push(Constraint::Length(3)); // Buttons
+    constraints.push(Constraint::Length(1)); // Help text
+
+    let areas = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(constraints)
+        .split(frame.area());
+
+    // Draw input fields.
+    for (i, (input, area)) in input_fields.iter().zip(areas.iter()).enumerate() {
+        let focused = i == selected;
+        let inner_width = area.width.saturating_sub(2) as usize;
+        let scroll = input.visual_scroll(inner_width);
+
+        let border_style = if focused {
+            Style::default().fg(Color::Yellow)
+        } else {
+            Style::default()
+        };
+
+        frame.render_widget(
+            Paragraph::new(input.value())
+                .scroll((0, scroll.min(u16::MAX as usize) as u16))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .border_style(border_style)
+                        .title(format!(" {} ", fields[i])),
+                ),
+            *area,
+        );
+
+        // Position the cursor in the focused input.
+        if focused && inner_width > 0 && area.height >= 3 {
+            let cursor_x = input
+                .visual_cursor()
+                .saturating_sub(scroll)
+                .min(inner_width - 1);
+
+            frame.set_cursor_position(Position::new(area.x + 1 + cursor_x as u16, area.y + 1));
+        }
+    }
+
+    // Split the button row into two buttons.
+    let button_areas = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+        .split(areas[input_fields.len()]);
+
+    let labels = [" Submit ", " Cancel "];
+
+    for i in 0..2 {
+        let focused = selected == input_fields.len() + i;
+
+        let style = if focused {
+            Style::default().fg(Color::Yellow)
+        } else {
+            Style::default()
+        };
+
+        let border_style = if focused {
+            Style::default().fg(Color::Yellow)
+        } else {
+            Style::default()
+        };
+
+        frame.render_widget(
+            Paragraph::new(labels[i])
+                .alignment(Alignment::Center)
+                .style(style)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .border_style(border_style),
+                ),
+            button_areas[i],
+        );
+    }
+
+    frame.render_widget(
+        Paragraph::new("Up/Down or Tab: navigate | Enter: select | Esc: cancel"),
+        areas[input_fields.len() + 1],
+    );
 }
