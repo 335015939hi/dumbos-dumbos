@@ -35,7 +35,7 @@ pub async fn main(
         Ok(path) => code_path_global = path,
         Err(msg) => {
             let msg = format!("{msg}");
-            Event::reject_code(user, code, &msg).dispatch();
+            Event::reject_code(user, code, false, &msg).dispatch();
             return Err(StatusCode::FORBIDDEN);
         }
     }
@@ -43,7 +43,7 @@ pub async fn main(
         Ok(path) => code_path_user = path,
         Err(msg) => {
             let msg = format!("{msg}");
-            Event::reject_code(user, code, &msg).dispatch();
+            Event::reject_code(user, code, true, &msg).dispatch();
             return Err(StatusCode::FORBIDDEN);
         }
     }
@@ -52,7 +52,7 @@ pub async fn main(
         Ok(v) => match v {
             Ok(_) => {}
             Err(e) => {
-                Event::reject_code(user, code, &e).dispatch();
+                Event::reject(user, &format!("using code {code}"), &e).dispatch();
                 return Err(StatusCode::FORBIDDEN);
             }
         },
@@ -77,7 +77,7 @@ pub async fn main(
                     }
                     Err(e) => {
                         if e.kind() == std::io::ErrorKind::NotFound {
-                            Event::reject_code(user, code, &String::from("no code found"))
+                            Event::reject_code(user, code, false, &String::from("no code found"))
                                 .dispatch();
                             return Err(StatusCode::FORBIDDEN);
                         } else {
@@ -109,7 +109,7 @@ pub async fn main(
     if dumb::check_expire_and_set(&mut dumbpayload) {
         //code is expired
         println!("code {code} requestedby user {user} is expired");
-        Event::reject_code(user, code, &"expired".into()).dispatch();
+        Event::reject_code(user, code, is_code_personal, &"expired".into()).dispatch();
         return Err(StatusCode::FORBIDDEN);
     }
 

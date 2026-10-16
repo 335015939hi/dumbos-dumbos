@@ -2,28 +2,14 @@ use crate::ui::menu;
 use crossterm::event::KeyCode;
 use dumbtool::events;
 use dumbtool::events::Event;
-use dumbtool::events::EventType;
 use ratatui::DefaultTerminal;
-use ratatui::style::Color;
 use ratatui::style::Modifier;
 use ratatui::style::Style;
 use ratatui::widgets;
 use ratatui::widgets::Borders;
 use ratatui::widgets::ListItem;
 
-fn events_list_append(list: &mut Vec<ListItem>, event: Event) {
-    let color = match event.event_type {
-        EventType::Upload | EventType::Code => Color::Cyan,
-        EventType::CodeRejected | EventType::UploadRejected => Color::Yellow,
-        EventType::Info => Color::Green,
-        EventType::Error => Color::Red,
-    };
-    let event = widgets::ListItem::new(format!("{event}"));
-    let event = event.style(Style::default().fg(color));
-    list.insert(0, event);
-}
-
-fn events_list_reload(list: &mut Vec<ListItem>) {
+fn events_list_reload(list: &mut Vec<Event>) {
     let events_table = events::EVENTS_TABLE.get().unwrap().lock().unwrap();
     let mut error: String;
     let new_len = events_table.len();
@@ -49,16 +35,22 @@ fn events_list_reload(list: &mut Vec<ListItem>) {
     }
     drop(events_table);
     for event in new_events_list {
-        events_list_append(list, event);
+        list.insert(0, event);
     }
 }
 
 pub fn main(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
     let mut state = widgets::ListState::default().with_selected(Some(0));
-    let mut events_list: Vec<ListItem> = vec![];
+    let mut events_list: Vec<Event> = vec![];
     events_list_reload(&mut events_list);
     loop {
-        let menu: widgets::List = widgets::List::new(events_list.clone());
+        let mut events_menu_list: Vec<ListItem> = vec![];
+        for event in &events_list {
+            let event = widgets::ListItem::new(format!("{event}"))
+                .style(Style::default().fg(event.color()));
+            events_menu_list.push(event);
+        }
+        let menu: widgets::List = widgets::List::new(events_menu_list);
         let menu = menu.block(
             widgets::Block::default()
                 .title("Events log")

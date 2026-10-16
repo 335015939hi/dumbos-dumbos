@@ -2,18 +2,20 @@ use crate::log;
 use crate::tables::EventsTable;
 use chrono::DateTime;
 use chrono::Local;
+use ratatui::style::Color;
 use serde::Deserialize;
 use serde::Serialize;
 use std::fmt;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Eq)]
 pub enum EventType {
     Code,
     Upload,
     CodeRejected,
     UploadRejected,
+    GenericReject,
     Error,
     Info,
 }
@@ -65,6 +67,21 @@ impl fmt::Display for Event {
                     Some(s) => s.as_str(),
                     None => "",
                 };
+            }
+            EventType::GenericReject => {
+                tag = "Reject";
+                s += format!(
+                    "{} rejected becase ",
+                    match &self.extra {
+                        Some(a) => a.as_str(),
+                        None => "unknown action",
+                    }
+                )
+                .as_str();
+                s += match &self.reason {
+                    Some(r) => r.as_str(),
+                    None => "unknown reason",
+                }
             }
             EventType::Upload => {
                 tag = "Action";
@@ -131,6 +148,41 @@ impl Event {
     pub fn print(&self) {
         println!("{self}");
     }
+
+    pub fn match_type(&self, event_type: EventType) -> bool {
+        self.event_type == event_type
+    }
+    pub fn match_user(&self, user: &String) -> bool {
+        match &self.user {
+            Some(u) => u == user,
+            None => false,
+        }
+    }
+    pub fn match_code(&self, is_personal: bool, code: &String) -> bool {
+        let code = match is_personal {
+            true => format!("{code} (personal)"),
+            false => format!("{code} (global)"),
+        };
+        match self.event_type {
+            EventType::Code | EventType::CodeRejected => match &self.extra {
+                Some(c) => &code == c,
+                None => false,
+            },
+            _ => false,
+        }
+    }
+
+    pub fn color(&self) -> Color {
+        match self.event_type {
+            EventType::Upload | EventType::Code => Color::Cyan,
+            EventType::CodeRejected | EventType::UploadRejected | EventType::GenericReject => {
+                Color::Yellow
+            }
+            EventType::Info => Color::Green,
+            EventType::Error => Color::Red,
+        }
+    }
+
     pub fn code(user: &String, code: &String, personal: bool) -> Self {
         Self {
             event_type: EventType::Code,
@@ -143,13 +195,25 @@ impl Event {
             }),
         }
     }
-    pub fn reject_code(user: &String, code: &String, reason: &String) -> Self {
+    pub fn reject_code(user: &String, code: &String, personal: bool, reason: &String) -> Self {
         Self {
             event_type: EventType::CodeRejected,
             user: Some(user.clone()),
             time: -1,
             reason: Some(reason.clone()),
-            extra: Some(code.clone()),
+            extra: Some(match personal {
+                true => format!("{code} (personal)"),
+                false => format!("{code} (global)"),
+            }),
+        }
+    }
+    pub fn reject(user: &String, action: &String, reason: &String) -> Self {
+        Self {
+            event_type: EventType::GenericReject,
+            user: Some(user.clone()),
+            time: -1,
+            reason: Some(reason.clone()),
+            extra: Some(action.clone()),
         }
     }
     pub fn error(action: &String, message: &String) -> Self {
