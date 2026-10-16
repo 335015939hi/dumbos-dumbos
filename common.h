@@ -30,7 +30,7 @@
 // debug mode for emulator
 #ifndef DEBUG_MODE
 #if defined(__x86_64__) || defined(_M_X64)
-#define DEBUG_MODE
+// #define DEBUG_MODE
 #endif
 #else
 #if !defined(__x86_64__) || !defined(_M_X64)

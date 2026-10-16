@@ -1,3 +1,4 @@
+mod dialog;
 mod events;
 pub mod main;
 mod menu;

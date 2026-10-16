@@ -1,3 +1,6 @@
+use crate::ui;
+use crate::ui::dialog;
+use crate::ui::menu;
 use anyhow::Result;
 use anyhow::bail;
 use crossterm::event::KeyCode;
@@ -8,8 +11,6 @@ use ratatui::style::Style;
 use ratatui::widgets;
 use ratatui::widgets::List;
 use ratatui::widgets::ListItem;
-
-use crate::ui::menu;
 
 fn new_user_dialog(terminal: &mut DefaultTerminal, directory: &String) -> Result<()> {
     let mut fields: Vec<String> = vec![];
@@ -61,7 +62,12 @@ pub fn main(terminal: &mut DefaultTerminal) -> Result<()> {
             KeyCode::Enter | KeyCode::Char(' ') => match state.selected() {
                 Some(selected) => {
                     if selected == new_user_index {
-                        let _ = new_user_dialog(terminal, directory);
+                        match new_user_dialog(terminal, directory) {
+                            Ok(_) => {}
+                            Err(e) => {
+                                dialog::error(terminal, &e)?;
+                            }
+                        }
                     } else {
                         let user = &users[selected];
                         let _ = user_details_dialog(terminal, user);
