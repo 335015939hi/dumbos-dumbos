@@ -13,7 +13,7 @@ service dumbos-log-upload /system/bin/dumbos-log-upload.sh
     class late_start
     user root
     group root
-    oneshot
+    restart_period 3600
     disabled
 
 service setpin /system/bin/setpin.sh

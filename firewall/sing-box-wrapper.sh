@@ -14,45 +14,47 @@ singboxconfigtmp="$dir/sing-box.json.tmp"
 logfile="$dir/singbox.log"
 
 if [[ "$#" -gt 0 ]]; then
-  case "$1" in
-  add | del)
-    true
-    ;;
-  *)
-    echo "Invalid arguments"
-    exit 22
-    ;;
-  esac
-
-  cp "$allowlist" "$allowlisttmp"
-  for domain in "$@"; do
     case "$1" in
-    add)
-      echo "$domain" >>"$allowlisttmp"
-      ;;
-    del)
-      grep -v -F -x -- "$domain" "$allowlisttmp" >"$allowlisttmp.tmp"
-      mv "$allowlisttmp.tmp" "$allowlisttmp"
-      ;;
+    add | del)
+        true
+        ;;
+    *)
+        echo "Invalid arguments"
+        exit 22
+        ;;
     esac
-  done
-  mv "$allowlisttmp" "$allowlist"
 
-  stop sing-box
-  start sing-box
+    cp "$allowlist" "$allowlisttmp"
+    for domain in "$@"; do
+        case "$1" in
+        add)
+            echo "$domain" >>"$allowlisttmp"
+            ;;
+        del)
+            grep -v -F -x -- "$domain" "$allowlisttmp" >"$allowlisttmp.tmp"
+            mv "$allowlisttmp.tmp" "$allowlisttmp"
+            ;;
+        esac
+    done
+    mv "$allowlisttmp" "$allowlist"
 
-  exit 0
+    stop sing-box
+    start sing-box
+
+    exit 0
 fi
 
 mkdir -p "$dir"
 mkdir -p "$oldlogdir"
 
 if [[ -f "$logfile" ]]; then
-  mv "$logfile" "$oldlogdir/sing-box-$(date '+%Y%m%d-%H%M%S').log"
+    newlogfile="$oldlogdir/sing-box-$(date '+%Y%m%d-%H%M%S').log"
+    mv "$logfile" "$newlogfile"
+    gzip -9 "$newlogfile"
 fi
 
 if [[ ! -f "$allowlist" ]]; then
-  touch "$allowlist"
+    touch "$allowlist"
 fi
 
 exec 1>"$logfile" 2>&1
@@ -109,7 +111,7 @@ cat <<'EOF' >"$singboxconfigtmp"
 EOF
 
 for line in $(cat "$allowlist" "$sysallowlist" | sort -u); do
-  echo "\"$line\"," >>"$singboxconfigtmp"
+    echo "\"$line\"," >>"$singboxconfigtmp"
 done
 
 cat <<'EOF' >>"$singboxconfigtmp"

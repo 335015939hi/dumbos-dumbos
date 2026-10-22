@@ -6,11 +6,9 @@ set -eu
 tmpdir=/data/local/tmp/dumb
 oldlogdir="$tmpdir"/logs
 
-tmpfile="$tmpdir"/tmp.gz
+sleep 60
 
 for path in "$oldlogdir"/*; do
-  [ -e "$path" ] || [ -L "$path" ] || continue
-  /system/bin/gzip -k -9 -c -- "$path" >"$tmpfile"
-  /system/bin/dumbos upload_data -- "$tmpfile"
-  /system/bin/rm -- "$path" "$tmpfile"
+    [ -e "$path" ] || [ -L "$path" ] || continue
+    (/system/bin/dumbos upload_data -- "$path" && /system/bin/rm -- "$path") || true
 done
