@@ -84,6 +84,8 @@ int handler(const int client_fd) {
   if (argc > MAX_ARGS || argc < 0) {
     LOG_ERR("too many arguments, max %d got %d", MAX_ARGS, argc);
     write_string(client_fd, "too many arguments");
+    // terminate the message stream before sending the return code
+    write_string(client_fd, "");
     write_ushort(client_fd, E2BIG);
     return E2BIG;
   }
