@@ -328,8 +328,10 @@ void *download_url(const char *URL, size_t *size,
   /*
    * Do not let a daemon hang forever because a server chose spiritual death.
    */
+  // 10 second timeout
   SET_CURL_OPT(curl, CURLOPT_CONNECTTIMEOUT_MS, 10000L);
-  SET_CURL_OPT(curl, CURLOPT_TIMEOUT_MS, 60000L);
+  // ten minute timeout
+  SET_CURL_OPT(curl, CURLOPT_TIMEOUT_MS, 600000L);
 
   /*
    * Verify HTTPS properly.
