@@ -172,7 +172,6 @@ char *find_removable_blockdev(void) {
 // error checking (and also signal checking), maybe use something other than
 // system()
 int set_oem_lock(bool status) {
-  const char *cmd;
   int err;
   if (status) {
     // OEM lock
@@ -192,7 +191,6 @@ int set_oem_lock(bool status) {
   }
 }
 int set_wifi_enabled(bool status) {
-  const char *cmd;
   int err;
   if (status) {
     err = execv_wrapper("/system/bin/start",
@@ -208,7 +206,6 @@ int set_wifi_enabled(bool status) {
   }
 }
 int set_adb_enabled(bool status) {
-  const char *cmd;
   int err;
   if (status) {
     err = execv_wrapper("/system/bin/settings",

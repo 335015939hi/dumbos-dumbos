@@ -97,7 +97,6 @@ int start_daemon(const struct daemon_opts *const opt) {
 
   int socket_fd;
   int err;
-  int len;
   struct sockaddr_un *sock_addr = malloc(sizeof(struct sockaddr_un));
   if (sock_addr == NULL) {
     LOG_ERRNO("failed to malloc", errno);

@@ -87,9 +87,6 @@ out:
 }
 
 int maybe_set_lockscreen_text(void) {
-  sqlite3 *db = NULL;
-  sqlite3_stmt *stmt = NULL;
-  int err;
   struct DUMBOS_USER_DATA *user_data;
   char *fancy_name;
 

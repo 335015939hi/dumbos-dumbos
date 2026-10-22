@@ -64,7 +64,6 @@ int handler(const int client_fd) {
 
   int argc;
   char **argv;
-  char *ret_msg = NULL;
   int ret = EINVAL;
   bool haserror = false;
 
