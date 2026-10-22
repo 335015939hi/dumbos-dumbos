@@ -142,14 +142,14 @@ int main(int argc, char **argv) {
 
   errno = 0;
   opt->mode = (mode_t)strtoul(opt_sock_mode_str, &end, 8);
-  if (errno || *end != '\0' || opt->mode < 0) {
+  if (errno || *end != '\0') {
     LOG_FATAL("invalid mode '%s'", opt_sock_mode_str);
     return EINVAL;
   }
 
   char *sock_own_str = strdup(opt_sock_own_str);
   if (sock_own_str == NULL) {
-    LOG_ERR("strdup() fail", errno);
+    LOG_ERRNO("strdup() fail", errno);
     return errno;
   }
   char *colon = strchr(sock_own_str, ':');

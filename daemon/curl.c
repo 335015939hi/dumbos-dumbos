@@ -24,8 +24,9 @@
  *     - sets *size to 0 when size != NULL
  */
 
-#include <stdio.h>
 #define _GNU_SOURCE 1
+
+#include <stdio.h>
 
 #include <curl/curl.h>
 
@@ -278,7 +279,7 @@ void *download_url(const char *URL, size_t *size, int sockfd) {
    * This prevents cursed redirects like http://good.example ->
    * file:///etc/passwd.
    */
-#if defined(CURLOPT_PROTOCOLS_STR)
+#if LIBCURL_VERSION_NUM >= 0x075500
   SET_CURL_OPT(curl, CURLOPT_PROTOCOLS_STR, "http,https");
   SET_CURL_OPT(curl, CURLOPT_REDIR_PROTOCOLS_STR, "http,https");
 #else
