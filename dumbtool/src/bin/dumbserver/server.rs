@@ -123,9 +123,8 @@ pub fn dumb_verify_request(
     }
 }
 
-async fn default_route(uri: Uri) -> String {
-    dumbtool::events::Event::info(&format!("got Url {}", uri.path())).dispatch();
-    return uri.path().into();
+async fn default_route() -> StatusCode {
+    return StatusCode::NOT_FOUND;
 }
 
 pub async fn main(
