@@ -193,11 +193,13 @@ int secret_code(int argc, char **argv, int sockfd) {
   payload = download_url(url, &payload_size, sockfd);
   if (payload == NULL) {
     err = errno;
+    if (err == 0)
+      err = EIO;
     free(url);
-    LOG_ERRNO("failed to download payload from server", errno);
-    if (errno == ECONNREFUSED) {
+    LOG_ERRNO("failed to download payload from server", err);
+    if (err == ECONNREFUSED) {
       write_string(sockfd, "check your connection");
-    } else if (errno == EPROTO) {
+    } else if (err == EPROTO) {
       write_string(sockfd, "invalid code");
     } else {
       write_string(sockfd,
