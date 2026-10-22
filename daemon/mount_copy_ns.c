@@ -200,6 +200,7 @@ static void print_progress(struct copy_progress *progress, int force) {
   }
   LOG("%s", progress_str);
   write_string(dumbos_client_socketfd, progress_str);
+  free(progress_str);
 }
 
 static int copy_regular_file(const char *src, const char *dst,
