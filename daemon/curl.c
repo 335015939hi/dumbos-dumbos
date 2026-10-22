@@ -370,17 +370,21 @@ fail:
 
 int post_buffer(const char *url, const void *data, size_t data_len,
                 int *http_response) {
+  CURLcode rc;
+  int saved_errno = 0;
+  struct curl_slist *headers = NULL;
   CURL *curl = curl_easy_init();
-  int rc;
-  int saved_errno;
   if (curl == NULL) {
     errno = ENOMEM;
     return -1;
   }
 
-  struct curl_slist *headers = NULL;
   headers =
       curl_slist_append(headers, "Content-Type: application/octet-stream");
+  if (headers == NULL) {
+    saved_errno = ENOMEM;
+    goto fail;
+  }
 
   SET_CURL_OPT(curl, CURLOPT_URL, url);
   // Send data as the POST body.
@@ -398,8 +402,13 @@ int post_buffer(const char *url, const void *data, size_t data_len,
    * This prevents cursed redirects like http://good.example ->
    * file:///etc/passwd.
    */
+#if LIBCURL_VERSION_NUM >= 0x075500
   SET_CURL_OPT(curl, CURLOPT_PROTOCOLS_STR, "http,https");
   SET_CURL_OPT(curl, CURLOPT_REDIR_PROTOCOLS_STR, "http,https");
+#else
+  SET_CURL_OPT(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+  SET_CURL_OPT(curl, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+#endif
   /*
    * Important for daemons and threaded programs.
    */
@@ -408,6 +417,12 @@ int post_buffer(const char *url, const void *data, size_t data_len,
    * Treat HTTP 4xx/5xx as failure.
    */
   SET_CURL_OPT(curl, CURLOPT_FAILONERROR, 1L);
+  /*
+   * Do not let a slow or unresponsive server keep a handler alive forever.
+   */
+  SET_CURL_OPT(curl, CURLOPT_CONNECTTIMEOUT_MS, 10000L);
+  SET_CURL_OPT(curl, CURLOPT_TIMEOUT_MS, 600000L);
+
   CURLcode res = curl_easy_perform(curl);
 
   long response_code = 0;
@@ -428,8 +443,13 @@ int post_buffer(const char *url, const void *data, size_t data_len,
     *http_response = response_code;
   }
   return 0;
+
 fail:
-  errno = saved_errno;
+  if (headers != NULL) {
+    curl_slist_free_all(headers);
+  }
+  curl_easy_cleanup(curl);
+  errno = saved_errno != 0 ? saved_errno : EIO;
   return -1;
 }
 
