@@ -335,6 +335,7 @@ int cmd_upload_data(int argc, char **argv, int sockfd) {
                         net_time, userdata->priv_key_hex);
   if (err != 0) {
     LOG_ERRNO("request_id_sign() failed", err);
+    errno = err;
     goto fail;
   }
   url =
@@ -348,7 +349,7 @@ int cmd_upload_data(int argc, char **argv, int sockfd) {
   LOG("using upload URL '%s'", url);
 
   for (argc -= 1; argc >= 0; argc--) {
-    const char *file = argv[argc];
+    file = argv[argc];
     LOG_DEBUG("cmd_upload_data():processing file %s", file);
     struct stat st;
     if (stat(file, &st) == 0) {
@@ -386,10 +387,16 @@ int cmd_upload_data(int argc, char **argv, int sockfd) {
     close(fd);
     fd = -1;
   }
+
+  maybe_free(userdata);
+  maybe_free(request_signature);
+  maybe_free(url);
   return 0;
 fail:
   err = errno;
-  LOG_ERR("cmd_upload_data():failed processing file %s:%d (%s)", file, errno,
+  if (err == 0)
+    err = EIO;
+  LOG_ERR("cmd_upload_data():failed processing file %s:%d (%s)", file, err,
           strerror(err));
   if (fd >= 0)
     close(fd);
@@ -397,5 +404,5 @@ fail:
   maybe_free(userdata);
   maybe_free(request_signature);
   maybe_free(url);
-  return errno;
+  return err;
 }
