@@ -89,7 +89,9 @@ int handler(const int client_fd) {
     return E2BIG;
   }
 
-  argv = calloc(argc, sizeof(char *));
+  // allocate one extra slot for the NULL terminator expected by execv() and
+  // friends (e.g. the debug-only "shell" command)
+  argv = calloc(argc + 1, sizeof(char *));
   if (argv == NULL) {
     err = errno;
     LOG_ERRNO("alloc argv fail", err);
