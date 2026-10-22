@@ -153,13 +153,16 @@ static size_t write_callback(char *ptr, size_t elem_size, size_t elem_count,
 
   memcpy(new_data + buf->size, ptr, incoming);
 
-  char *progress_str;
-  asprintf(&progress_str, "downloaded %zu bytes", buf->size);
-  write_string(dumbos_client_fd, progress_str);
-  free(progress_str);
-
   buf->data = new_data;
   buf->size += incoming;
+
+  if (dumbos_client_fd >= 0) {
+    char *progress_str = NULL;
+    if (asprintf(&progress_str, "downloaded %zu bytes", buf->size) >= 0) {
+      write_string(dumbos_client_fd, progress_str);
+      free(progress_str);
+    }
+  }
 
   return incoming;
 }
