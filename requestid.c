@@ -149,11 +149,11 @@ struct DUMBOS_USER_DATA *dumbos_alloc_new_user(const char *user,
     return NULL;
   }
   struct DUMBOS_USER_DATA *new_user = malloc(sizeof *new_user);
-  memset(new_user, 0, sizeof(*new_user));
   if (new_user == NULL) {
     LOG_ERRNO("failed to allocate memory", errno);
     return NULL;
   }
+  memset(new_user, 0, sizeof(*new_user));
   snprintf(new_user->username, DUMBOS_USERNAME_MAXLEN, "%s", user);
   snprintf(new_user->priv_key_hex, ED25519_PRIVATE_KEY_HEX_SIZE, "%s",
            priv_key_hex);
