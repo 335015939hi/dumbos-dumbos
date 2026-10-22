@@ -117,6 +117,7 @@ int start_daemon(const struct daemon_opts *const opt) {
 
   if (strlen(opt->path) >= MAX_SOCK_PATH) {
     LOG_ERR("socket path too long, aborting");
+    close(socket_fd);
     free(sock_addr);
     return ENAMETOOLONG;
   }
