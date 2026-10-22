@@ -187,19 +187,25 @@ static void print_progress(struct copy_progress *progress, int force) {
 
   progress->last_print = now;
 
-  char *progress_str;
+  char *progress_str = NULL;
 
   if (progress->total != 0) {
     double percent = 100.0 * (double)progress->done / (double)progress->total;
-    asprintf(&progress_str, "\rCopied %.2f MiB / %.2f MiB (%5.1f%%)",
-             (double)progress->done / (1024.0 * 1024.0),
-             (double)progress->total / (1024.0 * 1024.0), percent);
+    if (asprintf(&progress_str, "\rCopied %.2f MiB / %.2f MiB (%5.1f%%)",
+                 (double)progress->done / (1024.0 * 1024.0),
+                 (double)progress->total / (1024.0 * 1024.0), percent) < 0) {
+      return;
+    }
   } else {
-    asprintf(&progress_str, "\rCopied %.2f MiB",
-             (double)progress->done / (1024.0 * 1024.0));
+    if (asprintf(&progress_str, "\rCopied %.2f MiB",
+                 (double)progress->done / (1024.0 * 1024.0)) < 0) {
+      return;
+    }
   }
   LOG("%s", progress_str);
-  write_string(dumbos_client_socketfd, progress_str);
+  if (dumbos_client_socketfd >= 0) {
+    write_string(dumbos_client_socketfd, progress_str);
+  }
   free(progress_str);
 }
 
