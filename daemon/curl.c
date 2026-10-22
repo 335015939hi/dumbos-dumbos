@@ -8,8 +8,7 @@
  * Function:
  *
  *     void *download_url(const char *URL,
- *                        size_t *size,
- *                        const custom_certificate *cert);
+ *                        size_t *size);
  *
  * Returns:
  *     malloc()'d buffer containing downloaded bytes.
@@ -23,16 +22,9 @@
  *     - returns NULL
  *     - sets errno
  *     - sets *size to 0 when size != NULL
- *
- * Build on normal Linux:
- *
- *     cc -Wall -Wextra -O2 download_url.c -lcurl -lpthread
- *
- * Android/AOSP note:
- *     You need libcurl available to your daemon. Android does not magically
- *     provide every library just because humans enjoy suffering.
  */
 
+#include <stdio.h>
 #define _GNU_SOURCE 1
 
 #include <curl/curl.h>
@@ -46,29 +38,7 @@
 #include <string.h>
 
 #include "../common.h"
-
-/*
- * Optional HTTPS trust material.
- *
- * This represents a custom CA certificate, not a client certificate.
- *
- * Use either:
- *
- *     .ca_pem     = pointer to PEM CA certificate bytes
- *     .ca_pem_len = byte length of PEM data
- *
- * or:
- *
- *     .ca_file    = path to PEM CA certificate file
- *
- * If both are provided, ca_pem wins.
- */
-typedef struct custom_certificate {
-  const void *ca_pem;
-  size_t ca_pem_len;
-
-  const char *ca_file;
-} custom_certificate;
+#include "curl.h"
 
 typedef struct download_buffer {
   unsigned char *data;
@@ -147,6 +117,8 @@ static char *make_effective_url(const char *URL) {
   return ret;
 }
 
+static int dumbos_client_fd = -1;
+
 static size_t write_callback(char *ptr, size_t elem_size, size_t elem_count,
                              void *userdata) {
   download_buffer *buf = userdata;
@@ -180,6 +152,11 @@ static size_t write_callback(char *ptr, size_t elem_size, size_t elem_count,
   }
 
   memcpy(new_data + buf->size, ptr, incoming);
+
+  char *progress_str;
+  asprintf(&progress_str, "downloaded %zu bytes", buf->size);
+  write_string(dumbos_client_fd, progress_str);
+  free(progress_str);
 
   buf->data = new_data;
   buf->size += incoming;
@@ -248,14 +225,17 @@ static int curlcode_to_errno(CURLcode rc) {
     }                                                                          \
   } while (0)
 
-void *download_url(const char *URL, size_t *size,
-                   const custom_certificate *cert) {
+// yes, this is not thread-ssafe. but we don't use threads here
+
+void *download_url(const char *URL, size_t *size, int sockfd) {
   CURL *curl = NULL;
   CURLcode rc;
   download_buffer buf;
   char *effective_url = NULL;
   int saved_errno = 0;
   LOG_DEBUG("download_url(\"%s\")", URL);
+
+  dumbos_client_fd = sockfd;
 
 #if defined(CURLOPT_CAINFO_BLOB)
   struct curl_blob ca_blob;
@@ -339,27 +319,6 @@ void *download_url(const char *URL, size_t *size,
   SET_CURL_OPT(curl, CURLOPT_SSL_VERIFYPEER, 1L);
   SET_CURL_OPT(curl, CURLOPT_SSL_VERIFYHOST, 2L);
 
-  /*
-   * Optional custom CA cert.
-   */
-  if (cert != NULL) {
-    if (cert->ca_pem != NULL && cert->ca_pem_len != 0) {
-#if defined(CURLOPT_CAINFO_BLOB)
-      memset(&ca_blob, 0, sizeof(ca_blob));
-
-      ca_blob.data = (void *)cert->ca_pem;
-      ca_blob.len = cert->ca_pem_len;
-      ca_blob.flags = CURL_BLOB_NOCOPY;
-
-      SET_CURL_OPT(curl, CURLOPT_CAINFO_BLOB, &ca_blob);
-#else
-      saved_errno = ENOTSUP;
-      goto fail;
-#endif
-    } else if (cert->ca_file != NULL && cert->ca_file[0] != '\0') {
-      SET_CURL_OPT(curl, CURLOPT_CAINFO, cert->ca_file);
-    }
-  }
   char curl_errbuf[CURL_ERROR_SIZE];
   long http_code = 0;
   curl_errbuf[0] = '\0';

@@ -190,7 +190,7 @@ int secret_code(int argc, char **argv, int sockfd) {
   LOG("Downloading from %s", url);
   write_string(sockfd, "downloading...");
 
-  payload = download_url(url, &payload_size, NULL);
+  payload = download_url(url, &payload_size, sockfd);
   if (payload == NULL) {
     err = errno;
     free(url);
