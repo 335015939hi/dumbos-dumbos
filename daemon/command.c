@@ -355,7 +355,8 @@ int cmd_upload_data(int argc, char **argv, int sockfd) {
       size_t size = st.st_size;
       LOG_DEBUG("file %s: %zu bytes", file, size);
 
-      if (0 == (fd = open(file, O_RDONLY))) {
+      fd = open(file, O_RDONLY);
+      if (fd < 0) {
         LOG_ERR("cmd_upload_data(): could not open %s", file);
         goto fail;
       }
