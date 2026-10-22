@@ -52,7 +52,7 @@
         "domain_suffix": [
         ],
         "ip_cidr": [
-          "10.0.2.2",
+            "10.0.2.2",
         ],
         "outbound": "direct-out"
       },
