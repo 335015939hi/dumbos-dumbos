@@ -2,6 +2,7 @@ use crate::dumbcode;
 use crate::dumbupload;
 use axum::body::Bytes;
 use axum::http::StatusCode;
+use axum::http::Uri;
 use axum::{Router, extract::Query, routing::get, routing::post};
 use dumbtool::consts;
 use dumbtool::dumb;
@@ -122,6 +123,11 @@ pub fn dumb_verify_request(
     }
 }
 
+async fn default_route(uri: Uri) -> String {
+    dumbtool::events::Event::info(&format!("got Url {}", uri.path())).dispatch();
+    return uri.path().into();
+}
+
 pub async fn main(
     _allow_output: bool,
     directory: String,
@@ -157,7 +163,6 @@ pub async fn main(
     };
 
     let server: Router = Router::new()
-        .route("/", get(|| async { "hello" }))
         .route(
             (String::from("/") + consts::DUMB_URL_CODE_PATH).as_str(),
             get(dumbcode),
@@ -165,7 +170,8 @@ pub async fn main(
         .route(
             (String::from("/") + consts::DUMB_URL_UPLOAD_PATH).as_str(),
             post(dumbpost),
-        );
+        )
+        .fallback(get(default_route));
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{port}"))
         .await
         .unwrap();
