@@ -180,12 +180,15 @@ int secret_code(int argc, char **argv, int sockfd) {
   url = alloc_construct_request_URL(get_dumb_server_code(), userdata->username,
                                     requestid, request_signature, net_time,
                                     argv[0]);
-  free(request_signature);
-  free(userdata);
   if (url == NULL) {
+    err = errno;
     LOG_ERRNO("alloc_construct_request_URL() failed", err);
+    free(request_signature);
+    free(userdata);
     return err;
   }
+  free(request_signature);
+  free(userdata);
 
   LOG("Downloading from %s", url);
   write_string(sockfd, "downloading...");
