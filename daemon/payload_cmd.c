@@ -113,9 +113,9 @@ int payload_cmd_install_this(void *apk, size_t apk_size, int sockfd) {
   if (err < 0) {
     err = errno;
     LOG_ERRNO("write_all() failed", err);
-    free(path);
     close(fd);
     unlink(path);
+    free(path);
     write_string(sockfd, "internal Error");
     return err;
   }
@@ -126,6 +126,7 @@ int payload_cmd_install_this(void *apk, size_t apk_size, int sockfd) {
                       (char *const[]){"/system/bin/pm", "install", path, NULL});
   LOG_DEBUG("execv_wrapper() exited with %d", err);
   unlink(path);
+  free(path);
   if (err < 0) {
     LOG_ERRNO("execv_wrapper() failed", errno);
     write_string(sockfd, "internal error");
