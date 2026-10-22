@@ -73,8 +73,11 @@ void set_default_server(const char *server) {
 void set_tmpdir(const char *path) {
   if (dumb_tmpdir)
     free(dumb_tmpdir);
-  int len = strlen(path);
-  if (path[len - 1] == '/') {
+  size_t len = path != NULL ? strlen(path) : 0;
+  if (len == 0) {
+    errno = EINVAL;
+    dumb_tmpdir = NULL;
+  } else if (path[len - 1] == '/') {
     dumb_tmpdir = strdup(path);
   } else {
     dumb_tmpdir = malloc(len + 2);
