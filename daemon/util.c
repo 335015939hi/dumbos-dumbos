@@ -327,3 +327,41 @@ char *alloc_construct_request_URL(const char *baseURL, const char *user,
   }
   return url;
 }
+
+/*
+ * Returns:
+ *   true  if path is strictly below parent
+ *   false  if it is not, or if either path cannot be resolved (errno is set)
+ */
+bool path_is_below(const char *path, const char *parent) {
+  errno = 0;
+  char *resolved_path = realpath(path, NULL);
+  if (resolved_path == NULL)
+    return false;
+
+  char *resolved_parent = realpath(parent, NULL);
+  if (resolved_parent == NULL) {
+    int saved_errno = errno;
+    free(resolved_path);
+    errno = saved_errno;
+    return false;
+  }
+
+  size_t path_len = strlen(resolved_path);
+  size_t parent_len = strlen(resolved_parent);
+  bool result = false;
+
+  if (parent_len == 1 && resolved_parent[0] == '/') {
+    /* Every absolute path except / itself is below /. */
+    result = path_len > 1;
+  } else if (path_len > parent_len &&
+             memcmp(resolved_path, resolved_parent, parent_len) == 0 &&
+             resolved_path[parent_len] == '/') {
+    result = true;
+  }
+
+  free(resolved_path);
+  free(resolved_parent);
+
+  return result;
+}

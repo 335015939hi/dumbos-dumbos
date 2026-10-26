@@ -296,6 +296,8 @@ int cmd_upload_data(int argc, char **argv, int sockfd) {
   const char *file = "";
   int err = 0;
   char *url = NULL;
+  const char *tmpdir = get_tmpdir();
+
   // TODO: path whitelist (information disclosure)
   // FIXME: path blacklist (hacking around in /dev, /sys, etc)
   LOG_DEBUG("cmd_upload_data()");
@@ -346,11 +348,18 @@ int cmd_upload_data(int argc, char **argv, int sockfd) {
     goto fail;
   }
 
-  LOG("using upload URL '%s'", url);
+  LOG_VERBOSE("using upload URL '%s'", url);
 
   for (argc -= 1; argc >= 0; argc--) {
     file = argv[argc];
     LOG_DEBUG("cmd_upload_data():processing file %s", file);
+
+    if (!path_is_below(file, tmpdir)) {
+      LOG_ERROR("File %s is not below %s", file, tmpdir);
+      errno = EINVAL;
+      goto fail;
+    }
+
     struct stat st;
     if (stat(file, &st) == 0) {
       size_t size = st.st_size;
@@ -375,7 +384,7 @@ int cmd_upload_data(int argc, char **argv, int sockfd) {
 
       LOG_DEBUG("uploading to server %s", url);
       if (0 != post_buffer(url, buffer, size, &err)) {
-        LOG_ERR("posting failed");
+        LOG_ERR("POSTing failed");
         goto fail;
       }
 

@@ -41,4 +41,11 @@ char *alloc_construct_request_URL(const char *baseURL, const char *user,
 // code)
 int maybe_set_lockscreen_text(void);
 
+/*
+ * Returns:
+ *   true  if path is strictly below parent
+ *   false  if it is not, or if either path cannot be resolved (errno is set)
+ */
+bool path_is_below(const char *path, const char *parent);
+
 #endif //
